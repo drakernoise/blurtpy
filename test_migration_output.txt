@@ -1,0 +1,54 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.1, pytest-9.0.1, pluggy-1.6.0 -- C:\Users\pablo\AppData\Local\Programs\Python\Python312\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\pablo\Movistar Cloud\Gravity\blurtpy
+configfile: pytest.ini
+collecting ... collected 0 items / 2 errors
+
+=================================== ERRORS ====================================
+____________ ERROR collecting tests/blurtpy/test_account_blurt.py _____________
+ImportError while importing test module 'C:\Users\pablo\Movistar Cloud\Gravity\blurtpy\tests\blurtpy\test_account_blurt.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+..\..\..\AppData\Local\Programs\Python\Python312\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\blurtpy\test_account_blurt.py:7: in <module>
+    from blurtpy import Blurt, exceptions, Blurt
+blurtpy\__init__.py:2: in <module>
+    from .blurt import Blurt
+blurtpy\blurt.py:15: in <module>
+    from blurtpy.blockchaininstance import BlockChainInstance
+blurtpy\blockchaininstance.py:15: in <module>
+    from .storage import get_default_config_store
+blurtpy\storage.py:3: in <module>
+    from .nodelist import NodeList
+blurtpy\nodelist.py:8: in <module>
+    from blurtpy.account import Account
+blurtpy\account.py:17: in <module>
+    from blurtpy.rc import RC
+E   ModuleNotFoundError: No module named 'blurtpy.rc'
+____________ ERROR collecting tests/blurtpy/test_account_blurt.py _____________
+ImportError while importing test module 'C:\Users\pablo\Movistar Cloud\Gravity\blurtpy\tests\blurtpy\test_account_blurt.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+..\..\..\AppData\Local\Programs\Python\Python312\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\blurtpy\test_account_blurt.py:7: in <module>
+    from blurtpy import Blurt, exceptions, Blurt
+blurtpy\__init__.py:2: in <module>
+    from .blurt import Blurt
+blurtpy\blurt.py:15: in <module>
+    from blurtpy.blockchaininstance import BlockChainInstance
+blurtpy\blockchaininstance.py:15: in <module>
+    from .storage import get_default_config_store
+blurtpy\storage.py:3: in <module>
+    from .nodelist import NodeList
+blurtpy\nodelist.py:8: in <module>
+    from blurtpy.account import Account
+blurtpy\account.py:17: in <module>
+    from blurtpy.rc import RC
+E   ModuleNotFoundError: No module named 'blurtpy.rc'
+!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!
+============================== 2 errors in 0.66s ==============================

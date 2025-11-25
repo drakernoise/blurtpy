@@ -1,0 +1,81 @@
+# -*- coding: utf-8 -*-
+import unittest
+from parameterized import parameterized
+from blurtpy import Blurt
+from blurtpy.asset import Asset
+from blurtpy.instance import set_shared_blurt_instance
+from blurtpy.exceptions import AssetDoesNotExistsException
+from .nodes import get_blurt_nodes, get_blurt_nodes
+
+
+
+class Testcases(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.bts = Blurt(
+            node=get_blurt_nodes(),
+            nobroadcast=True,
+            num_retries=10
+        )
+        cls.blurtit = Blurt(
+            node="https://api.blurtit.com",
+            nobroadcast=True,
+            num_retries=10
+        )
+        set_shared_blurt_instance(cls.bts)
+
+    @parameterized.expand([
+        ("normal"),
+        ("blurtit"),
+    ])
+    def test_assert(self, node_param):
+        if node_param == "normal":
+            stm = self.bts
+        else:
+            stm = self.blurtit
+        with self.assertRaises(AssetDoesNotExistsException):
+            Asset("FOObarNonExisting", full=False, blurt_instance=stm)
+
+    @parameterized.expand([
+        ("normal", "HBD", "HBD", 3, "@@000000013"),
+        ("normal", "HIVE", "HIVE", 3, "@@000000021"),
+        ("normal", "VESTS", "VESTS", 6, "@@000000037"),
+        ("normal", "@@000000013", "HBD", 3, "@@000000013"),
+        ("normal", "@@000000021", "HIVE", 3, "@@000000021"),
+        ("normal", "@@000000037", "VESTS", 6, "@@000000037"),
+    ])
+    def test_properties(self, node_param, data, symbol_str, precision, asset_str):
+        if node_param == "normal":
+            stm = self.bts
+        else:
+            stm = self.testnet
+        asset = Asset(data, full=False, blurt_instance=stm)
+        self.assertEqual(asset.symbol, symbol_str)
+        self.assertEqual(asset.precision, precision)
+        self.assertEqual(asset.asset, asset_str)
+
+    def test_assert_equal(self):
+        stm = self.bts
+        asset1 = Asset("HBD", full=False, blurt_instance=stm)
+        asset2 = Asset("HBD", full=False, blurt_instance=stm)
+        self.assertTrue(asset1 == asset2)
+        self.assertTrue(asset1 == "HBD")
+        self.assertTrue(asset2 == "HBD")
+        asset3 = Asset("HIVE", full=False, blurt_instance=stm)
+        self.assertTrue(asset1 != asset3)
+        self.assertTrue(asset3 != "HBD")
+        self.assertTrue(asset1 != "HIVE")
+
+        a = {'asset': '@@000000021', 'precision': 3, 'id': 'HIVE', 'symbol': 'HIVE'}
+        b = {'asset': '@@000000021', 'precision': 3, 'id': '@@000000021', 'symbol': 'HIVE'}
+        self.assertTrue(Asset(a, blurt_instance=stm) == Asset(b, blurt_instance=stm))
+
+    """
+    # Mocker comes from pytest-mock, providing an easy way to have patched objects
+    # for the life of the test.
+    def test_calls(mocker):
+        asset = Asset("USD", lazy=True, blurt_instance=Blurt(offline=True))
+        method = mocker.patch.object(Asset, 'get_call_orders')
+        asset.calls
+        method.assert_called_with(10)
+    """

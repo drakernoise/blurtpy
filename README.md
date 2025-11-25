@@ -1,0 +1,102 @@
+# blurtpy: Librería Python para Blurt
+
+`blurtpy` es una librería Python moderna, robusta y segura para interactuar con la blockchain de **Blurt**.
+Es un fork directo de la popular librería `beem`, optimizada y limpiada específicamente para el ecosistema Blurt.
+
+## Características Principales
+
+*   **Nativa para Blurt:** Sin código muerto de Steem o Hive. Optimizada para las reglas de consenso de Blurt.
+*   **Segura:** Auditoría de seguridad realizada. Manejo de claves privadas endurecido para prevenir fugas accidentales.
+*   **Completa:** Soporta operaciones de cuenta, transferencias, votación, testigos, y más.
+*   **Alto Rendimiento:** Soporte para nodos WebSocket y HTTP. Firma de transacciones rápida (soporte opcional para `secp256k1`).
+
+## Instalación
+
+### Requisitos Previos
+*   Python 3.8 o superior.
+*   `pip` y `setuptools`.
+
+### Instalación desde el código fuente
+```bash
+git clone https://gitlab.com/tu-usuario/blurtpy.git
+cd blurtpy
+pip install -e .
+```
+
+### Dependencias Opcionales (Recomendadas)
+Para mayor velocidad en la firma de transacciones:
+```bash
+pip install secp256k1prp
+```
+o
+```bash
+pip install cryptography
+```
+
+## Uso Rápido
+
+### Conexión a Blurt
+```python
+from blurtpy import Blurt
+
+# Conectar a un nodo público
+b = Blurt(node=["https://rpc.blurt.world"])
+
+print(b.info())
+```
+
+### Gestión de Cuentas
+```python
+from blurtpy.account import Account
+
+# Leer información de una cuenta
+acc = Account("tekraze", blockchain_instance=b)
+print(f"Balance: {acc.balances['available']}")
+print(f"Voting Power: {acc.vp:.2f}%")
+```
+
+### Enviar Transferencia
+```python
+from blurtpy import Blurt
+
+# Necesitas la clave activa para transferir
+wif = "5tuClavePrivadaActiva..." 
+b = Blurt(keys=[wif], node=["https://rpc.blurt.world"])
+
+b.transfer("destinatario", 10, "BLURT", "memo de prueba", account="tu-usuario")
+```
+
+### Votar un Post
+```python
+from blurtpy import Blurt
+
+# Necesitas la clave de posting
+wif = "5tuClavePrivadaPosting..."
+b = Blurt(keys=[wif], node=["https://rpc.blurt.world"])
+
+# Votar al 100%
+b.vote("@autor/permlink", 100, account="tu-usuario")
+```
+
+## Seguridad
+
+`blurtpy` ha sido auditada para asegurar un manejo responsable de las claves privadas.
+*   **Protección de Logs:** Los objetos `PrivateKey` no muestran el WIF (clave privada) al ser impresos o convertidos a string, evitando fugas en logs.
+*   **Firma Determinista:** Soporte para firmas ECDSA robustas.
+
+> **Nota:** Nunca compartas tus claves privadas. Si usas el wallet local (`blurtpy.sqlite`), asegúrate de protegerlo con una contraseña fuerte.
+
+## Documentación Adicional
+
+En la carpeta `docs/` encontrarás:
+*   [Guía de Migración y Walkthrough](docs/walkthrough.md)
+*   [Reporte de Auditoría de Seguridad](docs/security_audit_report.md)
+
+## Créditos
+
+`blurtpy` es un fork de [beem](https://github.com/holgern/beem) creado por Holger Hattendorf, quien a su vez se basó en `python-bitshares` de Fabian Schuh.
+Agradecemos a la comunidad de código abierto por sentar las bases de este proyecto.
+
+## Licencia
+
+Este proyecto está licenciado bajo la Licencia MIT. Ver el archivo LICENSE para más detalles.
