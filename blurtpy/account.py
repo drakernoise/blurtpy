@@ -11,7 +11,7 @@ from .exceptions import AccountDoesNotExistsException, OfflineHasNoRPCException
 from blurtapi.exceptions import ApiNotSupported, MissingRequiredActiveAuthority, SupportedByBlurtmind, FilteredItemNotFound
 from .blockchainobject import BlockchainObject
 from .blockchain import Blockchain
-from .utils import formatTimeString, formatTimedelta, remove_from_dict, reputation_to_score, addTzInfo
+from .utils import formatTimeString, formatTimedelta, remove_from_dict, reputation_to_score, addTzInfo, resolve_authorperm
 from blurtpy.amount import Amount
 from blurtbase import operations
 
