@@ -9,6 +9,16 @@ Asegúrate de tener instalada la librería y configurada tu clave privada (WIF) 
 pip install blurtpy
 ```
 
+## Configuración Inicial (¡IMPORTANTE!)
+
+Antes de ejecutar los ejemplos, debes configurar tu **Wallet Seguro**. Esto creará una base de datos local cifrada (`blurtpy.sqlite`) para almacenar tus claves privadas, evitando tener que escribirlas en el código.
+
+1.  Ejecuta el script de configuración:
+    ```bash
+    python examples/secure_wallet_setup.py
+    ```
+2.  Sigue las instrucciones para crear una contraseña maestra y añadir tus claves (WIF).
+
 ## Índice de Ejemplos
 
 ### 1. Interacción Social (`social_actions.py`)
@@ -30,8 +40,17 @@ pip install blurtpy
 -   Cambiar claves de la cuenta.
 
 ## Ejecución
-Para ejecutar cualquiera de los scripts:
+Para ejecutar cualquiera de los scripts (te pedirá la contraseña del wallet):
 
 ```bash
 python examples/social_actions.py
+```
+
+## Optimización de Nodos
+La librería incluye una función para encontrar automáticamente el nodo más rápido. Puedes usarla en tus propios scripts así:
+
+```python
+from blurtpy import Blurt
+# Se conectará automáticamente al nodo con menor latencia
+b = Blurt(node="best")
 ```
