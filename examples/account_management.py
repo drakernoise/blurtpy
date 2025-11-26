@@ -1,18 +1,28 @@
-import logging
+import getpass
 from blurtpy import Blurt
 from blurtpy.account import Account
 from blurtpy.graphenebase.account import PasswordKey
 
 # Configuración
-# REEMPLAZA ESTAS VARIABLES CON TUS DATOS
-# ¡ATENCIÓN! Estas operaciones son críticas y requieren la CLAVE DE PROPIETARIO (OWNER KEY)
-# o la CLAVE MAESTRA (MASTER PASSWORD) según la operación.
-WIF_OWNER = "TU_CLAVE_PRIVADA_OWNER" 
 USUARIO = "tu_usuario"
 NODO = ["https://rpc.blurt.world"]
 
 # Inicializar Blurt
-b = Blurt(node=NODO, keys=[WIF_OWNER])
+b = Blurt(node=NODO)
+
+# Desbloquear Wallet
+if b.wallet.created():
+    if b.wallet.locked():
+        pwd = getpass.getpass(f"Introduce contraseña del wallet para operar como {USUARIO}: ")
+        try:
+            b.wallet.unlock(pwd)
+            print("Wallet desbloqueado.")
+        except Exception as e:
+            print(f"Error al desbloquear: {e}")
+            exit()
+else:
+    print("No se encontró un wallet creado. Ejecuta 'examples/secure_wallet_setup.py' primero.")
+    exit()
 
 def establecer_cuenta_recuperacion(cuenta_recuperacion):
     """Establece la cuenta de recuperación (Recovery Account)."""

@@ -1,20 +1,31 @@
-import logging
-from datetime import datetime, timedelta
+import getpass
 from blurtpy import Blurt
 from blurtpy.account import Account
 from blurtpy.comment import Comment
 from blurtpy.discussions import Query, Discussions_by_created
+from blurtpy.wallet import Wallet
 
 # Configuración
-# REEMPLAZA ESTAS VARIABLES CON TUS DATOS
-WIF = "TU_CLAVE_PRIVADA_POSTING"
 USUARIO = "tu_usuario"
 NODO = ["https://rpc.blurt.world"]
 
-# Inicializar Blurt
-# Si no proporcionas keys, solo podrás leer datos públicos.
-# Para escribir (votar, comentar), necesitas la clave privada.
-b = Blurt(node=NODO, keys=[WIF])
+# Inicializar Blurt sin claves hardcodeadas
+# Se usará el wallet local (blurtpy.sqlite)
+b = Blurt(node=NODO)
+
+# Desbloquear Wallet
+if b.wallet.created():
+    if b.wallet.locked():
+        pwd = getpass.getpass(f"Introduce contraseña del wallet para operar como {USUARIO}: ")
+        try:
+            b.wallet.unlock(pwd)
+            print("Wallet desbloqueado.")
+        except Exception as e:
+            print(f"Error al desbloquear: {e}")
+            exit()
+else:
+    print("No se encontró un wallet creado. Ejecuta 'examples/secure_wallet_setup.py' primero.")
+    exit()
 
 def comentar_post(identifier, body, title=""):
     """Comenta en un post existente."""

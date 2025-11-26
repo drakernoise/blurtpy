@@ -1,17 +1,28 @@
-import logging
-import time
+import getpass
 from blurtpy import Blurt
 from blurtpy.account import Account
 from blurtpy.amount import Amount
 
 # Configuración
-# REEMPLAZA ESTAS VARIABLES CON TUS DATOS
-WIF_ACTIVE = "TU_CLAVE_PRIVADA_ACTIVA" # Necesaria para transferencias
 USUARIO = "tu_usuario"
 NODO = ["https://rpc.blurt.world"]
 
 # Inicializar Blurt
-b = Blurt(node=NODO, keys=[WIF_ACTIVE])
+b = Blurt(node=NODO)
+
+# Desbloquear Wallet
+if b.wallet.created():
+    if b.wallet.locked():
+        pwd = getpass.getpass(f"Introduce contraseña del wallet para operar como {USUARIO}: ")
+        try:
+            b.wallet.unlock(pwd)
+            print("Wallet desbloqueado.")
+        except Exception as e:
+            print(f"Error al desbloquear: {e}")
+            exit()
+else:
+    print("No se encontró un wallet creado. Ejecuta 'examples/secure_wallet_setup.py' primero.")
+    exit()
 
 def power_up(cantidad, usuario_destino=None):
     """Convierte BLURT líquido a Blurt Power (Vesting)."""

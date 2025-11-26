@@ -20,7 +20,7 @@ log = logging.getLogger(__name__)
 class Blurt(BlockChainInstance):
     """ Connect to the Blurt network.
 
-        :param str node: Node to connect to *(optional)*
+        :param str node: Node to connect to *(optional)*. Set to "best" to automatically find the fastest node.
         :param str rpcuser: RPC user *(optional)*
         :param str rpcpassword: RPC password *(optional)*
         :param bool nobroadcast: Do **not** broadcast a transaction!
@@ -109,6 +109,29 @@ class Blurt(BlockChainInstance):
             )
 
     """
+    def __init__(self, node=None, **kwargs):
+        if node == "best":
+            node = self.find_best_node()
+        elif node is None:
+             pass
+             
+        super(Blurt, self).__init__(node=node, **kwargs)
+
+    @staticmethod
+    def find_best_node(verbose=False):
+        """ Benchmarks known Blurt nodes and returns the URL of the fastest one. """
+        from blurtpy.nodelist import NodeList
+        nl = NodeList()
+        nodes = nl.get_blurt_nodes()
+        if verbose:
+            print(f"Benchmarking {len(nodes)} nodes...")
+        results = nl.get_node_answer_time(nodes, verbose=verbose)
+        if results:
+            best = results[0]["url"]
+            if verbose:
+                print(f"Best node found: {best}")
+            return best
+        return "https://rpc.beblurt.com" # Fallback
 
     def get_network(self, use_stored_data=True, config=None):
         """ Identify the network
