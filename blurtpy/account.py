@@ -2905,6 +2905,30 @@ class Account(BlockchainObject):
         })
         return self.blockchain.finalizeOp(op, account, "active", **kwargs)
 
+    def vote(self, identifier, weight, account=None, **kwargs):
+        """ Vote for a post
+
+            :param str identifier: Identifier for the post
+            :param float weight: Voting weight in percent
+            :param str account: (optional) the source account for the vote
+        """
+        if account is None:
+            account = self
+        else:
+            account = Account(account, blockchain_instance=self.blockchain)
+        
+        author, permlink = resolve_authorperm(identifier)
+        
+        op = operations.Vote(**{
+            "voter": account["name"],
+            "author": author,
+            "permlink": permlink,
+            "weight": int(weight * BLURT_1_PERCENT),
+            "prefix": self.blockchain.prefix,
+            "json_str": not bool(self.blockchain.config["use_condenser"]),
+        })
+        return self.blockchain.finalizeOp(op, account, "posting", **kwargs)
+
     def transfer_to_vesting(self, amount, to=None, account=None, skip_account_check=False, **kwargs):
         """ Vest STEEM
 
