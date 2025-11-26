@@ -13,6 +13,7 @@ from .amount import Amount
 from .utils import formatTime, resolve_authorperm, derive_permlink, sanitize_permlink, remove_from_dict, addTzInfo, formatToTimeStamp
 from blurtpy.constants import BLURT_VOTE_REGENERATION_SECONDS, BLURT_100_PERCENT, BLURT_1_PERCENT, BLURT_RC_REGEN_TIME
 from blurtpy.blockchaininstance import BlockChainInstance
+from .account import Account
 log = logging.getLogger(__name__)
 
 
@@ -467,3 +468,23 @@ class Blurt(BlockChainInstance):
     def vests_symbol(self):
         """ get the current chains symbol for VESTS """
         return self._get_asset_symbol(2)
+
+    def transfer(self, to, amount, asset, memo="", account=None, **kwargs):
+        """ Transfer BLURT or SBD to another account.
+
+            :param str to: Recipient
+            :param float amount: Amount to transfer
+            :param str asset: Asset to transfer
+            :param str memo: (optional) Memo
+            :param str account: (optional) the source account for the transfer
+        """
+        return Account(account, blockchain_instance=self).transfer(to, amount, asset, memo, **kwargs)
+
+    def vote(self, identifier, weight, account=None, **kwargs):
+        """ Vote for a post
+
+            :param str identifier: Identifier for the post
+            :param float weight: Voting weight in percent
+            :param str account: (optional) the source account for the vote
+        """
+        return Account(account, blockchain_instance=self).vote(identifier, weight, **kwargs)
