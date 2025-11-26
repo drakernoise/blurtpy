@@ -66,5 +66,23 @@ b.vote("@drakernoise/...", 100, account="draktest")
 # {'expiration': '...', 'trx_id': '7298071a620debc8848cd54d721f0a908d706f2d', ...}
 ```
 
+## Nuevas Funcionalidades (Sesión 2)
+
+### 5. Wallet Seguro
+Se ha implementado un sistema de gestión de claves seguro para evitar hardcodear WIFs en los scripts.
+-   **Script de Configuración:** `examples/secure_wallet_setup.py` permite crear un wallet cifrado localmente (`blurtpy.sqlite`) y añadir claves de forma interactiva.
+-   **Uso en Scripts:** Los scripts de ejemplo ahora solicitan la contraseña del wallet al inicio y obtienen las claves automáticamente según sea necesario.
+
+### 6. Optimización de Nodos
+Se ha añadido la capacidad de seleccionar automáticamente el mejor nodo disponible.
+-   **Uso:** `Blurt(node="best")`.
+-   **Funcionamiento:** La librería realiza un benchmark de latencia a los nodos conocidos y se conecta al más rápido.
+
+### 7. Ejemplos Completos
+Se ha creado una suite de ejemplos en `examples/` cubriendo:
+-   **Social:** `social_actions.py` (votar, comentar, buscar).
+-   **Wallet:** `wallet_actions.py` (transferencias, power up, delegaciones).
+-   **Cuenta:** `account_management.py` (cambio de claves, recuperación).
+
 ## Estado Final
-La librería está lista para ser usada y extendida. La deuda técnica de Steem/Hive ha sido drásticamente reducida y se ha verificado la capacidad de lectura y escritura en la blockchain.
+La librería está lista para ser usada y extendida. La deuda técnica de Steem/Hive ha sido drásticamente reducida y se ha verificado la capacidad de lectura y escritura en la blockchain. Además, cuenta con herramientas de seguridad y usabilidad listas para producción.

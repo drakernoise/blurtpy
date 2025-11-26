@@ -53,12 +53,10 @@ def encrypt(privkey, passphrase):
     :rtype: Base58
 
     """
-    if isinstance(privkey, str):
+    if not isinstance(privkey, PrivateKey):
         privkey = PrivateKey(privkey)
-    else:
-        privkey = PrivateKey(repr(privkey))    
 
-    privkeyhex = repr(privkey)   # hex
+    privkeyhex = repr(privkey._wif)   # hex
     addr = format(privkey.bitcoin.address, "BTC")
     a = py23_bytes(addr, 'ascii')
     salt = hashlib.sha256(hashlib.sha256(a).digest()).digest()[0:4]
