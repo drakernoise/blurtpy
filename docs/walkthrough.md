@@ -48,5 +48,23 @@ acc = Account("tekraze", blockchain_instance=b)
 print(acc.balances)
 ```
 
+## Verificación Manual
+
+Se han realizado pruebas manuales exitosas de operaciones de escritura en la red Blurt:
+
+### Transferencia
+```python
+b.transfer("drakernoise", 1, "BLURT", "memo de prueba", account="draktest")
+# Resultado:
+# {'expiration': '...', 'trx_id': '7d00a4d73f452f629881e6cc09a9769666692bcd', ...}
+```
+
+### Voto
+```python
+b.vote("@drakernoise/...", 100, account="draktest")
+# Resultado:
+# {'expiration': '...', 'trx_id': '7298071a620debc8848cd54d721f0a908d706f2d', ...}
+```
+
 ## Estado Final
-La librería está lista para ser usada y extendida. La deuda técnica de Steem/Hive ha sido drásticamente reducida.
+La librería está lista para ser usada y extendida. La deuda técnica de Steem/Hive ha sido drásticamente reducida y se ha verificado la capacidad de lectura y escritura en la blockchain.
