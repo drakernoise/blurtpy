@@ -44,14 +44,18 @@ def setup_wallet():
     # 3. Añadir Claves
     while True:
         print("\n--- Gestión de Claves ---")
-        print("1. Añadir una clave privada (WIF)")
+        print("Puedes añadir tantas claves como quieras (Owner, Active, Posting, Memo).")
+        print("1. Añadir una nueva clave privada (WIF)")
         print("2. Listar claves públicas guardadas")
         print("3. Salir")
         
         opcion = input("Elige una opción: ")
         
         if opcion == "1":
-            wif = getpass.getpass("Introduce la clave privada (WIF) (comienza por 5...): ")
+            print("\nIntroduce una de tus claves privadas WIF.")
+            print("Tipos válidos: Posting, Active, Owner, Memo.")
+            print("(Nota: La Master Password no es una clave WIF, usa las claves derivadas de ella).")
+            wif = getpass.getpass("Clave WIF (comienza por 5...): ")
             try:
                 b.wallet.addPrivateKey(wif)
                 print("¡Clave añadida correctamente!")
