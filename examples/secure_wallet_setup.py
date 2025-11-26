@@ -66,7 +66,8 @@ def setup_wallet():
                 if account:
                     print(f"Esta clave pertenece a la cuenta: {account}")
                 else:
-                    print("No se pudo identificar la cuenta asociada (¿estás conectado a internet?)")
+                    print("Clave guardada. (Nota: No se pudo identificar la cuenta automáticamente,")
+                    print("esto es normal para claves Memo o si hay problemas de conexión).")
                     
             except Exception as e:
                 print(f"Error al añadir clave: {e}")
