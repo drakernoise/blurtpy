@@ -273,7 +273,6 @@ class Account_update(GrapheneObject):
             ('posting', posting),
             ('memo_key', PublicKey(kwargs["memo_key"], prefix=prefix)),
             ('json_metadata', String(meta)),
-            ('extensions', Set([])),
         ]))
 
 
