@@ -2,6 +2,7 @@ import getpass
 from blurtpy import Blurt
 from blurtpy.wallet import Wallet
 from blurtpy.exceptions import WalletExists
+from blurtpy.account import Account
 
 def setup_wallet():
     """
