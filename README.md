@@ -1,102 +1,102 @@
-# blurtpy: Librería Python para Blurt
+# blurtpy: Python Library for Blurt
 
-`blurtpy` es una librería Python moderna, robusta y segura para interactuar con la blockchain de **Blurt**.
-Es un fork directo de la popular librería `beem`, optimizada y limpiada específicamente para el ecosistema Blurt.
+`blurtpy` is a modern, robust, and secure Python library for interacting with the **Blurt** blockchain.
+It is a direct fork of the popular `beem` library, optimized and cleaned specifically for the Blurt ecosystem.
 
-## Características Principales
+## Key Features
 
-*   **Nativa para Blurt:** Sin código muerto de Steem o Hive. Optimizada para las reglas de consenso de Blurt.
-*   **Segura:** Auditoría de seguridad realizada. Manejo de claves privadas endurecido para prevenir fugas accidentales.
-*   **Completa:** Soporta operaciones de cuenta, transferencias, votación, testigos, y más.
-*   **Alto Rendimiento:** Soporte para nodos WebSocket y HTTP. Firma de transacciones rápida (soporte opcional para `secp256k1`).
+*   **Native to Blurt:** No dead code from Steem or Hive. Optimized for Blurt's consensus rules.
+*   **Secure:** Security audit performed. Hardened private key handling to prevent accidental leaks.
+*   **Complete:** Supports account operations, transfers, voting, witnesses, and more.
+*   **High Performance:** Support for WebSocket and HTTP nodes. Fast transaction signing (optional support for `secp256k1`).
 
-## Instalación
+## Installation
 
-### Requisitos Previos
-*   Python 3.8 o superior.
-*   `pip` y `setuptools`.
+### Prerequisites
+*   Python 3.8 or higher.
+*   `pip` and `setuptools`.
 
-### Instalación desde el código fuente
+### Installation from Source
 ```bash
-git clone https://gitlab.com/tu-usuario/blurtpy.git
+git clone https://gitlab.com/your-username/blurtpy.git
 cd blurtpy
 pip install -e .
 ```
 
-### Dependencias Opcionales (Recomendadas)
-Para mayor velocidad en la firma de transacciones:
+### Optional Dependencies (Recommended)
+For faster transaction signing:
 ```bash
 pip install secp256k1prp
 ```
-o
+or
 ```bash
 pip install cryptography
 ```
 
-## Uso Rápido
+## Quick Start
 
-### Conexión a Blurt
+### Connecting to Blurt
 ```python
 from blurtpy import Blurt
 
-# Conectar a un nodo público
+# Connect to a public node
 b = Blurt(node=["https://rpc.blurt.world"])
 
 print(b.info())
 ```
 
-### Gestión de Cuentas
+### Account Management
 ```python
 from blurtpy.account import Account
 
-# Leer información de una cuenta
+# Read account information
 acc = Account("tekraze", blockchain_instance=b)
 print(f"Balance: {acc.balances['available']}")
 print(f"Voting Power: {acc.vp:.2f}%")
 ```
 
-### Enviar Transferencia
+### Sending a Transfer
 ```python
 from blurtpy import Blurt
 
-# Necesitas la clave activa para transferir
-wif = "5tuClavePrivadaActiva..." 
+# You need the active key to transfer
+wif = "5YourActivePrivateKey..." 
 b = Blurt(keys=[wif], node=["https://rpc.blurt.world"])
 
-b.transfer("destinatario", 10, "BLURT", "memo de prueba", account="tu-usuario")
+b.transfer("recipient", 10, "BLURT", "test memo", account="your-username")
 ```
 
-### Votar un Post
+### Voting on a Post
 ```python
 from blurtpy import Blurt
 
-# Necesitas la clave de posting
-wif = "5tuClavePrivadaPosting..."
+# You need the posting key
+wif = "5YourPostingPrivateKey..."
 b = Blurt(keys=[wif], node=["https://rpc.blurt.world"])
 
-# Votar al 100%
-b.vote("@autor/permlink", 100, account="tu-usuario")
+# Vote at 100%
+b.vote("@author/permlink", 100, account="your-username")
 ```
 
-## Seguridad
+## Security
 
-`blurtpy` ha sido auditada para asegurar un manejo responsable de las claves privadas.
-*   **Protección de Logs:** Los objetos `PrivateKey` no muestran el WIF (clave privada) al ser impresos o convertidos a string, evitando fugas en logs.
-*   **Firma Determinista:** Soporte para firmas ECDSA robustas.
+`blurtpy` has been audited to ensure responsible handling of private keys.
+*   **Log Protection:** `PrivateKey` objects do not show the WIF (private key) when printed or converted to string, preventing leaks in logs.
+*   **Deterministic Signing:** Support for robust ECDSA signatures.
 
-> **Nota:** Nunca compartas tus claves privadas. Si usas el wallet local (`blurtpy.sqlite`), asegúrate de protegerlo con una contraseña fuerte.
+> **Note:** Never share your private keys. If you use the local wallet (`blurtpy.sqlite`), make sure to protect it with a strong password.
 
-## Documentación Adicional
+## Additional Documentation
 
-En la carpeta `docs/` encontrarás:
-*   [Guía de Migración y Walkthrough](docs/walkthrough.md)
-*   [Reporte de Auditoría de Seguridad](docs/security_audit_report.md)
+In the `docs/` folder you will find:
+*   [Migration Guide and Walkthrough](docs/walkthrough.md)
+*   [Security Audit Report](docs/security_audit_report.md)
 
-## Créditos
+## Credits
 
-`blurtpy` es un fork de [beem](https://github.com/holgern/beem) creado por Holger Hattendorf, quien a su vez se basó en `python-bitshares` de Fabian Schuh.
-Agradecemos a la comunidad de código abierto por sentar las bases de este proyecto.
+`blurtpy` is a fork of [beem](https://github.com/holgern/beem) created by Holger Hattendorf, who in turn based it on `python-bitshares` by Fabian Schuh.
+We thank the open source community for laying the foundations of this project.
 
-## Licencia
+## License
 
-Este proyecto está licenciado bajo la Licencia MIT. Ver el archivo LICENSE para más detalles.
+This project is licensed under the MIT License. See the LICENSE file for more details.
