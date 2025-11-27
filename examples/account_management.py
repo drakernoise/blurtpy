@@ -1,7 +1,7 @@
 import getpass
 from blurtpy import Blurt
 from blurtpy.account import Account
-from blurtpy.graphenebase.account import PasswordKey
+from blurtgraphenebase.account import PasswordKey
 
 # Configuración
 USUARIO = "tu_usuario"
