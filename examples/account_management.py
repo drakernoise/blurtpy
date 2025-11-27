@@ -93,6 +93,62 @@ def change_keys(new_password):
 
         # --- DEBUG END ---
 
+        # --- MANUAL TRANSACTION CONSTRUCTION ---
+        from blurtbase import operations
+        import json
+        
+        print("[DEBUG] Manually constructing transaction...")
+        
+        # 1. Derive NEW keys
+        new_keys = {}
+        for role in ['owner', 'active', 'posting', 'memo']:
+            pk = PasswordKey(USERNAME, new_password, role=role)
+            new_keys[role] = format(pk.get_public_key(), b.chain_params["prefix"])
+            
+        print(f"[DEBUG] New Keys derived: {new_keys}")
+
+        # 2. Construct Operation
+        # TEST MODE: Set to False to perform REAL key update
+        TEST_MODE = False 
+        
+        if TEST_MODE:
+            print("[DEBUG] TEST MODE: Updating only metadata to verify signing...")
+            op = operations.Account_update(
+                account=USERNAME,
+                memo_key=acc["memo_key"], # Keep existing memo key
+                json_metadata=json.dumps({"test": "signing_verification"}),
+                prefix=b.chain_params["prefix"],
+                # Owner/Active/Posting are omitted to keep them unchanged
+            )
+            print("[DEBUG] Operation constructed (METADATA UPDATE ONLY).")
+        else:
+            print("[DEBUG] REAL MODE: Updating ALL account keys...")
+            op = operations.Account_update(
+                account=USERNAME,
+                owner=operations.Permission(
+                    weight_threshold=1,
+                    key_auths=[[new_keys['owner'], 1]],
+                    account_auths=[],
+                    prefix=b.chain_params["prefix"]
+                ),
+                active=operations.Permission(
+                    weight_threshold=1,
+                    key_auths=[[new_keys['active'], 1]],
+                    account_auths=[],
+                    prefix=b.chain_params["prefix"]
+                ),
+                posting=operations.Permission(
+                    weight_threshold=1,
+                    key_auths=[[new_keys['posting'], 1]],
+                    account_auths=[],
+                    prefix=b.chain_params["prefix"]
+                ),
+                memo_key=new_keys['memo'],
+                json_metadata=acc["json_metadata"], # Keep existing metadata
+                prefix=b.chain_params["prefix"]
+            )
+            print("[DEBUG] Operation constructed (FULL KEY UPDATE).")
+
         # 3. Get CURRENT Owner Key from Wallet
         current_owner_pub = acc["owner"]["key_auths"][0][0]
         print(f"[DEBUG] Current Owner PubKey: {current_owner_pub}")
