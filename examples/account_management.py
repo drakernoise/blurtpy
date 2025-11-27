@@ -76,6 +76,8 @@ def cambiar_claves(nueva_contrasena):
 if __name__ == "__main__":
     # EJEMPLOS DE USO (Descomenta para probar)
     
+    print("Descomenta las líneas de abajo para probar las funciones.")
+    
     # 1. Establecer cuenta de recuperación
     # establecer_cuenta_recuperacion("tekraze")
     
