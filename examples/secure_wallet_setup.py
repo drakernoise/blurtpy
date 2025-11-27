@@ -70,7 +70,36 @@ def setup_wallet():
                     print("this is normal for Memo keys or if there are connection issues).")
                     
             except Exception as e:
-                print(f"Error adding key: {e}")
+                if "Key already in the store" in str(e):
+                    print(f"\n[INFO] This key is ALREADY in your wallet.")
+                    try:
+                        pub = b.wallet.publickey_from_wif(wif)
+                        print(f"Public Key: {pub}")
+                        account = b.wallet.getAccountFromPublicKey(pub)
+                        if account:
+                            print(f"It belongs to account: {account}")
+                            # Check authority
+                            acc = Account(account, blockchain_instance=b)
+                            print(f"Checking permissions for {account}...")
+                            found_roles = []
+                            for role in ['owner', 'active', 'posting', 'memo']:
+                                if role == 'memo':
+                                    if acc['memo_key'] == str(pub):
+                                        found_roles.append(role)
+                                else:
+                                    for auth in acc[role]['key_auths']:
+                                        if auth[0] == str(pub):
+                                            found_roles.append(role)
+                            
+                            if found_roles:
+                                print(f"This key has permissions: {', '.join(found_roles).upper()}")
+                            else:
+                                print("This key does NOT match any current permissions on the blockchain for this account.")
+                                print("It might be an old key.")
+                    except Exception as inner_e:
+                        print(f"Could not analyze key details: {inner_e}")
+                else:
+                    print(f"Error adding key: {e}")
                 
         elif option == "2":
             keys = b.wallet.getPublicKeys()
