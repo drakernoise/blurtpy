@@ -9,10 +9,31 @@ import sys
 # ... (connection setup)
 
 if len(sys.argv) > 1:
-    # Check specific block
-    block_num = int(sys.argv[1])
-    print(f"Inspecting specific block {block_num}...")
-    blocks_to_check = [block_num]
+    arg = sys.argv[1]
+    if len(arg) == 40:
+        # It's a Transaction ID
+        print(f"Inspecting Transaction ID: {arg}")
+        try:
+            tx = b.rpc.get_transaction(arg)
+            print(json.dumps(tx, indent=2))
+            for op in tx['operations']:
+                op_type = op[0]
+                op_data = op[1]
+                print(f"\n[FOUND] {op_type}")
+                if 'extensions' in op_data:
+                    print(f"EXTENSIONS FIELD FOUND: {op_data['extensions']}")
+                else:
+                    print("EXTENSIONS FIELD NOT FOUND in JSON")
+            found = True
+            blocks_to_check = [] # Skip block loop
+        except Exception as e:
+            print(f"Error fetching transaction: {e}")
+            blocks_to_check = []
+    else:
+        # Check specific block
+        block_num = int(arg)
+        print(f"Inspecting specific block {block_num}...")
+        blocks_to_check = [block_num]
 else:
     # Search back 20000 blocks
     print("Searching for recent account_update operations...")
@@ -20,9 +41,8 @@ else:
     head_block = props['head_block_number']
     blocks_to_check = range(head_block, head_block - 20000, -1)
 
-found = False
 for block_num in blocks_to_check:
-    if found and len(sys.argv) == 1: break # Stop after first find in search mode
+    if found: break # Stop if found via TXID or previous loop
     
     if len(sys.argv) == 1 and block_num % 100 == 0:
         print(f"Checking block {block_num}...")
@@ -54,5 +74,5 @@ for block_num in blocks_to_check:
                 
                 found = True
                 
-if not found:
+if not found and len(blocks_to_check) > 0:
     print("No account_update or account_update2 found.")
