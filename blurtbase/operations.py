@@ -259,6 +259,11 @@ class Account_update(GrapheneObject):
         else:
             posting = Optional(None)
 
+        if "memo_key" in kwargs and kwargs["memo_key"]:
+            memo_key = Optional(PublicKey(kwargs["memo_key"], prefix=prefix))
+        else:
+            memo_key = Optional(None)
+
         meta = ""
         if "json_metadata" in kwargs and kwargs["json_metadata"]:
             if isinstance(kwargs["json_metadata"], dict):
@@ -271,8 +276,10 @@ class Account_update(GrapheneObject):
             ('owner', owner),
             ('active', active),
             ('posting', posting),
-            ('memo_key', PublicKey(kwargs["memo_key"], prefix=prefix)),
+            ('memo_key', memo_key),
             ('json_metadata', String(meta)),
+            ('posting_json_metadata', String(kwargs.get("posting_json_metadata", ""))),
+            ('extensions', Set([])),
         ]))
 
 
