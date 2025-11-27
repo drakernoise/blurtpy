@@ -144,6 +144,23 @@ def change_keys(new_password):
         b.txbuffer.appendWif(current_owner_wif)
         signed_tx = b.txbuffer.sign()
         print(f"[DEBUG] Signed Transaction: {signed_tx}")
+        
+        # --- LOCAL VERIFICATION ---
+        print("[DEBUG] Verifying signature locally...")
+        try:
+            # We need to reconstruct the Signed_Transaction object to verify
+            from blurtgraphenebase.signedtransactions import Signed_Transaction
+            stx = Signed_Transaction(signed_tx)
+            # Verify using the Chain ID and the expected Public Keys
+            # We pass the public key we expect to have signed it
+            stx.verify([current_owner_pub], b.chain_params)
+            print("[DEBUG] Local Signature Verification: SUCCESS")
+        except Exception as e:
+            print(f"[DEBUG] Local Signature Verification: FAILED - {e}")
+            import traceback
+            traceback.print_exc()
+        # --------------------------
+
         resp = b.txbuffer.broadcast()
         print(f"[DEBUG] Broadcast Response: {resp}")
         
