@@ -91,6 +91,12 @@ def change_keys(new_password):
             print(f"[DEBUG] Error checking keys: {e}")
         # --- DEBUG END ---
 
+        # --- DEBUG END ---
+
+        # 3. Get CURRENT Owner Key from Wallet
+        current_owner_pub = acc["owner"]["key_auths"][0][0]
+        print(f"[DEBUG] Current Owner PubKey: {current_owner_pub}")
+
         try:
             current_owner_wif = b.wallet.getPrivateKeyForPublicKey(current_owner_pub)
             print(f"[DEBUG] Got WIF from wallet: {str(current_owner_wif)[:5]}...")
