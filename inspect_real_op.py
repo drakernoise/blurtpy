@@ -10,14 +10,19 @@ print("Searching for recent account_update operations...")
 props = b.get_dynamic_global_properties()
 head_block = props['head_block_number']
 
-# Search back 100 blocks
+# Search back 20000 blocks
 found = False
-for block_num in range(head_block, head_block - 1000, -1):
+for block_num in range(head_block, head_block - 20000, -1):
     if found: break
-    if block_num % 10 == 0:
+    if block_num % 100 == 0:
         print(f"Checking block {block_num}...")
     
-    block = b.rpc.get_block(block_num)
+    try:
+        block = b.rpc.get_block(block_num)
+    except Exception as e:
+        print(f"Error fetching block {block_num}: {e}")
+        continue
+
     if not block or 'transactions' not in block:
         continue
         
@@ -26,8 +31,8 @@ for block_num in range(head_block, head_block - 1000, -1):
             op_type = op[0]
             op_data = op[1]
             
-            if op_type == 'account_update':
-                print(f"\n[FOUND] account_update in block {block_num}")
+            if op_type in ['account_update', 'account_update2']:
+                print(f"\n[FOUND] {op_type} in block {block_num}")
                 print(json.dumps(op, indent=2))
                 
                 # Check if 'extensions' is present in the dictionary
@@ -40,4 +45,4 @@ for block_num in range(head_block, head_block - 1000, -1):
                 break
                 
 if not found:
-    print("No account_update found in last 1000 blocks.")
+    print("No account_update or account_update2 found in last 20000 blocks.")
