@@ -65,6 +65,32 @@ def change_keys(new_password):
         # Update keys on the blockchain
         # This requires the CURRENT Owner Key (which should be in the wallet)
         print("Sending update transaction to blockchain...")
+        
+        # --- DEBUG START ---
+        print(f"\n[DEBUG] Checking wallet keys for {USERNAME}...")
+        print(f"[DEBUG] Chain ID: {b.chain_params['chain_id']}")
+        print(f"[DEBUG] Prefix: {b.chain_params['prefix']}")
+        try:
+            owner_auth = acc["owner"]["key_auths"]
+            print(f"[DEBUG] Account Owner Auths: {owner_auth}")
+            found = False
+            for auth in owner_auth:
+                pub = auth[0]
+                try:
+                    b.wallet.getPrivateKeyForPublicKey(pub)
+                    print(f"[DEBUG] FOUND Private Key for {pub} in wallet!")
+                    found = True
+                except Exception:
+                    print(f"[DEBUG] MISSING Private Key for {pub} in wallet.")
+            
+            if not found:
+                print("[DEBUG] CRITICAL - No Owner Key found in wallet!")
+            else:
+                print("[DEBUG] Owner Key is present. Proceeding...")
+        except Exception as e:
+            print(f"[DEBUG] Error checking keys: {e}")
+        # --- DEBUG END ---
+
         acc.update_account_keys(new_password)
         print("Keys changed successfully!")
         print("Please update your wallet with the new keys immediately.")
