@@ -126,6 +126,13 @@ class Signed_Transaction(GrapheneObject):
         #   GrapheneObject and the data given in __init__()
         self.message = unhexlify(self.chainid) + py23_bytes(self)
         self.digest = hashlib.sha256(self.message).digest()
+        
+        # --- DEBUG SERIALIZATION ---
+        print(f"[DEBUG] Chain ID: {self.chainid}")
+        print(f"[DEBUG] Serialized Tx (hex): {hexlify(py23_bytes(self)).decode('ascii')}")
+        print(f"[DEBUG] Full Message (ChainID + Tx) (hex): {hexlify(self.message).decode('ascii')}")
+        print(f"[DEBUG] Digest (SHA256) (hex): {hexlify(self.digest).decode('ascii')}")
+        # ---------------------------
 
         # restore signatures
         self.data["signatures"] = sigs
