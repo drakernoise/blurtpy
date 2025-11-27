@@ -91,9 +91,65 @@ def change_keys(new_password):
             print(f"[DEBUG] Error checking keys: {e}")
         # --- DEBUG END ---
 
-        acc.update_account_keys(new_password)
-        print("Keys changed successfully!")
-        print("Please update your wallet with the new keys immediately.")
+        # --- MANUAL UPDATE START ---
+        from blurtbase import operations
+        from blurtgraphenebase.account import PasswordKey
+        
+        print("[DEBUG] Manually constructing transaction...")
+        
+        # 1. Derive NEW keys
+        key_auths = {}
+        for role in ['owner', 'active', 'posting', 'memo']:
+            pk = PasswordKey(USERNAME, new_password, role=role)
+            key_auths[role] = format(pk.get_public_key(), b.chain_params["prefix"])
+            
+        print(f"[DEBUG] New Keys derived: {key_auths}")
+
+        # 2. Construct Operation
+        op = operations.Account_update(**{
+            "account": USERNAME,
+            'owner': {'account_auths': [],
+                      'key_auths': [[key_auths['owner'], 1]],
+                      "address_auths": [],
+                      'weight_threshold': 1},
+            'active': {'account_auths': [],
+                       'key_auths': [[key_auths['active'], 1]],
+                       "address_auths": [],
+                       'weight_threshold': 1},
+            'posting': {'account_auths': acc['posting']['account_auths'],
+                        'key_auths': [[key_auths['posting'], 1]],
+                        "address_auths": [],
+                        'weight_threshold': 1},
+            'memo_key': key_auths['memo'],
+            "json_metadata": acc['json_metadata'],
+            "prefix": b.chain_params["prefix"],
+        })
+        
+        print("[DEBUG] Operation constructed.")
+        
+        # 3. Get CURRENT Owner Key from Wallet
+        current_owner_pub = acc["owner"]["key_auths"][0][0]
+        print(f"[DEBUG] Current Owner PubKey: {current_owner_pub}")
+        
+        try:
+            current_owner_wif = b.wallet.getPrivateKeyForPublicKey(current_owner_pub)
+            print(f"[DEBUG] Got WIF from wallet: {str(current_owner_wif)[:5]}...")
+        except Exception as e:
+            print(f"[DEBUG] Failed to get WIF: {e}")
+            raise
+            
+        # 4. Sign and Broadcast
+        print("[DEBUG] Signing and broadcasting...")
+        b.txbuffer.clear()
+        b.txbuffer.appendOps([op])
+        b.txbuffer.appendWif(current_owner_wif)
+        signed_tx = b.txbuffer.sign()
+        print(f"[DEBUG] Signed Transaction: {signed_tx}")
+        resp = b.txbuffer.broadcast()
+        print(f"[DEBUG] Broadcast Response: {resp}")
+        
+        # acc.update_account_keys(new_password) # Commented out original call
+        # --- MANUAL UPDATE END ---
         
         # Show new keys (Security Warning: Do not do this in production logs)
         print("\n--- NEW KEYS (SAVE THEM NOW) ---")
