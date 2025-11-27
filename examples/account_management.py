@@ -150,10 +150,14 @@ def change_keys(new_password):
         try:
             # We need to reconstruct the Signed_Transaction object to verify
             from blurtgraphenebase.signedtransactions import Signed_Transaction
+            from blurtgraphenebase.account import PublicKey
+            
             stx = Signed_Transaction(signed_tx)
             # Verify using the Chain ID and the expected Public Keys
             # We pass the public key we expect to have signed it
-            stx.verify([current_owner_pub], b.chain_params)
+            # Convert string to PublicKey object
+            pub_key_obj = PublicKey(current_owner_pub, prefix=b.chain_params["prefix"])
+            stx.verify([pub_key_obj], b.chain_params)
             print("[DEBUG] Local Signature Verification: SUCCESS")
         except Exception as e:
             print(f"[DEBUG] Local Signature Verification: FAILED - {e}")
