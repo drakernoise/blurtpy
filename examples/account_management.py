@@ -87,57 +87,6 @@ def change_keys(new_password):
                 print("[DEBUG] CRITICAL - No Owner Key found in wallet!")
             else:
                 print("[DEBUG] Owner Key is present. Proceeding...")
-        except Exception as e:
-            print(f"[DEBUG] Error checking keys: {e}")
-        # --- DEBUG END ---
-
-        # --- MANUAL UPDATE START ---
-        from blurtbase import operations
-        
-        print("[DEBUG] Manually constructing transaction...")
-        
-        # 1. Derive NEW keys
-        key_auths = {}
-        for role in ['owner', 'active', 'posting', 'memo']:
-            pk = PasswordKey(USERNAME, new_password, role=role)
-            key_auths[role] = format(pk.get_public_key(), b.chain_params["prefix"])
-            
-        print(f"[DEBUG] New Keys derived: {key_auths}")
-
-        # 2. Construct Operation
-        # TEST: Try to update ONLY metadata first to verify signing works
-        # We use the EXISTING keys for the update payload
-        print("[DEBUG] TEST MODE: Updating only metadata to verify signing...")
-        
-        current_owner_pub = acc["owner"]["key_auths"][0][0]
-        current_active_pub = acc["active"]["key_auths"][0][0]
-        current_posting_pub = acc["posting"]["key_auths"][0][0]
-        current_memo_pub = acc["memo_key"]
-
-        op = operations.Account_update(**{
-            "account": USERNAME,
-            'owner': {'account_auths': [],
-                      'key_auths': [[current_owner_pub, 1]],
-                      "address_auths": [],
-                      'weight_threshold': 1},
-            'active': {'account_auths': [],
-                       'key_auths': [[current_active_pub, 1]],
-                       "address_auths": [],
-                       'weight_threshold': 1},
-            'posting': {'account_auths': acc['posting']['account_auths'],
-                        'key_auths': [[current_posting_pub, 1]],
-                        "address_auths": [],
-                        'weight_threshold': 1},
-            'memo_key': current_memo_pub,
-            "json_metadata": '{"test": "signing_verification"}',
-            "prefix": b.chain_params["prefix"],
-        })
-        
-        print("[DEBUG] Operation constructed (METADATA UPDATE ONLY).")
-        
-        # 3. Get CURRENT Owner Key from Wallet
-        print(f"[DEBUG] Current Owner PubKey: {current_owner_pub}")
-        
         try:
             current_owner_wif = b.wallet.getPrivateKeyForPublicKey(current_owner_pub)
             print(f"[DEBUG] Got WIF from wallet: {str(current_owner_wif)[:5]}...")
