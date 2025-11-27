@@ -87,6 +87,10 @@ def change_keys(new_password):
                 print("[DEBUG] CRITICAL - No Owner Key found in wallet!")
             else:
                 print("[DEBUG] Owner Key is present. Proceeding...")
+        except Exception as e:
+            print(f"[DEBUG] Error checking keys: {e}")
+        # --- DEBUG END ---
+
         try:
             current_owner_wif = b.wallet.getPrivateKeyForPublicKey(current_owner_pub)
             print(f"[DEBUG] Got WIF from wallet: {str(current_owner_wif)[:5]}...")
