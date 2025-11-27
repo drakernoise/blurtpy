@@ -1,105 +1,108 @@
 import getpass
+import time
 from blurtpy import Blurt
 from blurtpy.account import Account
 from blurtpy.amount import Amount
 
-# Configuración
-USUARIO = "tu_usuario"
-NODO = ["https://rpc.blurt.world"]
+# Configuration
+USERNAME = "your_username"
+NODE = ["https://rpc.blurt.world"]
 
-# Inicializar Blurt
-b = Blurt(node=NODO)
+# Initialize Blurt
+b = Blurt(node=NODE)
 
-# Desbloquear Wallet
+# Unlock Wallet
 if b.wallet.created():
     if b.wallet.locked():
-        pwd = getpass.getpass(f"Introduce contraseña del wallet para operar como {USUARIO}: ")
+        pwd = getpass.getpass(f"Enter wallet password to operate as {USERNAME}: ")
         try:
             b.wallet.unlock(pwd)
-            print("Wallet desbloqueado.")
+            print("Wallet unlocked.")
         except Exception as e:
-            print(f"Error al desbloquear: {e}")
+            print(f"Error unlocking: {e}")
             exit()
 else:
-    print("No se encontró un wallet creado. Ejecuta 'examples/secure_wallet_setup.py' primero.")
+    print("No wallet found. Run 'examples/secure_wallet_setup.py' first.")
     exit()
 
-def power_up(cantidad, usuario_destino=None):
-    """Convierte BLURT líquido a Blurt Power (Vesting)."""
-    print(f"Haciendo Power Up de {cantidad} BLURT...")
+def power_up(amount, to_user=None):
+    """Converts liquid BLURT to Blurt Power (Vesting)."""
+    print(f"Powering Up {amount} BLURT...")
     try:
-        acc = Account(USUARIO, blockchain_instance=b)
-        # Si usuario_destino es None, se hace power up a la propia cuenta
-        acc.transfer_to_vesting(cantidad, to=usuario_destino)
-        print("Power Up realizado con éxito.")
+        acc = Account(USERNAME, blockchain_instance=b)
+        # If to_user is None, power up to self
+        acc.transfer_to_vesting(amount, to=to_user)
+        print("Power Up successful.")
     except Exception as e:
-        print(f"Error en Power Up: {e}")
+        print(f"Error in Power Up: {e}")
 
-def delegar_bp(cantidad_vests, usuario_destino):
-    """Delega Blurt Power a otro usuario."""
-    print(f"Delegando {cantidad_vests} VESTS a {usuario_destino}...")
+def delegate_bp(amount_vests, to_user):
+    """Delegates Blurt Power to another user."""
+    print(f"Delegating {amount_vests} VESTS to {to_user}...")
     try:
-        acc = Account(USUARIO, blockchain_instance=b)
-        acc.delegate_vesting_shares(usuario_destino, cantidad_vests)
-        print("Delegación realizada con éxito.")
+        acc = Account(USERNAME, blockchain_instance=b)
+        acc.delegate_vesting_shares(to_user, amount_vests)
+        print("Delegation successful.")
     except Exception as e:
-        print(f"Error en Delegación: {e}")
+        print(f"Error in Delegation: {e}")
 
-def transferencia_multiple(lista_destinatarios, cantidad, asset="BLURT", memo=""):
-    """Envía la misma cantidad a múltiples usuarios."""
-    print(f"Iniciando transferencia múltiple a {len(lista_destinatarios)} usuarios...")
-    acc = Account(USUARIO, blockchain_instance=b)
+def multiple_transfer(recipients, amount, asset="BLURT", memo=""):
+    """Sends the same amount to multiple users."""
+    print(f"Starting multiple transfer to {len(recipients)} users...")
+    acc = Account(USERNAME, blockchain_instance=b)
     
-    for destinatario in lista_destinatarios:
+    for recipient in recipients:
         try:
-            print(f"Enviando {cantidad} {asset} a {destinatario}...")
-            acc.transfer(destinatario, cantidad, asset, memo)
-            print("Enviado.")
+            print(f"Sending {amount} {asset} to {recipient}...")
+            acc.transfer(recipient, amount, asset, memo)
+            print("Sent.")
         except Exception as e:
-            print(f"Error enviando a {destinatario}: {e}")
+            print(f"Error sending to {recipient}: {e}")
 
-def transferencia_recurrente(destinatario, cantidad, asset="BLURT", memo="", repeticiones=3, intervalo_segundos=60):
-    """Simula una transferencia recurrente (ejecutar script en segundo plano)."""
-    print(f"Iniciando transferencia recurrente a {destinatario}: {repeticiones} veces cada {intervalo_segundos}s.")
-    acc = Account(USUARIO, blockchain_instance=b)
+def recurring_transfer(recipient, amount, asset="BLURT", memo="", repetitions=3, interval_seconds=60):
+    """Simulates a recurring transfer (run script in background)."""
+    print(f"Starting recurring transfer to {recipient}: {repetitions} times every {interval_seconds}s.")
+    acc = Account(USERNAME, blockchain_instance=b)
     
-    for i in range(repeticiones):
+    for i in range(repetitions):
         try:
-            print(f"Ejecución {i+1}/{repeticiones}...")
-            acc.transfer(destinatario, cantidad, asset, memo)
-            print("Transferencia realizada.")
+            print(f"Execution {i+1}/{repetitions}...")
+            acc.transfer(recipient, amount, asset, memo)
+            print("Transfer successful.")
         except Exception as e:
-            print(f"Error en transferencia recurrente: {e}")
+            print(f"Error in recurring transfer: {e}")
         
-        if i < repeticiones - 1:
-            print(f"Esperando {intervalo_segundos} segundos...")
-            time.sleep(intervalo_segundos)
+        if i < repetitions - 1:
+            print(f"Waiting {interval_seconds} seconds...")
+            time.sleep(interval_seconds)
 
-def transferir_a_savings(cantidad, asset="BLURT", memo="Ahorros"):
-    """Transfiere fondos a la cuenta de ahorros (Savings)."""
-    print(f"Transfiriendo {cantidad} {asset} a Savings...")
+def transfer_to_savings(amount, asset="BLURT", memo="Savings"):
+    """Transfers funds to the Savings account."""
+    print(f"Transferring {amount} {asset} to Savings...")
     try:
-        acc = Account(USUARIO, blockchain_instance=b)
-        acc.transfer_to_savings(cantidad, asset, memo)
-        print("Transferencia a Savings exitosa.")
+        acc = Account(USERNAME, blockchain_instance=b)
+        acc.transfer_to_savings(amount, asset, memo)
+        print("Transfer to Savings successful.")
     except Exception as e:
-        print(f"Error en transferencia a Savings: {e}")
+        print(f"Error in transfer to Savings: {e}")
 
 if __name__ == "__main__":
-    # EJEMPLOS DE USO (Descomenta para probar)
+    # USAGE EXAMPLES (Uncomment to test)
+    
+    print("Uncomment lines below to test functions.")
     
     # 1. Power Up (1 BLURT)
     # power_up(1)
     
-    # 2. Delegar BP (1000 VESTS)
-    # delegar_bp("1000 VESTS", "tekraze")
+    # 2. Delegate BP (1000 VESTS)
+    # delegate_bp("1000 VESTS", "tekraze")
     
-    # 3. Transferencia Múltiple
-    # destinatarios = ["usuario1", "usuario2", "usuario3"]
-    # transferencia_multiple(destinatarios, 0.1, "BLURT", "Regalo")
+    # 3. Multiple Transfer
+    # recipients = ["user1", "user2", "user3"]
+    # multiple_transfer(recipients, 0.1, "BLURT", "Gift")
     
-    # 4. Transferencia Recurrente (3 veces, cada 10 segundos)
-    # transferencia_recurrente("draktest", 0.1, "BLURT", "Pago recurrente", repeticiones=3, intervalo_segundos=10)
+    # 4. Recurring Transfer (3 times, every 10 seconds)
+    # recurring_transfer("draktest", 0.1, "BLURT", "Recurring payment", repetitions=3, interval_seconds=10)
     
-    # 5. Ahorros
-    # transferir_a_savings(1, "BLURT", "Guardando para el futuro")
+    # 5. Savings
+    # transfer_to_savings(1, "BLURT", "Saving for the future")

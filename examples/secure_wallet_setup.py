@@ -5,80 +5,80 @@ from blurtpy.exceptions import WalletExists
 
 def setup_wallet():
     """
-    Script interactivo para configurar un wallet seguro y añadir claves.
+    Interactive script to setup a secure wallet and add keys.
     """
-    print("=== Configuración de Wallet Seguro de Blurtpy ===")
-    print("Este script creará un archivo de base de datos local cifrado para guardar tus claves.")
+    print("=== Blurtpy Secure Wallet Setup ===")
+    print("This script will create a local encrypted database file to store your keys.")
     
     b = Blurt()
     
-    # 1. Crear Wallet si no existe
+    # 1. Create Wallet if it doesn't exist
     if b.wallet.created():
-        print("\n¡Ya existe un wallet creado!")
-        print("Si quieres borrarlo y empezar de cero, borra el archivo 'blurtpy.sqlite' o usa b.wallet.wipe(True)")
+        print("\nA wallet already exists!")
+        print("If you want to delete it and start over, delete the 'blurtpy.sqlite' file or use b.wallet.wipe(True)")
     else:
-        print("\nVamos a crear un nuevo wallet.")
-        password = getpass.getpass("Elige una contraseña maestra para el wallet: ")
-        confirm = getpass.getpass("Confirma la contraseña: ")
+        print("\nLet's create a new wallet.")
+        password = getpass.getpass("Choose a master password for the wallet: ")
+        confirm = getpass.getpass("Confirm password: ")
         
         if password != confirm:
-            print("Error: Las contraseñas no coinciden.")
+            print("Error: Passwords do not match.")
             return
             
         try:
             b.wallet.create(password)
-            print("Wallet creado exitosamente.")
+            print("Wallet created successfully.")
         except WalletExists:
-            print("El wallet ya existía.")
+            print("The wallet already existed.")
 
-    # 2. Desbloquear Wallet
+    # 2. Unlock Wallet
     if b.wallet.locked():
-        password = getpass.getpass("\nIntroduce la contraseña del wallet para desbloquearlo: ")
+        password = getpass.getpass("\nEnter wallet password to unlock: ")
         try:
             b.wallet.unlock(password)
-            print("Wallet desbloqueado.")
+            print("Wallet unlocked.")
         except Exception as e:
-            print(f"Error al desbloquear: {e}")
+            print(f"Error unlocking: {e}")
             return
 
-    # 3. Añadir Claves
+    # 3. Add Keys
     while True:
-        print("\n--- Gestión de Claves ---")
-        print("Puedes añadir tantas claves como quieras (Owner, Active, Posting, Memo).")
-        print("1. Añadir una nueva clave privada (WIF)")
-        print("2. Listar claves públicas guardadas")
-        print("3. Salir")
+        print("\n--- Key Management ---")
+        print("You can add as many keys as you want (Owner, Active, Posting, Memo).")
+        print("1. Add a new private key (WIF)")
+        print("2. List saved public keys")
+        print("3. Exit")
         
-        opcion = input("Elige una opción: ")
+        option = input("Choose an option: ")
         
-        if opcion == "1":
-            print("\nIntroduce una de tus claves privadas WIF.")
-            print("Tipos válidos: Posting, Active, Owner, Memo.")
-            print("(Nota: La Master Password no es una clave WIF, usa las claves derivadas de ella).")
-            wif = getpass.getpass("Clave WIF (comienza por 5...): ")
+        if option == "1":
+            print("\nEnter one of your private WIF keys.")
+            print("Valid types: Posting, Active, Owner, Memo.")
+            print("(Note: The Master Password is NOT a WIF key, use the keys derived from it).")
+            wif = getpass.getpass("WIF Key (starts with 5...): ")
             try:
                 b.wallet.addPrivateKey(wif)
-                print("¡Clave añadida correctamente!")
+                print("Key added successfully!")
                 
-                # Intentar identificar a qué cuenta pertenece
+                # Try to identify which account it belongs to
                 pub = b.wallet.publickey_from_wif(wif)
                 account = b.wallet.getAccountFromPublicKey(pub)
                 if account:
-                    print(f"Esta clave pertenece a la cuenta: {account}")
+                    print(f"This key belongs to account: {account}")
                 else:
-                    print("Clave guardada. (Nota: No se pudo identificar la cuenta automáticamente,")
-                    print("esto es normal para claves Memo o si hay problemas de conexión).")
+                    print("Key saved. (Note: Could not automatically identify the account,")
+                    print("this is normal for Memo keys or if there are connection issues).")
                     
             except Exception as e:
-                print(f"Error al añadir clave: {e}")
+                print(f"Error adding key: {e}")
                 
-        elif opcion == "2":
+        elif option == "2":
             keys = b.wallet.getPublicKeys()
-            print(f"\nHay {len(keys)} claves guardadas:")
+            print(f"\nThere are {len(keys)} saved keys:")
             for k in keys:
                 print(f"- {k}")
                 
-        elif opcion == "3":
+        elif option == "3":
             break
 
 if __name__ == "__main__":

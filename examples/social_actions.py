@@ -1,133 +1,134 @@
 import getpass
+from datetime import datetime, timedelta
 from blurtpy import Blurt
 from blurtpy.account import Account
 from blurtpy.comment import Comment
 from blurtpy.discussions import Query, Discussions_by_created
 from blurtpy.wallet import Wallet
 
-# Configuración
-USUARIO = "tu_usuario"
-NODO = ["https://rpc.blurt.world"]
+# Configuration
+USERNAME = "your_username"
+NODE = ["https://rpc.blurt.world"]
 
-# Inicializar Blurt sin claves hardcodeadas
-# Se usará el wallet local (blurtpy.sqlite)
-b = Blurt(node=NODO)
+# Initialize Blurt without hardcoded keys
+# It will use the local wallet (blurtpy.sqlite)
+b = Blurt(node=NODE)
 
-# Desbloquear Wallet
+# Unlock Wallet
 if b.wallet.created():
     if b.wallet.locked():
-        pwd = getpass.getpass(f"Introduce contraseña del wallet para operar como {USUARIO}: ")
+        pwd = getpass.getpass(f"Enter wallet password to operate as {USERNAME}: ")
         try:
             b.wallet.unlock(pwd)
-            print("Wallet desbloqueado.")
+            print("Wallet unlocked.")
         except Exception as e:
-            print(f"Error al desbloquear: {e}")
+            print(f"Error unlocking: {e}")
             exit()
 else:
-    print("No se encontró un wallet creado. Ejecuta 'examples/secure_wallet_setup.py' primero.")
+    print("No wallet found. Run 'examples/secure_wallet_setup.py' first.")
     exit()
 
-def comentar_post(identifier, body, title=""):
-    """Comenta en un post existente."""
-    print(f"Comentando en {identifier}...")
+def comment_post(identifier, body, title=""):
+    """Comments on an existing post."""
+    print(f"Commenting on {identifier}...")
     try:
         c = Comment(identifier, blockchain_instance=b)
-        c.reply(body, title=title, author=USUARIO)
-        print("Comentario publicado con éxito.")
+        c.reply(body, title=title, author=USERNAME)
+        print("Comment published successfully.")
     except Exception as e:
-        print(f"Error al comentar: {e}")
+        print(f"Error commenting: {e}")
 
-def analizar_comentarios(identifier):
-    """Cuenta comentarios y lista autores."""
-    print(f"Analizando comentarios de {identifier}...")
+def analyze_comments(identifier):
+    """Counts comments and lists authors."""
+    print(f"Analyzing comments of {identifier}...")
     try:
         c = Comment(identifier, blockchain_instance=b)
         replies = c.get_replies()
-        print(f"Total de comentarios directos: {len(replies)}")
+        print(f"Total direct comments: {len(replies)}")
         
-        autores = set()
+        authors = set()
         for reply in replies:
-            autores.add(reply['author'])
+            authors.add(reply['author'])
         
-        print(f"Autores únicos: {', '.join(autores)}")
+        print(f"Unique authors: {', '.join(authors)}")
         return replies
     except Exception as e:
-        print(f"Error al analizar comentarios: {e}")
+        print(f"Error analyzing comments: {e}")
         return []
 
-def votar_comentarios(replies, peso=100):
-    """Vota una lista de comentarios."""
-    print(f"Votando {len(replies)} comentarios con peso {peso}%...")
+def vote_comments(replies, weight=100):
+    """Votes on a list of comments."""
+    print(f"Voting on {len(replies)} comments with weight {weight}%...")
     for reply in replies:
         try:
-            print(f"Votando a {reply['author']}...")
-            reply.vote(peso, account=USUARIO)
-            print("Voto enviado.")
+            print(f"Voting for {reply['author']}...")
+            reply.vote(weight, account=USERNAME)
+            print("Vote sent.")
         except Exception as e:
-            print(f"Error al votar a {reply['author']}: {e}")
+            print(f"Error voting for {reply['author']}: {e}")
 
-def ultimo_post_usuario(usuario):
-    """Encuentra el último post de un usuario."""
-    print(f"Buscando último post de {usuario}...")
+def last_user_post(user):
+    """Finds the last post of a user."""
+    print(f"Searching last post of {user}...")
     try:
-        acc = Account(usuario, blockchain_instance=b)
-        # get_blog devuelve una lista de entradas del blog
+        acc = Account(user, blockchain_instance=b)
+        # get_blog returns a list of blog entries
         blog = acc.get_blog(limit=1)
         if blog:
             last_post = blog[0]
-            print(f"Último post: {last_post['title']} ({last_post['permlink']})")
+            print(f"Last post: {last_post['title']} ({last_post['permlink']})")
             return last_post
         else:
-            print("El usuario no tiene posts.")
+            print("User has no posts.")
             return None
     except Exception as e:
-        print(f"Error al buscar post: {e}")
+        print(f"Error searching post: {e}")
         return None
 
-def buscar_posts_recientes(tag, horas=24):
-    """Busca posts recientes por tag."""
-    print(f"Buscando posts en tag '{tag}' de las últimas {horas} horas...")
+def search_recent_posts(tag, hours=24):
+    """Searches recent posts by tag."""
+    print(f"Searching posts in tag '{tag}' from the last {hours} hours...")
     try:
         q = Query(limit=20, tag=tag)
         posts = Discussions_by_created(q, blockchain_instance=b)
         
-        limit_date = datetime.utcnow() - timedelta(hours=horas)
+        limit_date = datetime.utcnow() - timedelta(hours=hours)
         
         count = 0
         for post in posts:
-            post_date = post['created'] # Esto ya debería ser un objeto datetime si se parsea bien, o string
-            # Asegurar formato fecha si es string (depende de la versión de la librería, beem solía devolver datetime)
+            post_date = post['created'] # This should be a datetime object or string
+            # Ensure date format if string
             if isinstance(post_date, str):
                 post_date = datetime.strptime(post_date, "%Y-%m-%dT%H:%M:%S")
             
             if post_date > limit_date:
-                print(f"- {post['created']}: {post['title']} por {post['author']}")
+                print(f"- {post['created']}: {post['title']} by {post['author']}")
                 count += 1
             else:
-                # Como Discussions_by_created está ordenado por fecha, si pasamos el límite podemos parar
+                # Since Discussions_by_created is ordered by date, we can stop if we pass the limit
                 break
-        print(f"Encontrados {count} posts recientes.")
+        print(f"Found {count} recent posts.")
     except Exception as e:
-        print(f"Error en búsqueda: {e}")
+        print(f"Error in search: {e}")
 
 if __name__ == "__main__":
-    # EJEMPLOS DE USO (Descomenta para probar)
+    # USAGE EXAMPLES (Uncomment to test)
     
-    # 1. Encontrar último post de un usuario
-    # post = ultimo_post_usuario("tekraze")
+    # 1. Find last post of a user
+    # post = last_user_post("tekraze")
     
-    # 2. Comentar en ese post (¡CUIDADO! Esto publica en la blockchain real)
+    # 2. Comment on that post (BE CAREFUL! This publishes to the real blockchain)
     # if post:
-    #    identificador = f"@{post['author']}/{post['permlink']}"
-    #    comentar_post(identificador, "¡Hola! Este es un comentario de prueba desde blurtpy.")
+    #    identifier = f"@{post['author']}/{post['permlink']}"
+    #    comment_post(identifier, "Hello! This is a test comment from blurtpy.")
     
-    # 3. Analizar comentarios
+    # 3. Analyze comments
     # if post:
-    #    identificador = f"@{post['author']}/{post['permlink']}"
-    #    comentarios = analizar_comentarios(identificador)
+    #    identifier = f"@{post['author']}/{post['permlink']}"
+    #    comments = analyze_comments(identifier)
        
-    # 4. Votar comentarios (¡CUIDADO! Esto gasta Voting Power)
-    #    votar_comentarios(comentarios, peso=10) # 10%
+    # 4. Vote comments (BE CAREFUL! This consumes Voting Power)
+    #    vote_comments(comments, weight=10) # 10%
     
-    # 5. Buscar posts recientes
-    buscar_posts_recientes("blurt", horas=24)
+    # 5. Search recent posts
+    search_recent_posts("blurt", hours=24)

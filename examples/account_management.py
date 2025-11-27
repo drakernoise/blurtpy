@@ -3,83 +3,93 @@ from blurtpy import Blurt
 from blurtpy.account import Account
 from blurtgraphenebase.account import PasswordKey
 
-# Configuración
-USUARIO = "tu_usuario"
-NODO = ["https://rpc.blurt.world"]
+# Configuration
+USERNAME = "your_username"  # <--- Change this to your actual Blurt username
+NODE = ["https://rpc.blurt.world"]
 
-# Inicializar Blurt
-b = Blurt(node=NODO)
+# Initialize Blurt
+b = Blurt(node=NODE)
 
-# Desbloquear Wallet
+# Unlock Wallet
 if b.wallet.created():
     if b.wallet.locked():
-        pwd = getpass.getpass(f"Introduce contraseña del wallet para operar como {USUARIO}: ")
+        pwd = getpass.getpass(f"Enter wallet password to operate as {USERNAME}: ")
         try:
             b.wallet.unlock(pwd)
-            print("Wallet desbloqueado.")
+            print("Wallet unlocked.")
         except Exception as e:
-            print(f"Error al desbloquear: {e}")
+            print(f"Error unlocking: {e}")
             exit()
 else:
-    print("No se encontró un wallet creado. Ejecuta 'examples/secure_wallet_setup.py' primero.")
+    print("No wallet found. Run 'examples/secure_wallet_setup.py' first.")
     exit()
 
-def establecer_cuenta_recuperacion(cuenta_recuperacion):
-    """Establece la cuenta de recuperación (Recovery Account)."""
-    print(f"Estableciendo cuenta de recuperación a: {cuenta_recuperacion}...")
+def set_recovery_account(new_recovery_account):
+    """Sets the recovery account for the user."""
+    print(f"Setting recovery account to: {new_recovery_account}...")
     try:
-        acc = Account(USUARIO, blockchain_instance=b)
-        # Esta operación tarda 30 días en hacerse efectiva
-        acc.change_recovery_account(cuenta_recuperacion)
-        print("Solicitud de cambio de cuenta de recuperación enviada (tardará 30 días).")
+        acc = Account(USERNAME, blockchain_instance=b)
+        # This operation requires the Owner Key
+        acc.change_recovery_account(new_recovery_account)
+        print("Recovery account change request sent (will take 30 days).")
     except Exception as e:
-        print(f"Error al cambiar cuenta de recuperación: {e}")
+        print(f"Error changing recovery account: {e}")
 
-def cambiar_claves(nueva_contrasena):
+def change_keys(new_password):
     """
-    Cambia TODAS las claves de la cuenta (Owner, Active, Posting, Memo)
-    derivándolas de una nueva contraseña maestra.
-    
-    ¡PELIGRO! Si pierdes la nueva contraseña, perderás acceso a tu cuenta para siempre.
+    Changes the account keys (Owner, Active, Posting, Memo) derived from a new password.
+    WARNING: This is a critical operation. If you lose the new password, you lose the account.
     """
-    print("¡ATENCIÓN! Estás a punto de cambiar todas las claves de tu cuenta.")
-    confirmacion = input("¿Estás seguro? Escribe 'SI' para continuar: ")
+    print("!!! WARNING: YOU ARE ABOUT TO CHANGE YOUR ACCOUNT KEYS !!!")
+    print(f"Changing keys for user: {USERNAME}")
     
-    if confirmacion != "SI":
-        print("Operación cancelada.")
+    confirm = input("Are you sure? (type 'YES' to confirm): ")
+    if confirm != "YES":
+        print("Operation cancelled.")
         return
 
-    print("Generando nuevas claves y actualizando cuenta...")
     try:
-        acc = Account(USUARIO, blockchain_instance=b)
-        # update_account_keys deriva las nuevas claves públicas de la contraseña
-        # y envía la transacción de actualización.
-        # NO guarda las claves privadas en tu wallet local automáticamente,
-        # debes guardarlas tú o actualizar tu wallet.
-        acc.update_account_keys(nueva_contrasena)
+        acc = Account(USERNAME, blockchain_instance=b)
         
-        print("¡Claves actualizadas con éxito!")
-        print(f"Tu nueva contraseña maestra es: {nueva_contrasena}")
-        print("Generando claves privadas para que las guardes (NO LAS PIERDAS):")
+        # Generate new keys from the new password
+        print("Generating new keys...")
+        new_keys = {}
+        for role in ["owner", "active", "posting", "memo"]:
+            # Derive key from password (username + role + password)
+            pk = PasswordKey(USERNAME, new_password, role=role)
+            new_keys[role] = str(pk.get_public())
+            # Note: In a real app, you should save the new private keys securely here!
+            # For this example, we just print them (BE CAREFUL!)
+            print(f"New {role} key generated.")
+
+        # Update keys on the blockchain
+        # This requires the CURRENT Owner Key (which should be in the wallet)
+        print("Sending update transaction to blockchain...")
+        acc.update_account_keys(new_password)
+        print("Keys changed successfully!")
+        print("Please update your wallet with the new keys immediately.")
         
-        for role in ['owner', 'active', 'posting', 'memo']:
-            pk = PasswordKey(USUARIO, nueva_contrasena, role=role)
-            priv_key = str(pk.get_private_key())
-            pub_key = format(pk.get_public_key(), "BLURT")
+        # Show new keys (Security Warning: Do not do this in production logs)
+        print("\n--- NEW KEYS (SAVE THEM NOW) ---")
+        print(f"Master Password: {new_password}")
+        for role in ["owner", "active", "posting", "memo"]:
+            pk = PasswordKey(USERNAME, new_password, role=role)
+            pub_key = format(pk.get_public(), "STM")
+            priv_key = format(pk.get_private(), "WIF")
             print(f"{role.upper()}:")
             print(f"  Public: {pub_key}")
             print(f"  Private: {priv_key}")
             
     except Exception as e:
-        print(f"Error crítico al cambiar claves: {e}")
+        print(f"Critical error changing keys: {e}")
 
 if __name__ == "__main__":
-    # EJEMPLOS DE USO (Descomenta para probar)
+    # USAGE EXAMPLES (Uncomment to test)
     
-    print("Descomenta las líneas de abajo para probar las funciones.")
+    print("Uncomment lines below to test functions.")
     
-    # 1. Establecer cuenta de recuperación
-    # establecer_cuenta_recuperacion("tekraze")
+    # 1. Set recovery account
+    # set_recovery_account("tekraze")
     
-    # 2. Cambiar claves (¡MUCHO CUIDADO!)
-    # cambiar_claves("MiNuevaContrasenaSuperSegura123!")
+    # 2. Change keys (EXTREME CAUTION!)
+    # change_keys("MyNewSuperSecurePassword123!")
