@@ -93,7 +93,6 @@ def change_keys(new_password):
 
         # --- MANUAL UPDATE START ---
         from blurtbase import operations
-        from blurtgraphenebase.account import PasswordKey
         
         print("[DEBUG] Manually constructing transaction...")
         
