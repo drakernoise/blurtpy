@@ -4,17 +4,27 @@ import json
 # Connect to Blurt
 b = Blurt(node=["https://rpc.blurt.world"])
 
-print("Searching for recent account_update operations...")
+import sys
 
-# Get current block number
-props = b.get_dynamic_global_properties()
-head_block = props['head_block_number']
+# ... (connection setup)
 
-# Search back 20000 blocks
+if len(sys.argv) > 1:
+    # Check specific block
+    block_num = int(sys.argv[1])
+    print(f"Inspecting specific block {block_num}...")
+    blocks_to_check = [block_num]
+else:
+    # Search back 20000 blocks
+    print("Searching for recent account_update operations...")
+    props = b.get_dynamic_global_properties()
+    head_block = props['head_block_number']
+    blocks_to_check = range(head_block, head_block - 20000, -1)
+
 found = False
-for block_num in range(head_block, head_block - 20000, -1):
-    if found: break
-    if block_num % 100 == 0:
+for block_num in blocks_to_check:
+    if found and len(sys.argv) == 1: break # Stop after first find in search mode
+    
+    if len(sys.argv) == 1 and block_num % 100 == 0:
         print(f"Checking block {block_num}...")
     
     try:
@@ -24,6 +34,7 @@ for block_num in range(head_block, head_block - 20000, -1):
         continue
 
     if not block or 'transactions' not in block:
+        if len(sys.argv) > 1: print("Block has no transactions.")
         continue
         
     for tx in block['transactions']:
@@ -42,7 +53,6 @@ for block_num in range(head_block, head_block - 20000, -1):
                     print("EXTENSIONS FIELD NOT FOUND in JSON")
                 
                 found = True
-                break
                 
 if not found:
-    print("No account_update or account_update2 found in last 20000 blocks.")
+    print("No account_update or account_update2 found.")
