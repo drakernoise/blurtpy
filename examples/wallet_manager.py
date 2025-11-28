@@ -30,10 +30,7 @@ def update_account_key(blurt_instance, account_name, new_key, role):
             "prefix": blurt_instance.chain_params["prefix"]
         }
         
-        # Default: Keep existing keys
-        update_args["owner"] = acc["owner"]
-        update_args["active"] = acc["active"]
-        update_args["posting"] = acc["posting"]
+        # Default: Keep existing memo_key (mandatory field)
         update_args["memo_key"] = acc["memo_key"]
         
         # Update specific role
