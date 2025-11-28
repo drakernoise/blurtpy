@@ -38,6 +38,12 @@ def setup_wallet():
     
     # 1. Create Wallet if it doesn't exist
     if not b.wallet.created():
+        print("\nNo wallet found.")
+        create = input("Do you want to create a new secure wallet? (y/n): ")
+        if create.lower() != 'y':
+            print("Exiting.")
+            return
+
         print("\nLet's create a new wallet.")
         password = getpass.getpass("Choose a master password for the wallet: ")
         confirm = getpass.getpass("Confirm password: ")
@@ -73,11 +79,10 @@ def setup_wallet():
         print("\n--- Key Management ---")
         print("You can add as many keys as you want (Owner, Active, Posting, Memo).")
         print("1. Add a new private key (WIF)")
-        print("2. List saved public keys")
+        print("2. List Public/Private Keys (Smart Analysis)")
         print("3. Import keys from file (account_management output)")
         print("4. Archive current wallet & Start fresh")
-        print("5. Cleanup Orphan Keys")
-        print("6. Exit")
+        print("5. Exit")
         
         option = input("Choose an option: ")
         
@@ -137,9 +142,11 @@ def setup_wallet():
                 
         elif option == "2":
             keys = b.wallet.getPublicKeys()
-            print(f"\nThere are {len(keys)} saved keys. Analyzing...")
+            print(f"\nThere are {len(keys)} saved keys. Analyzing on blockchain...")
             
             analyzed_keys = []
+            orphans = []
+            
             for k in keys:
                 key_info = {"pub": k, "roles": []}
                 try:
@@ -176,6 +183,7 @@ def setup_wallet():
                                 key_info["roles"].append(f"[ERROR-CHECKING] {acc_name}")
                     else:
                         key_info["roles"].append("[ORPHAN] (No account found)")
+                        orphans.append(k)
                 except Exception as e:
                     key_info["roles"].append(f"[ERROR] {e}")
                 
@@ -186,17 +194,39 @@ def setup_wallet():
                 roles_str = ", ".join(item["roles"])
                 print(f"- {item['pub']}  ->  {roles_str}")
 
-            show_priv = input("\nDo you want to reveal the PRIVATE keys? (yes/NO): ")
-            if show_priv.lower() == "yes":
-                print("\n[WARNING] Displaying Private Keys. Ensure no one is watching!")
-                for item in analyzed_keys:
-                    try:
-                        priv = b.wallet.getPrivateKeyForPublicKey(item["pub"])
-                        print(f"- Pub: {item['pub']}")
-                        print(f"  Roles: {', '.join(item['roles'])}")
-                        print(f"  Priv: {priv}")
-                    except Exception as e:
-                        print(f"- Pub: {item['pub']} (Error retrieving private key: {e})")
+            # Inline Cleanup for Orphans
+            if orphans:
+                print(f"\n[NOTICE] Found {len(orphans)} orphan key(s) that are not used by any account.")
+                cleanup = input("Do you want to DELETE these orphan keys? (y/N): ")
+                if cleanup.lower() == 'y':
+                    if backup_wallet():
+                        deleted_count = 0
+                        for k in orphans:
+                            try:
+                                b.wallet.removePrivateKeyFromPublicKey(k)
+                                deleted_count += 1
+                            except Exception as e:
+                                print(f"Error deleting {k}: {e}")
+                        print(f"Successfully deleted {deleted_count} orphan keys.")
+                        # Remove from analyzed_keys list for display
+                        analyzed_keys = [x for x in analyzed_keys if x['pub'] not in orphans]
+                    else:
+                        print("Backup failed. Aborting deletion.")
+
+            if analyzed_keys:
+                show_priv = input("\nDo you want to reveal the PRIVATE keys for the remaining keys? (yes/NO): ")
+                if show_priv.lower() == "yes":
+                    print("\n[WARNING] Displaying Private Keys. Ensure no one is watching!")
+                    for item in analyzed_keys:
+                        try:
+                            priv = b.wallet.getPrivateKeyForPublicKey(item["pub"])
+                            print(f"- Pub: {item['pub']}")
+                            print(f"  Roles: {', '.join(item['roles'])}")
+                            print(f"  Priv: {priv}")
+                        except Exception as e:
+                            print(f"- Pub: {item['pub']} (Error retrieving private key: {e})")
+            else:
+                print("\nNo keys remaining in wallet.")
 
         elif option == "3":
             print("\n--- Import Keys from File ---")
@@ -304,43 +334,6 @@ def setup_wallet():
                 print("Operation cancelled.")
 
         elif option == "5":
-            print("\n--- Cleanup Orphan Keys ---")
-            print("Analyzing keys to find orphans (keys not associated with any account)...")
-            keys = b.wallet.getPublicKeys()
-            orphans = []
-            
-            for k in keys:
-                try:
-                    accounts = list(b.wallet.getAccountsFromPublicKey(k))
-                    if not accounts:
-                        orphans.append(k)
-                except Exception as e:
-                    print(f"Error checking key {k}: {e}")
-            
-            if not orphans:
-                print("No orphan keys found. Your wallet is clean!")
-            else:
-                print(f"\nFound {len(orphans)} orphan keys:")
-                for k in orphans:
-                    print(f"- {k}")
-                
-                confirm = input("\nDo you want to DELETE these keys? (yes/NO): ")
-                if confirm.lower() == "yes":
-                    if backup_wallet():
-                        deleted_count = 0
-                        for k in orphans:
-                            try:
-                                b.wallet.removePrivateKeyFromPublicKey(k)
-                                deleted_count += 1
-                            except Exception as e:
-                                print(f"Error deleting {k}: {e}")
-                        print(f"\nSuccessfully deleted {deleted_count} orphan keys.")
-                    else:
-                        print("Backup failed. Aborting deletion for safety.")
-                else:
-                    print("Operation cancelled.")
-
-        elif option == "6":
             break
 
 if __name__ == "__main__":
