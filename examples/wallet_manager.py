@@ -57,7 +57,13 @@ def update_account_key(blurt_instance, account_name, new_key, role):
         # Sign and Broadcast
         blurt_instance.txbuffer.clear()
         blurt_instance.txbuffer.appendOps([op])
-        blurt_instance.wallet.sign_transaction(blurt_instance.txbuffer)
+        
+        # Determine required permission
+        # Owner update requires Owner key. Others can use Active.
+        signing_perm = "owner" if role == "owner" else "active"
+        
+        blurt_instance.txbuffer.appendSigner(account_name, signing_perm)
+        blurt_instance.txbuffer.sign()
         resp = blurt_instance.txbuffer.broadcast()
         return resp
         
