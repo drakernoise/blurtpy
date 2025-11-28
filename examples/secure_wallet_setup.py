@@ -49,7 +49,8 @@ def setup_wallet():
         print("1. Add a new private key (WIF)")
         print("2. List saved public keys")
         print("3. Import keys from file (account_management output)")
-        print("4. Exit")
+        print("4. Archive current wallet & Start fresh")
+        print("5. Exit")
         
         option = input("Choose an option: ")
         
@@ -147,6 +148,33 @@ def setup_wallet():
                 print(f"Error reading file: {e}")
 
         elif option == "4":
+            print("\n--- Archive Wallet & Start Fresh ---")
+            print("This will rename your current 'blurtpy.sqlite' to a backup file")
+            print("and allow you to create a brand new, empty wallet.")
+            confirm = input("Are you sure? (type 'YES' to confirm): ")
+            
+            if confirm == "YES":
+                import os
+                import datetime
+                import shutil
+                
+                db_file = "blurtpy.sqlite"
+                if os.path.exists(db_file):
+                    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                    backup_name = f"blurtpy_backup_{timestamp}.sqlite"
+                    try:
+                        os.rename(db_file, backup_name)
+                        print(f"\nSuccess! Wallet archived as '{backup_name}'.")
+                        print("Please restart this script to create a new wallet.")
+                        return # Exit script to force restart logic
+                    except Exception as e:
+                        print(f"Error archiving wallet: {e}")
+                else:
+                    print("Error: No 'blurtpy.sqlite' file found to archive.")
+            else:
+                print("Operation cancelled.")
+
+        elif option == "5":
             break
 
 if __name__ == "__main__":
