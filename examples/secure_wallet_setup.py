@@ -8,16 +8,13 @@ def setup_wallet():
     """
     Interactive script to setup a secure wallet and add keys.
     """
-    print("=== Blurtpy Secure Wallet Setup ===")
-    print("This script will create a local encrypted database file to store your keys.")
+    print("=== Blurtpy Wallet Manager ===")
+    print("This script allows you to create, manage, and inspect your secure local wallet.")
     
     b = Blurt()
     
     # 1. Create Wallet if it doesn't exist
-    if b.wallet.created():
-        print("\nA wallet already exists!")
-        print("If you want to delete it and start over, delete the 'blurtpy.sqlite' file or use b.wallet.wipe(True)")
-    else:
+    if not b.wallet.created():
         print("\nLet's create a new wallet.")
         password = getpass.getpass("Choose a master password for the wallet: ")
         confirm = getpass.getpass("Confirm password: ")
@@ -38,6 +35,12 @@ def setup_wallet():
         try:
             b.wallet.unlock(password)
             print("Wallet unlocked.")
+            if b.wallet.created():
+                 print("(Note: A wallet already exists. If you want to delete it and start over,")
+                 print(" delete the 'blurtpy.sqlite' file or use b.wallet.wipe(True))")
+        except Exception as e:
+            print(f"Error unlocking wallet: {e}")
+            exit()
         except Exception as e:
             print(f"Error unlocking: {e}")
             return
@@ -89,8 +92,20 @@ def setup_wallet():
         elif option == "2":
             keys = b.wallet.getPublicKeys()
             print(f"\nThere are {len(keys)} saved keys:")
-            for k in keys:
-                print(f"- {k}")
+            
+            show_priv = input("Do you want to reveal the PRIVATE keys? (yes/NO): ")
+            if show_priv.lower() == "yes":
+                print("\n[WARNING] Displaying Private Keys. Ensure no one is watching!")
+                for k in keys:
+                    try:
+                        priv = b.wallet.getPrivateKeyForPublicKey(k)
+                        print(f"- Pub: {k}")
+                        print(f"  Priv: {priv}")
+                    except Exception as e:
+                        print(f"- Pub: {k} (Error retrieving private key: {e})")
+            else:
+                for k in keys:
+                    print(f"- {k}")
 
         elif option == "3":
             print("\n--- Import Keys from File ---")
