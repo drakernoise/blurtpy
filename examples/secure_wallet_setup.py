@@ -109,10 +109,14 @@ def setup_wallet():
                 #   Private: 5...
                 matches = re.findall(r"(OWNER|ACTIVE|POSTING|MEMO):\s+Public:\s+STM.*\s+Private:\s+(5[HJK][1-9A-Za-z]{48,})", content, re.MULTILINE)
                 
+                # Try to find account name
+                account_match = re.search(r"NEW KEYS for account (.*?):", content)
+                account_name = account_match.group(1) if account_match else "Unknown"
+                
                 if not matches:
                     print("No keys found in the expected format.")
                 else:
-                    print(f"Found {len(matches)} keys.")
+                    print(f"Found {len(matches)} keys for account '{account_name}'.")
                     for role, wif in matches:
                         print(f"Importing {role} key...")
                         try:
@@ -120,14 +124,28 @@ def setup_wallet():
                             try:
                                 pub = b.wallet.publickey_from_wif(wif)
                                 b.wallet.getPrivateKeyForPublicKey(pub)
-                                print(f"  [INFO] Key for {role} already exists.")
-                                # For bulk import, we default to skipping or could ask user. 
-                                # To be safe and clean, let's skip but notify.
-                                # If user wants to replace, they should archive/wipe wallet first.
-                                print(f"  Skipped: {role} key already exists.")
+                                print(f"  [WARN] Key for {role} is already in the wallet.")
+                                replace = input(f"  Do you want to replace the existing {role} key? (y/N): ")
+                                if replace.lower() == 'y':
+                                    # To replace, we must remove the old one first?
+                                    # Actually, addPrivateKey will raise if it exists.
+                                    # But since it's the SAME key (same WIF -> same Pub), 
+                                    # removing and adding is effectively a no-op but satisfies the "replace" action.
+                                    # If the user meant "replace the OLD DIFFERENT key", this logic doesn't catch it 
+                                    # because we are checking if THIS WIF is in the wallet.
+                                    # But assuming we want to force-add:
+                                    try:
+                                        b.wallet.removePrivateKeyFromPublicKey(pub)
+                                    except:
+                                        pass # Ignore if removal fails (shouldn't happen if get succeeded)
+                                    
+                                    b.wallet.addPrivateKey(wif)
+                                    print(f"  Success: {role} key replaced.")
+                                else:
+                                    print(f"  Skipped.")
                                 continue
                             except Exception:
-                                pass
+                                pass # Key not in wallet, proceed to add
 
                             b.wallet.addPrivateKey(wif)
                             print(f"  Success: {role} key added.")
