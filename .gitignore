@@ -138,3 +138,6 @@ cython_debug/
 blurtpy.sqlite
 *.db
 test_migration_output_*.txt
+
+# Movistar Cloud / Sync
+.syncmetadata
