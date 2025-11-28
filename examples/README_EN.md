@@ -15,7 +15,7 @@ Before running the examples, you must configure your **Secure Wallet**. This wil
 
 1.  Run the setup script:
     ```bash
-    python examples/secure_wallet_setup.py
+    python examples/wallet_manager.py
     ```
 2.  Follow the instructions to create a master password and add your keys (WIF).
 

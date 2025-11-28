@@ -21,7 +21,7 @@ if b.wallet.created():
             print(f"Error unlocking: {e}")
             exit()
 else:
-    print("No wallet found. Run 'examples/secure_wallet_setup.py' first.")
+    print("No wallet found. Run 'examples/wallet_manager.py' first.")
     exit()
 
 def set_recovery_account(new_recovery_account):

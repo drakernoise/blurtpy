@@ -70,7 +70,7 @@ b.vote("@drakernoise/...", 100, account="draktest")
 
 ### 5. Wallet Seguro
 Se ha implementado un sistema de gestión de claves seguro para evitar hardcodear WIFs en los scripts.
--   **Script de Configuración:** `examples/secure_wallet_setup.py` permite crear un wallet cifrado localmente (`blurtpy.sqlite`) y añadir claves de forma interactiva.
+-   **Script de Configuración:** `examples/wallet_manager.py` permite crear un wallet cifrado localmente (`blurtpy.sqlite`) y añadir claves de forma interactiva.
 -   **Uso en Scripts:** Los scripts de ejemplo ahora solicitan la contraseña del wallet al inicio y obtienen las claves automáticamente según sea necesario.
 
 ### 6. Optimización de Nodos

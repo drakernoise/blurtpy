@@ -10,7 +10,7 @@ def diagnose():
     
     # 1. Check if wallet exists
     if not b.wallet.created():
-        print("Error: No wallet found. Please run secure_wallet_setup.py first.")
+        print("Error: No wallet found. Please run wallet_manager.py first.")
         return
 
     # 2. Unlock wallet
@@ -80,7 +80,7 @@ def diagnose():
     else:
         print(f"You are missing the following keys: {', '.join(missing)}")
         print("To fix this:")
-        print("1. Run 'python examples/secure_wallet_setup.py'")
+        print("1. Run 'python examples/wallet_manager.py'")
         print("2. Choose Option 1 (Add key)")
         print("3. Enter the Private WIF for the missing keys.")
         if "Owner" in missing:

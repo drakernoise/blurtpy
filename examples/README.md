@@ -15,7 +15,7 @@ Antes de ejecutar los ejemplos, debes configurar tu **Wallet Seguro**. Esto crea
 
 1.  Ejecuta el script de configuración:
     ```bash
-    python examples/secure_wallet_setup.py
+    python examples/wallet_manager.py
     ```
 2.  Sigue las instrucciones para crear una contraseña maestra y añadir tus claves (WIF).
 
