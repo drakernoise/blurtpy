@@ -8,9 +8,46 @@ from blurtpy import Blurt
 from blurtpy.wallet import Wallet
 from blurtpy.exceptions import WalletExists
 from blurtpy.account import Account
+from blurtbase import operations
 
 def clear_screen():
     os.system('cls' if os.name == 'nt' else 'clear')
+
+def update_memo_key(blurt_instance, account_name, new_memo_key):
+    """
+    Updates the memo key for the given account.
+    Requires Active or Owner key to be present in the wallet.
+    """
+    try:
+        acc = Account(account_name, blockchain_instance=blurt_instance)
+        
+        # Construct Account_update operation
+        # We must preserve existing authorities (owner, active, posting)
+        # and only change the memo_key.
+        
+        op = operations.Account_update(
+            account=account_name,
+            owner=acc["owner"],
+            active=acc["active"],
+            posting=acc["posting"],
+            memo_key=new_memo_key,
+            json_metadata=acc["json_metadata"],
+            posting_json_metadata=acc.get("posting_json_metadata", ""),
+            extensions=acc.get("extensions", []),
+            prefix=blurt_instance.chain_params["prefix"]
+        )
+        
+        # Sign and Broadcast
+        # The library automatically selects the required key from the wallet
+        blurt_instance.txbuffer.clear()
+        blurt_instance.txbuffer.appendOps([op])
+        blurt_instance.wallet.sign_transaction(blurt_instance.txbuffer)
+        resp = blurt_instance.txbuffer.broadcast()
+        return resp
+        
+    except Exception as e:
+        raise Exception(f"Failed to update memo key: {e}")
+
 
 def print_banner():
     clear_screen()
@@ -101,6 +138,8 @@ def setup_wallet():
         print("3. Import keys from file")
         print("4. Archive current wallet & Start fresh")
         print("5. Exit")
+        print("-" * 30)
+        print("6. Account Operations (Blockchain)")
         print("-" * 30)
         
         option = input("Choose an option: ")
@@ -408,6 +447,107 @@ def setup_wallet():
 
         elif option == "5":
             break
+
+        elif option == "6":
+            print("\n--- Account Operations (Blockchain) ---")
+            print("1. Update Memo Key (Promote Orphan Key)")
+            print("2. Back to Main Menu")
+            
+            sub_op = input("Choose an option: ")
+            
+            if sub_op == "1":
+                print("\n--- Update Memo Key ---")
+                print("This will set an 'Orphan' key from your wallet as your official Memo Key on the blockchain.")
+                print("Requires Active or Owner key for the account to be present in the wallet.")
+                
+                # 1. Find potential accounts in wallet
+                keys = b.wallet.getPublicKeys()
+                accounts_found = set()
+                orphans = []
+                
+                print("Analyzing wallet keys...")
+                for k in keys:
+                    try:
+                        accs = list(b.wallet.getAccountsFromPublicKey(k))
+                        if accs:
+                            for a in accs:
+                                accounts_found.add(a)
+                        else:
+                            orphans.append(k)
+                    except:
+                        pass
+                
+                if not accounts_found:
+                    print("[!] No accounts identified in wallet. Cannot proceed.")
+                    print("Please import your Active or Owner key first.")
+                    input("\nPress Enter to continue...")
+                    continue
+                    
+                if not orphans:
+                    print("[!] No orphan keys found to promote.")
+                    input("\nPress Enter to continue...")
+                    continue
+                
+                # 2. Select Account
+                target_account = ""
+                if len(accounts_found) == 1:
+                    target_account = list(accounts_found)[0]
+                    print(f"Target Account: {target_account}")
+                else:
+                    print("\nSelect Account:")
+                    sorted_accs = sorted(list(accounts_found))
+                    for idx, acc in enumerate(sorted_accs):
+                        print(f"{idx+1}. {acc}")
+                    
+                    try:
+                        sel = int(input("Enter number: "))
+                        target_account = sorted_accs[sel-1]
+                    except:
+                        print("Invalid selection.")
+                        input("\nPress Enter to continue...")
+                        continue
+
+                # 3. Select Orphan Key
+                print(f"\nSelect Orphan Key to set as MEMO key for '{target_account}':")
+                t = PrettyTable()
+                t.field_names = ["#", "Public Key"]
+                t.align = "l"
+                
+                for idx, k in enumerate(orphans):
+                    t.add_row([idx+1, k])
+                print(t)
+                
+                try:
+                    sel = int(input("Enter number: "))
+                    new_memo_key = orphans[sel-1]
+                except:
+                    print("Invalid selection.")
+                    input("\nPress Enter to continue...")
+                    continue
+                
+                # 4. Confirm and Execute
+                print(f"\n[CONFIRM] You are about to update the MEMO key for '{target_account}'.")
+                print(f"New Memo Key: {new_memo_key}")
+                confirm = input("Type 'YES' to confirm transaction: ")
+                
+                if confirm == "YES":
+                    if not backup_wallet():
+                        print("Backup failed. Aborting.")
+                        input("\nPress Enter to continue...")
+                        continue
+                        
+                    print("Broadcasting transaction...")
+                    try:
+                        resp = update_memo_key(b, target_account, new_memo_key)
+                        print("\n[SUCCESS] Transaction broadcasted!")
+                        print(f"Ref Block Num: {resp.get('ref_block_num')}")
+                        print("Your Memo Key has been updated.")
+                    except Exception as e:
+                        print(f"\n[ERROR] Transaction failed: {e}")
+                else:
+                    print("Operation cancelled.")
+            
+            input("\nPress Enter to continue...")
 
 if __name__ == "__main__":
     setup_wallet()
