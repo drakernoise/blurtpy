@@ -146,6 +146,7 @@ def setup_wallet():
             
             analyzed_keys = []
             orphans = []
+            account_cache = {}
             
             for k in keys:
                 key_info = {"pub": k, "roles": []}
@@ -154,7 +155,12 @@ def setup_wallet():
                     if accounts:
                         for acc_name in accounts:
                             try:
-                                acc = Account(acc_name, blockchain_instance=b)
+                                if acc_name in account_cache:
+                                    acc = account_cache[acc_name]
+                                else:
+                                    acc = Account(acc_name, blockchain_instance=b)
+                                    account_cache[acc_name] = acc
+                                
                                 # Check roles
                                 found_role = False
                                 # Owner
@@ -188,6 +194,22 @@ def setup_wallet():
                     key_info["roles"].append(f"[ERROR] {e}")
                 
                 analyzed_keys.append(key_info)
+
+            # Second Pass: Check orphans against found accounts for Memo keys
+            if orphans and account_cache:
+                 print(f"Performing second pass check for Memo keys on {len(orphans)} orphan(s)...")
+                 for orphan_k in list(orphans):
+                     for acc_name, acc in account_cache.items():
+                         try:
+                             if acc["memo_key"] == orphan_k:
+                                 # Update analyzed_keys
+                                 for item in analyzed_keys:
+                                     if item["pub"] == orphan_k:
+                                         item["roles"] = [f"[MEMO] {acc_name}"]
+                                 orphans.remove(orphan_k)
+                                 break 
+                         except:
+                             pass
 
             # Display Results
             for item in analyzed_keys:
