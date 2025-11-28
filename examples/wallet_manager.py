@@ -3,10 +3,26 @@ import shutil
 import datetime
 from appdirs import user_data_dir
 import getpass
+from prettytable import PrettyTable
 from blurtpy import Blurt
 from blurtpy.wallet import Wallet
 from blurtpy.exceptions import WalletExists
 from blurtpy.account import Account
+
+def clear_screen():
+    os.system('cls' if os.name == 'nt' else 'clear')
+
+def print_banner():
+    clear_screen()
+    print(r"""
+  ____  _durt  _              
+ |  _ \| |_   | |    _ __  _   _ 
+ | |_) | | |  | |   | '_ \| | | |
+ |  _ <| | |_ | |___| |_) | |_| |
+ |_| \_\_|\__||_____| .__/ \__, |
+                    |_|    |___/ 
+      Wallet Manager v1.0
+    """)
 
 def backup_wallet():
     """Creates a timestamped backup of the wallet file."""
@@ -31,14 +47,13 @@ def setup_wallet():
     """
     Interactive script to setup a secure wallet and add keys.
     """
-    print("=== Blurtpy Wallet Manager ===")
-    print("This script allows you to create, manage, and inspect your secure local wallet.")
+    print_banner()
     
     b = Blurt()
     
     # 1. Create Wallet if it doesn't exist
     if not b.wallet.created():
-        print("\nNo wallet found.")
+        print("\n[!] No wallet found.")
         create = input("Do you want to create a new secure wallet? (y/n): ")
         if create.lower() != 'y':
             print("Exiting.")
@@ -76,29 +91,34 @@ def setup_wallet():
 
     # 3. Add Keys
     while True:
-        print("\n--- Key Management ---")
-        print("You can add as many keys as you want (Owner, Active, Posting, Memo).")
+        clear_screen()
+        print_banner()
+        print("\n" + "="*30)
+        print("   KEY MANAGEMENT MENU")
+        print("="*30)
         print("1. Add a new private key (WIF)")
         print("2. List Public/Private Keys (Smart Analysis)")
-        print("3. Import keys from file (account_management output)")
+        print("3. Import keys from file")
         print("4. Archive current wallet & Start fresh")
         print("5. Exit")
+        print("-" * 30)
         
         option = input("Choose an option: ")
         
         if option == "1":
-            print("\nEnter one of your private WIF keys.")
+            print("\n--- Add New Key ---")
             print("Valid types: Posting, Active, Owner, Memo.")
-            print("(Note: The Master Password is NOT a WIF key, use the keys derived from it).")
-            wif = getpass.getpass("WIF Key (starts with 5...): ")
+            print("(Note: The Master Password is NOT a WIF key).")
+            wif = getpass.getpass("Enter WIF Key (starts with 5...): ")
             try:
                 # Check if key already exists
                 try:
                     b.wallet.getPrivateKeyForPublicKey(b.wallet.publickey_from_wif(wif))
-                    print("Key already in wallet.")
+                    print("\n[!] Key already in wallet.")
                     replace = input("Do you want to replace it? (y/N): ")
                     if replace.lower() != 'y':
                         print("Skipped.")
+                        input("\nPress Enter to continue...")
                         continue
                 except Exception:
                     pass # Key not in wallet
@@ -139,6 +159,8 @@ def setup_wallet():
                     
             except Exception as e:
                 print(f"Error adding key: {e}")
+            
+            input("\nPress Enter to continue...")
                 
         elif option == "2":
             keys = b.wallet.getPublicKeys()
@@ -211,10 +233,16 @@ def setup_wallet():
                          except:
                              pass
 
-            # Display Results
+            # Display Results using PrettyTable
+            t = PrettyTable()
+            t.field_names = ["Public Key", "Role / Status"]
+            t.align = "l"
+            
             for item in analyzed_keys:
                 roles_str = ", ".join(item["roles"])
-                print(f"- {item['pub']}  ->  {roles_str}")
+                t.add_row([item['pub'], roles_str])
+            
+            print(t)
 
             # Inline Cleanup for Orphans
             if orphans:
@@ -238,17 +266,29 @@ def setup_wallet():
             if analyzed_keys:
                 show_priv = input("\nDo you want to reveal the PRIVATE keys for the remaining keys? (yes/NO): ")
                 if show_priv.lower() == "yes":
-                    print("\n[WARNING] Displaying Private Keys. Ensure no one is watching!")
+                    print("\n" + "!"*60)
+                    print(" [WARNING] DISPLAYING PRIVATE KEYS - ENSURE NO ONE IS WATCHING ")
+                    print("!"*60 + "\n")
+                    
+                    pt = PrettyTable()
+                    pt.field_names = ["Public Key", "Role", "Private Key"]
+                    pt.align = "l"
+                    
                     for item in analyzed_keys:
                         try:
                             priv = b.wallet.getPrivateKeyForPublicKey(item["pub"])
-                            print(f"- Pub: {item['pub']}")
-                            print(f"  Roles: {', '.join(item['roles'])}")
-                            print(f"  Priv: {priv}")
+                            roles_str = ", ".join(item["roles"])
+                            pt.add_row([item['pub'], roles_str, priv])
                         except Exception as e:
-                            print(f"- Pub: {item['pub']} (Error retrieving private key: {e})")
+                            pt.add_row([item['pub'], "Error", str(e)])
+                    print(pt)
+                    input("\nPress Enter to clear screen and continue...")
+                    clear_screen()
+                    continue
             else:
                 print("\nNo keys remaining in wallet.")
+            
+            input("\nPress Enter to continue...")
 
         elif option == "3":
             print("\n--- Import Keys from File ---")
@@ -272,12 +312,26 @@ def setup_wallet():
                 account_name = account_match.group(1) if account_match else "Unknown"
                 
                 if not matches:
-                    print("No keys found in the expected format.")
+                    print("\n[!] No keys found in the expected format.")
                 else:
-                    print(f"Found {len(matches)} keys for account '{account_name}'.")
+                    print(f"\nFound {len(matches)} keys for account '{account_name}':")
                     
+                    t = PrettyTable()
+                    t.field_names = ["Role", "Private Key (WIF)"]
+                    t.align = "l"
+                    for role, wif in matches:
+                        t.add_row([role, wif[:10] + "..." + wif[-5:]]) # Mask WIF for preview
+                    print(t)
+                    
+                    confirm_import = input("\nDo you want to import these keys? (y/n): ")
+                    if confirm_import.lower() != 'y':
+                        print("Import cancelled.")
+                        input("\nPress Enter to continue...")
+                        continue
+
                     if not backup_wallet():
                         print("Backup failed. Aborting import.")
+                        input("\nPress Enter to continue...")
                         continue
 
                     for role, wif in matches:
@@ -290,17 +344,10 @@ def setup_wallet():
                                 print(f"  [WARN] Key for {role} is already in the wallet.")
                                 replace = input(f"  Do you want to replace the existing {role} key? (y/N): ")
                                 if replace.lower() == 'y':
-                                    # To replace, we must remove the old one first?
-                                    # Actually, addPrivateKey will raise if it exists.
-                                    # But since it's the SAME key (same WIF -> same Pub), 
-                                    # removing and adding is effectively a no-op but satisfies the "replace" action.
-                                    # If the user meant "replace the OLD DIFFERENT key", this logic doesn't catch it 
-                                    # because we are checking if THIS WIF is in the wallet.
-                                    # But assuming we want to force-add:
                                     try:
                                         b.wallet.removePrivateKeyFromPublicKey(pub)
                                     except:
-                                        pass # Ignore if removal fails (shouldn't happen if get succeeded)
+                                        pass 
                                     
                                     b.wallet.addPrivateKey(wif)
                                     print(f"  Success: {role} key replaced.")
@@ -314,6 +361,10 @@ def setup_wallet():
                             print(f"  Success: {role} key added.")
                         except Exception as e:
                             print(f"  Error adding {role} key: {e}")
+                    
+                    input("\nImport complete. Press Enter to continue...")
+                    clear_screen()
+                    continue
                                 
             except FileNotFoundError:
                 print("Error: File not found.")
