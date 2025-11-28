@@ -157,11 +157,19 @@ def setup_wallet():
                 import os
                 import datetime
                 import shutil
+                from appdirs import user_data_dir
                 
-                db_file = "blurtpy.sqlite"
+                # Logic from blurtstorage/sqlite.py
+                appauthor = "blurtpy"
+                appname = "blurtpy"
+                data_dir = user_data_dir(appname, appauthor)
+                db_file = os.path.join(data_dir, "blurtpy.sqlite")
+                
+                print(f"Looking for wallet at: {db_file}")
+                
                 if os.path.exists(db_file):
                     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-                    backup_name = f"blurtpy_backup_{timestamp}.sqlite"
+                    backup_name = os.path.join(data_dir, f"blurtpy_backup_{timestamp}.sqlite")
                     try:
                         os.rename(db_file, backup_name)
                         print(f"\nSuccess! Wallet archived as '{backup_name}'.")
@@ -170,7 +178,7 @@ def setup_wallet():
                     except Exception as e:
                         print(f"Error archiving wallet: {e}")
                 else:
-                    print("Error: No 'blurtpy.sqlite' file found to archive.")
+                    print(f"Error: No 'blurtpy.sqlite' file found at {db_file}.")
             else:
                 print("Operation cancelled.")
 
