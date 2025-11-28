@@ -60,6 +60,17 @@ def setup_wallet():
             print("(Note: The Master Password is NOT a WIF key, use the keys derived from it).")
             wif = getpass.getpass("WIF Key (starts with 5...): ")
             try:
+                # Check if key already exists
+                try:
+                    b.wallet.getPrivateKeyForPublicKey(b.wallet.publickey_from_wif(wif))
+                    print("Key already in wallet.")
+                    replace = input("Do you want to replace it? (y/N): ")
+                    if replace.lower() != 'y':
+                        print("Skipped.")
+                        continue
+                except Exception:
+                    pass # Key not in wallet
+
                 b.wallet.addPrivateKey(wif)
                 print("Key added successfully!")
                 
@@ -73,36 +84,7 @@ def setup_wallet():
                     print("this is normal for Memo keys or if there are connection issues).")
                     
             except Exception as e:
-                if "Key already in the store" in str(e):
-                    print(f"\n[INFO] This key is ALREADY in your wallet.")
-                    try:
-                        pub = b.wallet.publickey_from_wif(wif)
-                        print(f"Public Key: {pub}")
-                        account = b.wallet.getAccountFromPublicKey(pub)
-                        if account:
-                            print(f"It belongs to account: {account}")
-                            # Check authority
-                            acc = Account(account, blockchain_instance=b)
-                            print(f"Checking permissions for {account}...")
-                            found_roles = []
-                            for role in ['owner', 'active', 'posting', 'memo']:
-                                if role == 'memo':
-                                    if acc['memo_key'] == str(pub):
-                                        found_roles.append(role)
-                                else:
-                                    for auth in acc[role]['key_auths']:
-                                        if auth[0] == str(pub):
-                                            found_roles.append(role)
-                            
-                            if found_roles:
-                                print(f"This key has permissions: {', '.join(found_roles).upper()}")
-                            else:
-                                print("This key does NOT match any current permissions on the blockchain for this account.")
-                                print("It might be an old key.")
-                    except Exception as inner_e:
-                        print(f"Could not analyze key details: {inner_e}")
-                else:
-                    print(f"Error adding key: {e}")
+                print(f"Error adding key: {e}")
                 
         elif option == "2":
             keys = b.wallet.getPublicKeys()
@@ -134,13 +116,23 @@ def setup_wallet():
                     for role, wif in matches:
                         print(f"Importing {role} key...")
                         try:
+                            # Check if key exists
+                            try:
+                                pub = b.wallet.publickey_from_wif(wif)
+                                b.wallet.getPrivateKeyForPublicKey(pub)
+                                print(f"  [INFO] Key for {role} already exists.")
+                                # For bulk import, we default to skipping or could ask user. 
+                                # To be safe and clean, let's skip but notify.
+                                # If user wants to replace, they should archive/wipe wallet first.
+                                print(f"  Skipped: {role} key already exists.")
+                                continue
+                            except Exception:
+                                pass
+
                             b.wallet.addPrivateKey(wif)
                             print(f"  Success: {role} key added.")
                         except Exception as e:
-                            if "Key already in the store" in str(e):
-                                print(f"  Skipped: {role} key already exists.")
-                            else:
-                                print(f"  Error adding {role} key: {e}")
+                            print(f"  Error adding {role} key: {e}")
                                 
             except FileNotFoundError:
                 print("Error: File not found.")
