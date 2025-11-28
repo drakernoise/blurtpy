@@ -1,8 +1,31 @@
+import os
+import shutil
+import datetime
+from appdirs import user_data_dir
 import getpass
 from blurtpy import Blurt
 from blurtpy.wallet import Wallet
 from blurtpy.exceptions import WalletExists
 from blurtpy.account import Account
+
+def backup_wallet():
+    """Creates a timestamped backup of the wallet file."""
+    try:
+        appauthor = "blurtpy"
+        appname = "blurtpy"
+        data_dir = user_data_dir(appname, appauthor)
+        db_file = os.path.join(data_dir, "blurtpy.sqlite")
+        
+        if os.path.exists(db_file):
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            backup_name = os.path.join(data_dir, f"blurtpy_backup_{timestamp}.sqlite")
+            shutil.copy2(db_file, backup_name)
+            print(f"\n[AUTO-BACKUP] Wallet state saved to: {backup_name}")
+            return True
+    except Exception as e:
+        print(f"\n[AUTO-BACKUP] Warning: Failed to create backup: {e}")
+        return False
+
 
 def setup_wallet():
     """
@@ -53,7 +76,8 @@ def setup_wallet():
         print("2. List saved public keys")
         print("3. Import keys from file (account_management output)")
         print("4. Archive current wallet & Start fresh")
-        print("5. Exit")
+        print("5. Cleanup Orphan Keys")
+        print("6. Exit")
         
         option = input("Choose an option: ")
         
@@ -74,6 +98,28 @@ def setup_wallet():
                 except Exception:
                     pass # Key not in wallet
 
+                # Auto-Backup before modification
+                if not backup_wallet():
+                    print("Backup failed. Aborting operation.")
+                    continue
+
+                # If we are replacing, we must remove the old key first
+                # (We know it exists if we are here and didn't continue)
+                # But wait, the try/except block above handles the "exists" check.
+                # If we are here, either it didn't exist, OR it existed and user said 'y'.
+                # If it existed, we need to remove it.
+                # Re-check existence to be safe or use a flag?
+                # Let's just try to remove it if we can, or rely on addPrivateKey raising.
+                # But addPrivateKey raises.
+                
+                pub = b.wallet.publickey_from_wif(wif)
+                try:
+                    b.wallet.getPrivateKeyForPublicKey(pub)
+                    # It exists, so we must be in "replace=y" mode
+                    b.wallet.removePrivateKeyFromPublicKey(pub)
+                except:
+                    pass # Didn't exist
+
                 b.wallet.addPrivateKey(wif)
                 print("Key added successfully!")
                 
@@ -91,21 +137,66 @@ def setup_wallet():
                 
         elif option == "2":
             keys = b.wallet.getPublicKeys()
-            print(f"\nThere are {len(keys)} saved keys:")
+            print(f"\nThere are {len(keys)} saved keys. Analyzing...")
             
-            show_priv = input("Do you want to reveal the PRIVATE keys? (yes/NO): ")
+            analyzed_keys = []
+            for k in keys:
+                key_info = {"pub": k, "roles": []}
+                try:
+                    accounts = list(b.wallet.getAccountsFromPublicKey(k))
+                    if accounts:
+                        for acc_name in accounts:
+                            try:
+                                acc = Account(acc_name, blockchain_instance=b)
+                                # Check roles
+                                found_role = False
+                                # Owner
+                                for auth in acc["owner"]["key_auths"]:
+                                    if auth[0] == k:
+                                        key_info["roles"].append(f"[OWNER] {acc_name}")
+                                        found_role = True
+                                # Active
+                                for auth in acc["active"]["key_auths"]:
+                                    if auth[0] == k:
+                                        key_info["roles"].append(f"[ACTIVE] {acc_name}")
+                                        found_role = True
+                                # Posting
+                                for auth in acc["posting"]["key_auths"]:
+                                    if auth[0] == k:
+                                        key_info["roles"].append(f"[POSTING] {acc_name}")
+                                        found_role = True
+                                # Memo
+                                if acc["memo_key"] == k:
+                                    key_info["roles"].append(f"[MEMO] {acc_name}")
+                                    found_role = True
+                                
+                                if not found_role:
+                                     key_info["roles"].append(f"[UNKNOWN-ROLE] {acc_name}")
+                            except Exception:
+                                key_info["roles"].append(f"[ERROR-CHECKING] {acc_name}")
+                    else:
+                        key_info["roles"].append("[ORPHAN] (No account found)")
+                except Exception as e:
+                    key_info["roles"].append(f"[ERROR] {e}")
+                
+                analyzed_keys.append(key_info)
+
+            # Display Results
+            for item in analyzed_keys:
+                roles_str = ", ".join(item["roles"])
+                print(f"- {item['pub']}  ->  {roles_str}")
+
+            show_priv = input("\nDo you want to reveal the PRIVATE keys? (yes/NO): ")
             if show_priv.lower() == "yes":
                 print("\n[WARNING] Displaying Private Keys. Ensure no one is watching!")
-                for k in keys:
+                for item in analyzed_keys:
                     try:
-                        priv = b.wallet.getPrivateKeyForPublicKey(k)
-                        print(f"- Pub: {k}")
+                        priv = b.wallet.getPrivateKeyForPublicKey(item["pub"])
+                        print(f"- Pub: {item['pub']}")
+                        print(f"  Roles: {', '.join(item['roles'])}")
                         print(f"  Priv: {priv}")
                     except Exception as e:
-                        print(f"- Pub: {k} (Error retrieving private key: {e})")
-            else:
-                for k in keys:
-                    print(f"- {k}")
+                        print(f"- Pub: {item['pub']} (Error retrieving private key: {e})")
 
         elif option == "3":
             print("\n--- Import Keys from File ---")
@@ -132,6 +223,11 @@ def setup_wallet():
                     print("No keys found in the expected format.")
                 else:
                     print(f"Found {len(matches)} keys for account '{account_name}'.")
+                    
+                    if not backup_wallet():
+                        print("Backup failed. Aborting import.")
+                        continue
+
                     for role, wif in matches:
                         print(f"Importing {role} key...")
                         try:
@@ -208,6 +304,43 @@ def setup_wallet():
                 print("Operation cancelled.")
 
         elif option == "5":
+            print("\n--- Cleanup Orphan Keys ---")
+            print("Analyzing keys to find orphans (keys not associated with any account)...")
+            keys = b.wallet.getPublicKeys()
+            orphans = []
+            
+            for k in keys:
+                try:
+                    accounts = list(b.wallet.getAccountsFromPublicKey(k))
+                    if not accounts:
+                        orphans.append(k)
+                except Exception as e:
+                    print(f"Error checking key {k}: {e}")
+            
+            if not orphans:
+                print("No orphan keys found. Your wallet is clean!")
+            else:
+                print(f"\nFound {len(orphans)} orphan keys:")
+                for k in orphans:
+                    print(f"- {k}")
+                
+                confirm = input("\nDo you want to DELETE these keys? (yes/NO): ")
+                if confirm.lower() == "yes":
+                    if backup_wallet():
+                        deleted_count = 0
+                        for k in orphans:
+                            try:
+                                b.wallet.removePrivateKeyFromPublicKey(k)
+                                deleted_count += 1
+                            except Exception as e:
+                                print(f"Error deleting {k}: {e}")
+                        print(f"\nSuccessfully deleted {deleted_count} orphan keys.")
+                    else:
+                        print("Backup failed. Aborting deletion for safety.")
+                else:
+                    print("Operation cancelled.")
+
+        elif option == "6":
             break
 
 if __name__ == "__main__":
