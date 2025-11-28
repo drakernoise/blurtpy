@@ -1,6 +1,7 @@
 import os
 import shutil
 import datetime
+import time
 from appdirs import user_data_dir
 import getpass
 from prettytable import PrettyTable
@@ -449,19 +450,6 @@ def setup_wallet():
                                             
                                             if not backup_wallet():
                                                 print("Backup failed. Aborting.")
-                                            else:
-                                                print(f"Updating {target_role} key on blockchain...")
-                                                try:
-                                                    resp = update_account_key(b, target_account, target_key, target_role)
-                                                    print(f"[SUCCESS] Updated {target_role} key! Block: {resp.get('ref_block_num')}")
-                                                    print("Refreshing data to verify changes...")
-                                                    should_refresh = True
-                                                    break 
-                                                except Exception as e:
-                                                    print(f"Update failed: {e}")
-                                        else:
-                                            print("Invalid role.")
-                                    except Exception as e:
                                         print(f"Update failed: {e}")
                             continue 
 
