@@ -450,7 +450,18 @@ def setup_wallet():
                                             
                                             if not backup_wallet():
                                                 print("Backup failed. Aborting.")
-                                        print(f"Update failed: {e}")
+                                            else:
+                                                print(f"Updating {target_role} key on blockchain...")
+                                                try:
+                                                    resp = update_account_key(b, target_account, target_key, target_role)
+                                                    print(f"[SUCCESS] Updated {target_role} key! Block: {resp.get('ref_block_num')}")
+                                                    print("Waiting 3s for blockchain propagation...")
+                                                    time.sleep(3)
+                                                    print("Refreshing data to verify changes...")
+                                                    should_refresh = True
+                                                    break 
+                                                except Exception as e:
+                                                    print(f"Update failed: {e}")
                             continue 
 
                         elif choice == "2":
