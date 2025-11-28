@@ -13,32 +13,48 @@ from blurtbase import operations
 def clear_screen():
     os.system('cls' if os.name == 'nt' else 'clear')
 
-def update_memo_key(blurt_instance, account_name, new_memo_key):
+def update_account_key(blurt_instance, account_name, new_key, role):
     """
-    Updates the memo key for the given account.
-    Requires Active or Owner key to be present in the wallet.
+    Updates the key for a specific role (owner, active, posting, memo) on the blockchain.
+    Requires a sufficient authority key (Active or Owner) to be present in the wallet.
     """
     try:
         acc = Account(account_name, blockchain_instance=blurt_instance)
         
-        # Construct Account_update operation
-        # We must preserve existing authorities (owner, active, posting)
-        # and only change the memo_key.
+        # Prepare arguments for Account_update
+        update_args = {
+            "account": account_name,
+            "json_metadata": acc["json_metadata"],
+            "posting_json_metadata": acc.get("posting_json_metadata", ""),
+            "extensions": acc.get("extensions", []),
+            "prefix": blurt_instance.chain_params["prefix"]
+        }
         
-        op = operations.Account_update(
-            account=account_name,
-            owner=acc["owner"],
-            active=acc["active"],
-            posting=acc["posting"],
-            memo_key=new_memo_key,
-            json_metadata=acc["json_metadata"],
-            posting_json_metadata=acc.get("posting_json_metadata", ""),
-            extensions=acc.get("extensions", []),
-            prefix=blurt_instance.chain_params["prefix"]
-        )
+        # Default: Keep existing keys
+        update_args["owner"] = acc["owner"]
+        update_args["active"] = acc["active"]
+        update_args["posting"] = acc["posting"]
+        update_args["memo_key"] = acc["memo_key"]
+        
+        # Update specific role
+        if role == "memo":
+            update_args["memo_key"] = new_key
+        elif role in ["owner", "active", "posting"]:
+            # Construct new authority object
+            # We assume a simple 1-key authority for this manager
+            new_auth = {
+                "weight_threshold": 1,
+                "account_auths": [],
+                "key_auths": [[new_key, 1]]
+            }
+            update_args[role] = new_auth
+        else:
+            raise ValueError(f"Invalid role: {role}")
+
+        # Construct Operation
+        op = operations.Account_update(**update_args)
         
         # Sign and Broadcast
-        # The library automatically selects the required key from the wallet
         blurt_instance.txbuffer.clear()
         blurt_instance.txbuffer.appendOps([op])
         blurt_instance.wallet.sign_transaction(blurt_instance.txbuffer)
@@ -46,18 +62,17 @@ def update_memo_key(blurt_instance, account_name, new_memo_key):
         return resp
         
     except Exception as e:
-        raise Exception(f"Failed to update memo key: {e}")
+        raise Exception(f"Failed to update {role} key: {e}")
 
 
 def print_banner():
     clear_screen()
     print(r"""
-  ____  _             _we_ 
- |  _ \| |_   _ _ __| |_ _ __  _   _ 
- | |_) | | | | | '__| __| '_ \| | | |
- |  _ <| | |_| | |  | |_| |_) | |_| |
- |_| \_\_|\__,_|_|   \__| .__/ \__, |
-                        |_|    |___/ 
+  ____  _             _   
+ |  _ \| |_   _ _ __| |_ 
+ | |_) | | | | | '__| __|
+ |  _ <| | |_| | |  | |_ 
+ |_| \_\_|\__,_|_|   \__|
       Wallet Manager v1.0
     """)
 
@@ -139,8 +154,6 @@ def setup_wallet():
         print("4. Archive current wallet & Start fresh")
         print("5. Exit")
         print("-" * 30)
-        print("6. Account Operations (Blockchain)")
-        print("-" * 30)
         
         option = input("Choose an option: ")
         
@@ -190,11 +203,84 @@ def setup_wallet():
                 # Try to identify which account it belongs to
                 pub = b.wallet.publickey_from_wif(wif)
                 account = b.wallet.getAccountFromPublicKey(pub)
+                
                 if account:
                     print(f"This key belongs to account: {account}")
+                    
+                    # Check if this key matches the blockchain state for any role
+                    # If not, it might be a new key the user wants to set
+                    try:
+                        acc_data = Account(account, blockchain_instance=b)
+                        
+                        # Determine which role this key MIGHT be intended for
+                        # This is tricky because we don't know what the user intends.
+                        # But if it's NOT in the blockchain, we can ask.
+                        
+                        is_on_chain = False
+                        roles_on_chain = []
+                        
+                        # Check Owner
+                        for auth in acc_data["owner"]["key_auths"]:
+                            if auth[0] == pub:
+                                is_on_chain = True
+                                roles_on_chain.append("OWNER")
+                        # Check Active
+                        for auth in acc_data["active"]["key_auths"]:
+                            if auth[0] == pub:
+                                is_on_chain = True
+                                roles_on_chain.append("ACTIVE")
+                        # Check Posting
+                        for auth in acc_data["posting"]["key_auths"]:
+                            if auth[0] == pub:
+                                is_on_chain = True
+                                roles_on_chain.append("POSTING")
+                        # Check Memo
+                        if acc_data["memo_key"] == pub:
+                            is_on_chain = True
+                            roles_on_chain.append("MEMO")
+                            
+                        if is_on_chain:
+                            print(f"Blockchain Status: Active as {', '.join(roles_on_chain)} key.")
+                        else:
+                            print("\n[NOTICE] This key is NOT currently active on the blockchain for account '{}'.".format(account))
+                            update = input("Do you want to UPDATE your account to use this key? (y/N): ")
+                            if update.lower() == 'y':
+                                print("Select role to assign to this key:")
+                                print("1. Owner (DANGEROUS)")
+                                print("2. Active")
+                                print("3. Posting")
+                                print("4. Memo")
+                                
+                                try:
+                                    role_sel = int(input("Enter number: "))
+                                    role_map = {1: "owner", 2: "active", 3: "posting", 4: "memo"}
+                                    target_role = role_map.get(role_sel)
+                                    
+                                    if target_role:
+                                        if target_role == "owner":
+                                            print("WARNING: Changing Owner key is critical. Ensure you have a backup!")
+                                            confirm = input("Type 'CONFIRM' to proceed: ")
+                                            if confirm != "CONFIRM":
+                                                print("Aborted.")
+                                                raise Exception("Cancelled by user")
+                                        
+                                        print(f"Updating {target_role} key on blockchain...")
+                                        resp = update_account_key(b, account, pub, target_role)
+                                        print(f"[SUCCESS] Updated {target_role} key! Block: {resp.get('ref_block_num')}")
+                                    else:
+                                        print("Invalid role selected.")
+                                except Exception as e:
+                                    print(f"Update failed: {e}")
+
+                    except Exception as e:
+                        print(f"Error checking blockchain state: {e}")
+
                 else:
                     print("Key saved. (Note: Could not automatically identify the account,")
                     print("this is normal for Memo keys or if there are connection issues).")
+                    
+                    # If we can't identify the account, we can't update it easily without asking for the account name.
+                    # For now, let's leave it simple.
                     
             except Exception as e:
                 print(f"Error adding key: {e}")
@@ -398,6 +484,35 @@ def setup_wallet():
 
                             b.wallet.addPrivateKey(wif)
                             print(f"  Success: {role} key added.")
+                            
+                            # Blockchain Update Check
+                            try:
+                                pub = b.wallet.publickey_from_wif(wif)
+                                acc_data = Account(account_name, blockchain_instance=b)
+                                
+                                is_on_chain = False
+                                if role == "OWNER":
+                                    for auth in acc_data["owner"]["key_auths"]:
+                                        if auth[0] == pub: is_on_chain = True
+                                elif role == "ACTIVE":
+                                    for auth in acc_data["active"]["key_auths"]:
+                                        if auth[0] == pub: is_on_chain = True
+                                elif role == "POSTING":
+                                    for auth in acc_data["posting"]["key_auths"]:
+                                        if auth[0] == pub: is_on_chain = True
+                                elif role == "MEMO":
+                                    if acc_data["memo_key"] == pub: is_on_chain = True
+                                
+                                if not is_on_chain:
+                                    print(f"  [NOTICE] This {role} key is NOT active on the blockchain.")
+                                    update = input(f"  Do you want to update your {role} key on the blockchain? (y/N): ")
+                                    if update.lower() == 'y':
+                                        print(f"  Updating {role} key...")
+                                        resp = update_account_key(b, account_name, pub, role.lower())
+                                        print(f"  [SUCCESS] Updated {role} key! Block: {resp.get('ref_block_num')}")
+                            except Exception as e:
+                                print(f"  Warning: Could not verify/update blockchain state: {e}")
+
                         except Exception as e:
                             print(f"  Error adding {role} key: {e}")
                     
@@ -447,107 +562,6 @@ def setup_wallet():
 
         elif option == "5":
             break
-
-        elif option == "6":
-            print("\n--- Account Operations (Blockchain) ---")
-            print("1. Update Memo Key (Promote Orphan Key)")
-            print("2. Back to Main Menu")
-            
-            sub_op = input("Choose an option: ")
-            
-            if sub_op == "1":
-                print("\n--- Update Memo Key ---")
-                print("This will set an 'Orphan' key from your wallet as your official Memo Key on the blockchain.")
-                print("Requires Active or Owner key for the account to be present in the wallet.")
-                
-                # 1. Find potential accounts in wallet
-                keys = b.wallet.getPublicKeys()
-                accounts_found = set()
-                orphans = []
-                
-                print("Analyzing wallet keys...")
-                for k in keys:
-                    try:
-                        accs = list(b.wallet.getAccountsFromPublicKey(k))
-                        if accs:
-                            for a in accs:
-                                accounts_found.add(a)
-                        else:
-                            orphans.append(k)
-                    except:
-                        pass
-                
-                if not accounts_found:
-                    print("[!] No accounts identified in wallet. Cannot proceed.")
-                    print("Please import your Active or Owner key first.")
-                    input("\nPress Enter to continue...")
-                    continue
-                    
-                if not orphans:
-                    print("[!] No orphan keys found to promote.")
-                    input("\nPress Enter to continue...")
-                    continue
-                
-                # 2. Select Account
-                target_account = ""
-                if len(accounts_found) == 1:
-                    target_account = list(accounts_found)[0]
-                    print(f"Target Account: {target_account}")
-                else:
-                    print("\nSelect Account:")
-                    sorted_accs = sorted(list(accounts_found))
-                    for idx, acc in enumerate(sorted_accs):
-                        print(f"{idx+1}. {acc}")
-                    
-                    try:
-                        sel = int(input("Enter number: "))
-                        target_account = sorted_accs[sel-1]
-                    except:
-                        print("Invalid selection.")
-                        input("\nPress Enter to continue...")
-                        continue
-
-                # 3. Select Orphan Key
-                print(f"\nSelect Orphan Key to set as MEMO key for '{target_account}':")
-                t = PrettyTable()
-                t.field_names = ["#", "Public Key"]
-                t.align = "l"
-                
-                for idx, k in enumerate(orphans):
-                    t.add_row([idx+1, k])
-                print(t)
-                
-                try:
-                    sel = int(input("Enter number: "))
-                    new_memo_key = orphans[sel-1]
-                except:
-                    print("Invalid selection.")
-                    input("\nPress Enter to continue...")
-                    continue
-                
-                # 4. Confirm and Execute
-                print(f"\n[CONFIRM] You are about to update the MEMO key for '{target_account}'.")
-                print(f"New Memo Key: {new_memo_key}")
-                confirm = input("Type 'YES' to confirm transaction: ")
-                
-                if confirm == "YES":
-                    if not backup_wallet():
-                        print("Backup failed. Aborting.")
-                        input("\nPress Enter to continue...")
-                        continue
-                        
-                    print("Broadcasting transaction...")
-                    try:
-                        resp = update_memo_key(b, target_account, new_memo_key)
-                        print("\n[SUCCESS] Transaction broadcasted!")
-                        print(f"Ref Block Num: {resp.get('ref_block_num')}")
-                        print("Your Memo Key has been updated.")
-                    except Exception as e:
-                        print(f"\n[ERROR] Transaction failed: {e}")
-                else:
-                    print("Operation cancelled.")
-            
-            input("\nPress Enter to continue...")
 
 if __name__ == "__main__":
     setup_wallet()
