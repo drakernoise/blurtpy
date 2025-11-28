@@ -462,6 +462,8 @@ def setup_wallet():
                                                     break 
                                                 except Exception as e:
                                                     print(f"Update failed: {e}")
+                                    except Exception as e:
+                                        print(f"Update failed: {e}")
                             continue 
 
                         elif choice == "2":
