@@ -220,211 +220,208 @@ def manage_keys_loop(b):
 
         # Management Menu
         should_refresh = False
-        
-        print("\nWhat would you like to do?")
-        if orphans:
-            print("1. Promote an orphan key to be active on the blockchain")
-            print("2. Delete orphan keys")
-            print("3. Return to Main Menu")
-        else:
-            print("1. Return to Main Menu")
-        
-        choice = input("Choose an option: ")
-        
-        if orphans:
-            if choice == "1":
-                # Promote Logic
-                print("\n--- Promote Orphan Key ---")
-                
-                # Select Orphan
-                if len(orphans) == 1:
-                    target_key = orphans[0]
-                    try:
-                        wif = b.wallet.getPrivateKeyForPublicKey(target_key)
-                        print(f"Selected Key (WIF): {wif[:15]}...{wif[-5:]}")
-                    except:
-                        print(f"Selected Key: {target_key}")
-                else:
-                    print("Select key to promote (WIF):")
-                    for idx, k in enumerate(orphans):
-                        try:
-                            wif = b.wallet.getPrivateKeyForPublicKey(k)
-                            display_str = f"{wif[:15]}...{wif[-5:]}"
-                        except:
-                            display_str = k
-                        print(f"{idx+1}. {display_str}")
-                    try:
-                        sel = int(input("Enter number: "))
-                        target_key = orphans[sel-1]
-                    except:
-                        print("Invalid selection.")
-                        target_key = None
-                
-                if target_key:
-                    # Select Account
-                    target_account = ""
-                    if account_cache:
-                        known_accounts = list(account_cache.keys())
-                        if len(known_accounts) == 1:
-                            target_account = known_accounts[0]
-                            print(f"Target Account: {target_account}")
-                        else:
-                            print("Select Account to update:")
-                            for idx, acc in enumerate(known_accounts):
-                                print(f"{idx+1}. {acc}")
-                            try:
-                                sel = int(input("Enter number: "))
-                                target_account = known_accounts[sel-1]
-                            except:
-                                print("Invalid selection.")
-                    
-                    if not target_account:
-                        target_account = input("Enter the account name to update: ")
-                    
-                    if target_account:
-                        # Get WIF for display
-                        try:
-                            target_wif = b.wallet.getPrivateKeyForPublicKey(target_key)
-                            display_wif = f"{target_wif[:10]}..."
-                        except:
-                            display_wif = target_key[:10]
+def add_key_routine(b):
+    print("\n--- Add a New Private Key ---")
+    print("Valid types: Posting, Active, Owner, Memo.")
+    print("(Note: The Master Password is NOT a WIF key).")
+    wif = getpass.getpass("Enter WIF Key (starts with 5...): ")
+    
+    try:
+        # Check if key exists
+        try:
+            pub = b.wallet.publickey_from_wif(wif)
+            b.wallet.getPrivateKeyForPublicKey(pub)
+            print("\n[!] Key already in wallet.")
+            if not get_user_confirmation("Do you want to replace it? (y/N): "):
+                print("Skipped.")
+                return
+        except Exception:
+            pass # Key not in wallet
 
-                        print(f"Select role to assign to key {display_wif}...:")
-                        print("1. Owner (DANGEROUS)")
-                        print("2. Active")
-                        print("3. Posting")
-                        print("4. Memo")
-                        
-                        try:
-                            role_sel = int(input("Enter number: "))
-                            role_map = {1: "owner", 2: "active", 3: "posting", 4: "memo"}
-                            target_role = role_map.get(role_sel)
-                            
-                            if target_role:
-                                if target_role == "owner":
-                                    print("WARNING: Changing Owner key is critical. Ensure you have a backup!")
-                                    if not get_user_confirmation("Type 'yes' to confirm: ", strict=True):
-                                        print("Aborted.")
-                                        continue
-                                
-                                if not backup_wallet():
-                                    print("Backup failed. Aborting.")
+        # Auto-Backup before modification
+        if not backup_wallet():
+            print("Backup failed. Aborting operation.")
+            return
+
+        # If we are replacing, we must remove the old key first
+        pub = b.wallet.publickey_from_wif(wif)
+        try:
+            b.wallet.getPrivateKeyForPublicKey(pub)
+            b.wallet.removePrivateKeyFromPublicKey(pub)
+        except:
+            pass 
+
+        b.wallet.addPrivateKey(wif)
+        print("Key added successfully!")
+        
+        # Blockchain Update Check
+        try:
+            acc_names = list(b.wallet.getAccountsFromPublicKey(pub))
+            if acc_names:
+                for account_name in acc_names:
+                    acc_data = Account(account_name, blockchain_instance=b)
+                    
+                    is_on_chain = False
+                    role_found = None
+                    
+                    # Check Owner
+                    for auth in acc_data["owner"]["key_auths"]:
+                        if auth[0] == pub: 
+                            is_on_chain = True
+                            role_found = "OWNER"
+                    # Check Active
+                    if not is_on_chain:
+                        for auth in acc_data["active"]["key_auths"]:
+                            if auth[0] == pub: 
+                                is_on_chain = True
+                                role_found = "ACTIVE"
+                    # Check Posting
+                    if not is_on_chain:
+                        for auth in acc_data["posting"]["key_auths"]:
+                            if auth[0] == pub: 
+                                is_on_chain = True
+                                role_found = "POSTING"
+                    # Check Memo
+                    if not is_on_chain:
+                        if acc_data["memo_key"] == pub: 
+                            is_on_chain = True
+                            role_found = "MEMO"
+                    
+                    if not is_on_chain:
+                        print(f"  [NOTICE] This key is NOT active on the blockchain for account '{account_name}'.")
+                        if get_user_confirmation(f"  Do you want to update your key on the blockchain for '{account_name}'? (y/N): "):
+                            print("  Select role to update:")
+                            print("  1. Owner (DANGEROUS)")
+                            print("  2. Active")
+                            print("  3. Posting")
+                            print("  4. Memo")
+                            try:
+                                r_sel = int(input("  Enter number: "))
+                                r_map = {1: "owner", 2: "active", 3: "posting", 4: "memo"}
+                                target_role = r_map.get(r_sel)
+                                if target_role:
+                                    if target_role == "owner":
+                                        if not get_user_confirmation("  WARNING: Changing Owner key is critical. Confirm? (yes/no): ", strict=True):
+                                            print("  Aborted.")
+                                            continue
+                                    
+                                    print(f"  Updating {target_role} key...")
+                                    resp = update_account_key(b, account_name, pub, target_role)
+                                    print(f"  [SUCCESS] Updated {target_role} key! Block: {resp.get('ref_block_num')}")
                                 else:
-                                    print(f"Updating {target_role} key on blockchain...")
-                                    try:
-                                        resp = update_account_key(b, target_account, target_key, target_role)
-                                        print(f"[SUCCESS] Updated {target_role} key! Block: {resp.get('ref_block_num')}")
-                                        print("Waiting 3s for blockchain propagation...")
-                                        time.sleep(3)
-                                        print("Refreshing data to verify changes...")
-                                        should_refresh = True
-                                    except Exception as e:
-                                        print(f"Update failed: {e}")
-                            else:
-                                print("Invalid role.")
-                        except Exception as e:
-                            print(f"Update failed: {e}")
-                
-                if should_refresh:
-                    continue
-                else:
-                    input("Press Enter to continue...")
-                    continue
+                                    print("  Invalid role.")
+                            except Exception as e:
+                                print(f"  Update failed: {e}")
+        except Exception as e:
+            print(f"  Warning: Could not verify/update blockchain state: {e}")
 
-            elif choice == "2":
-                # Delete Logic
-                print("\n--- Delete Orphan Keys ---")
-                print("1. Delete ALL orphan keys")
-                print("2. Delete specific orphan key")
-                print("3. Cancel")
-                
-                del_choice = input("Choose an option: ")
-                
-                if del_choice == "1":
-                    if get_user_confirmation(f"Are you sure you want to DELETE ALL {len(orphans)} orphan keys? (y/N): "):
-                        if backup_wallet():
-                            deleted_count = 0
-                            for k in orphans:
-                                try:
-                                    b.wallet.removePrivateKeyFromPublicKey(k)
-                                    deleted_count += 1
-                                except Exception as e:
-                                    print(f"Error deleting {k}: {e}")
-                            print(f"Successfully deleted {deleted_count} orphan keys.")
-                            should_refresh = True
-                        else:
-                            print("Backup failed. Aborting deletion.")
-                    else:
-                        print("Deletion cancelled.")
-
-                elif del_choice == "2":
-                    # Select specific key to delete
-                    if len(orphans) == 1:
-                        target_key = orphans[0]
-                        try:
-                            wif = b.wallet.getPrivateKeyForPublicKey(target_key)
-                            print(f"Selected Key (WIF): {wif[:15]}...{wif[-5:]}")
-                        except:
-                            print(f"Selected Key: {target_key}")
-                    else:
-                        print("Select key to delete (WIF):")
-                        for idx, k in enumerate(orphans):
-                            try:
-                                wif = b.wallet.getPrivateKeyForPublicKey(k)
-                                display_str = f"{wif[:15]}...{wif[-5:]}"
-                            except:
-                                display_str = k
-                            print(f"{idx+1}. {display_str}")
-                        try:
-                            sel = int(input("Enter number: "))
-                            target_key = orphans[sel-1]
-                        except:
-                            print("Invalid selection.")
-                            target_key = None
-                    
-                    if target_key:
-                        # Get WIF for confirmation display
-                        try:
-                            target_wif = b.wallet.getPrivateKeyForPublicKey(target_key)
-                            display_wif = f"{target_wif[:15]}...{target_wif[-5:]}"
-                        except:
-                            display_wif = target_key[:10] + "..."
-
-                        if get_user_confirmation(f"Are you sure you want to DELETE key {display_wif}? (y/N): "):
-                            if backup_wallet():
-                                try:
-                                    b.wallet.removePrivateKeyFromPublicKey(target_key)
-                                    print(f"Successfully deleted key {display_wif}...")
-                                    should_refresh = True
-                                except Exception as e:
-                                    print(f"Error deleting key: {e}")
-                            else:
-                                print("Backup failed. Aborting.")
-                        else:
-                            print("Deletion cancelled.")
-                
-                else:
-                    print("Cancelled.")
-                
-                if should_refresh:
-                    continue
-                else:
-                    input("Press Enter to continue...")
-                    continue
-
-            elif choice == "3":
-                break
+        # Transition to Manage Keys Loop
+        print("Transitioning to Key Management view...")
+        time.sleep(1)
+        manage_keys_loop(b)
             
-            else:
-                print("Invalid option.")
-                continue
+    except Exception as e:
+        print(f"Error adding key: {e}")
+        input("Press Enter to continue...")
 
-        else: # No orphans
-            if choice == "1":
-                break
-            else:
-                print("Invalid option.")
-                continue
+def import_keys_routine(b):
+    print("\n--- Import Keys from File ---")
+    print("This option reads a text file containing keys in the format generated by account_management.py")
+    filepath = input("Enter the path to the key file: ")
+    
+    try:
+        with open(filepath, 'r') as f:
+            content = f.read()
+        
+        import re
+        matches = re.findall(r"(OWNER|ACTIVE|POSTING|MEMO):\s+Public:\s+STM.*\s+Private:\s+(5[HJK][1-9A-Za-z]{48,})", content, re.MULTILINE)
+        
+        account_match = re.search(r"NEW KEYS for account (.*?):", content)
+        account_name = account_match.group(1) if account_match else "Unknown"
+        
+        if not matches:
+            print("\n[!] No keys found in the expected format.")
+        else:
+            print(f"\nFound {len(matches)} keys for account '{account_name}':")
+            
+            t = PrettyTable()
+            t.field_names = ["Role", "Private Key (WIF)"]
+            t.align = "l"
+            for role, wif in matches:
+                t.add_row([role, wif[:10] + "..." + wif[-5:]]) # Mask WIF for preview
+            print(t)
+            
+            if not get_user_confirmation("\nDo you want to import these keys? (y/n): "):
+                print("Import cancelled.")
+                return
+
+            if not backup_wallet():
+                print("Backup failed. Aborting import.")
+                return
+
+            for role, wif in matches:
+                print(f"Importing {role} key...")
+                try:
+                    # Check if key exists
+                    try:
+                        pub = b.wallet.publickey_from_wif(wif)
+                        b.wallet.getPrivateKeyForPublicKey(pub)
+                        print(f"  [WARN] Key for {role} is already in the wallet.")
+                        if get_user_confirmation(f"  Do you want to replace the existing {role} key? (y/N): "):
+                            try:
+                                b.wallet.removePrivateKeyFromPublicKey(pub)
+                            except:
+                                pass 
+                            
+                            b.wallet.addPrivateKey(wif)
+                            print(f"  Success: {role} key replaced.")
+                        else:
+                            print(f"  Skipped.")
+                        continue
+                    except Exception:
+                        pass # Key not in wallet, proceed to add
+
+                    b.wallet.addPrivateKey(wif)
+                    print(f"  Success: {role} key added.")
+                    
+                    # Blockchain Update Check
+                    try:
+                        pub = b.wallet.publickey_from_wif(wif)
+                        acc_data = Account(account_name, blockchain_instance=b)
+                        
+                        is_on_chain = False
+                        if role == "OWNER":
+                            for auth in acc_data["owner"]["key_auths"]:
+                                if auth[0] == pub: is_on_chain = True
+                        elif role == "ACTIVE":
+                            for auth in acc_data["active"]["key_auths"]:
+                                if auth[0] == pub: is_on_chain = True
+                        elif role == "POSTING":
+                            for auth in acc_data["posting"]["key_auths"]:
+                                if auth[0] == pub: is_on_chain = True
+                        elif role == "MEMO":
+                            if acc_data["memo_key"] == pub: is_on_chain = True
+                        
+                        if not is_on_chain:
+                            print(f"  [NOTICE] This {role} key is NOT active on the blockchain.")
+                            if get_user_confirmation(f"  Do you want to update your {role} key on the blockchain? (y/N): "):
+                                print(f"  Updating {role} key...")
+                                resp = update_account_key(b, account_name, pub, role.lower())
+                                print(f"  [SUCCESS] Updated {role} key! Block: {resp.get('ref_block_num')}")
+                    except Exception as e:
+                        print(f"  Warning: Could not verify/update blockchain state: {e}")
+
+                except Exception as e:
+                    print(f"  Error adding {role} key: {e}")
+            
+            print("Import complete. Transitioning to Key Management view...")
+            time.sleep(1)
+            manage_keys_loop(b)
+                        
+    except FileNotFoundError:
+        print("Error: File not found.")
+    except Exception as e:
+        print(f"Error reading file: {e}")
 
 def setup_wallet():
     """
@@ -444,199 +441,50 @@ def setup_wallet():
 
         print("\nLet's create a new wallet.")
         password = getpass.getpass("Choose a master password for the wallet: ")
-        confirm = getpass.getpass("Confirm password: ")
+        confirm_password = getpass.getpass("Confirm password: ")
         
-        if password != confirm:
-            print("Error: Passwords do not match.")
+        if password != confirm_password:
+            print("Passwords do not match. Exiting.")
             return
             
-        try:
-            b.wallet.create(password)
-            print("Wallet created successfully.")
-        except WalletExists:
-            print("The wallet already existed.")
-
-    # 2. Unlock Wallet
-    if b.wallet.locked():
-        password = getpass.getpass("\nEnter wallet password to unlock: ")
-        try:
-            b.wallet.unlock(password)
-            print("Wallet unlocked.")
-            if b.wallet.created():
-                 print("(Note: A wallet already exists. If you want to delete it and start over,")
-                 print(" delete the 'blurtpy.sqlite' file or use b.wallet.wipe(True))")
-        except Exception as e:
-            print(f"Error unlocking wallet: {e}")
-            exit()
-        except Exception as e:
-            print(f"Error unlocking: {e}")
-            return
+        b.wallet.create(password)
+        print("Wallet created successfully!")
+    else:
+        # Unlock Wallet
+        print("\n[!] Wallet found.")
+        while True:
+            pwd = getpass.getpass("Enter wallet password: ")
+            try:
+                b.wallet.unlock(pwd)
+                print("Wallet unlocked!")
+                break
+            except Exception:
+                print("Invalid password. Try again.")
 
     # 3. Add Keys
     while True:
         clear_screen()
         print_banner()
-        print("\n" + "="*30)
-        print("   KEY MANAGEMENT MENU")
-        print("="*30)
+        print("=============================")
+        print(" KEY MANAGEMENT MENU")
+        print("=============================")
         print("1. Add a new private key (WIF)")
         print("2. List Public/Private Keys (Smart Analysis)")
         print("3. Import keys from file")
         print("4. Archive current wallet & Start fresh")
         print("5. Exit")
-        print("-" * 30)
+        print("-----------------------------")
         
         option = input("Choose an option: ")
         
         if option == "1":
-            print("\n--- Add New Key ---")
-            print("Valid types: Posting, Active, Owner, Memo.")
-            print("(Note: The Master Password is NOT a WIF key).")
-            wif = getpass.getpass("Enter WIF Key (starts with 5...): ")
-            try:
-                # Check if key already exists
-                try:
-                    b.wallet.getPrivateKeyForPublicKey(b.wallet.publickey_from_wif(wif))
-                    print("\n[!] Key already in wallet.")
-                    if not get_user_confirmation("Do you want to replace it? (y/N): "):
-                        print("Skipped.")
-                        continue
-                except Exception:
-                    pass # Key not in wallet
-
-                # Auto-Backup before modification
-                if not backup_wallet():
-                    print("Backup failed. Aborting operation.")
-                    continue
-
-                # If we are replacing, we must remove the old key first
-                pub = b.wallet.publickey_from_wif(wif)
-                try:
-                    b.wallet.getPrivateKeyForPublicKey(pub)
-                    b.wallet.removePrivateKeyFromPublicKey(pub)
-                except:
-                    pass 
-
-                b.wallet.addPrivateKey(wif)
-                print("Key added successfully!")
-                
-                # Transition to Manage Keys Loop
-                print("Transitioning to Key Management view...")
-                time.sleep(1)
-                manage_keys_loop(b)
-                    
-            except Exception as e:
-                print(f"Error adding key: {e}")
-                input("Press Enter to continue...")
+            add_key_routine(b)
                 
         elif option == "2":
             manage_keys_loop(b)
 
         elif option == "3":
-            print("\n--- Import Keys from File ---")
-            print("This option reads a text file containing keys in the format generated by account_management.py")
-            filepath = input("Enter the path to the key file: ")
-            
-            try:
-                with open(filepath, 'r') as f:
-                    content = f.read()
-                
-                import re
-                # Regex to find Private keys associated with roles
-                # Format expected:
-                # ROLE:
-                #   Public: ...
-                #   Private: 5...
-                matches = re.findall(r"(OWNER|ACTIVE|POSTING|MEMO):\s+Public:\s+STM.*\s+Private:\s+(5[HJK][1-9A-Za-z]{48,})", content, re.MULTILINE)
-                
-                # Try to find account name
-                account_match = re.search(r"NEW KEYS for account (.*?):", content)
-                account_name = account_match.group(1) if account_match else "Unknown"
-                
-                if not matches:
-                    print("\n[!] No keys found in the expected format.")
-                else:
-                    print(f"\nFound {len(matches)} keys for account '{account_name}':")
-                    
-                    t = PrettyTable()
-                    t.field_names = ["Role", "Private Key (WIF)"]
-                    t.align = "l"
-                    for role, wif in matches:
-                        t.add_row([role, wif[:10] + "..." + wif[-5:]]) # Mask WIF for preview
-                    print(t)
-                    
-                    if not get_user_confirmation("\nDo you want to import these keys? (y/n): "):
-                        print("Import cancelled.")
-                        continue
-
-                    if not backup_wallet():
-                        print("Backup failed. Aborting import.")
-                        continue
-
-                    for role, wif in matches:
-                        print(f"Importing {role} key...")
-                        try:
-                            # Check if key exists
-                            try:
-                                pub = b.wallet.publickey_from_wif(wif)
-                                b.wallet.getPrivateKeyForPublicKey(pub)
-                                print(f"  [WARN] Key for {role} is already in the wallet.")
-                                if get_user_confirmation(f"  Do you want to replace the existing {role} key? (y/N): "):
-                                    try:
-                                        b.wallet.removePrivateKeyFromPublicKey(pub)
-                                    except:
-                                        pass 
-                                    
-                                    b.wallet.addPrivateKey(wif)
-                                    print(f"  Success: {role} key replaced.")
-                                else:
-                                    print(f"  Skipped.")
-                                continue
-                            except Exception:
-                                pass # Key not in wallet, proceed to add
-
-                            b.wallet.addPrivateKey(wif)
-                            print(f"  Success: {role} key added.")
-                            
-                            # Blockchain Update Check
-                            try:
-                                pub = b.wallet.publickey_from_wif(wif)
-                                acc_data = Account(account_name, blockchain_instance=b)
-                                
-                                is_on_chain = False
-                                if role == "OWNER":
-                                    for auth in acc_data["owner"]["key_auths"]:
-                                        if auth[0] == pub: is_on_chain = True
-                                elif role == "ACTIVE":
-                                    for auth in acc_data["active"]["key_auths"]:
-                                        if auth[0] == pub: is_on_chain = True
-                                elif role == "POSTING":
-                                    for auth in acc_data["posting"]["key_auths"]:
-                                        if auth[0] == pub: is_on_chain = True
-                                elif role == "MEMO":
-                                    if acc_data["memo_key"] == pub: is_on_chain = True
-                                
-                                if not is_on_chain:
-                                    print(f"  [NOTICE] This {role} key is NOT active on the blockchain.")
-                                    if get_user_confirmation(f"  Do you want to update your {role} key on the blockchain? (y/N): "):
-                                        print(f"  Updating {role} key...")
-                                        resp = update_account_key(b, account_name, pub, role.lower())
-                                        print(f"  [SUCCESS] Updated {role} key! Block: {resp.get('ref_block_num')}")
-                            except Exception as e:
-                                print(f"  Warning: Could not verify/update blockchain state: {e}")
-
-                        except Exception as e:
-                            print(f"  Error adding {role} key: {e}")
-                    
-                    print("Import complete. Transitioning to Key Management view...")
-                    time.sleep(1)
-                    manage_keys_loop(b)
-                    continue
-                                
-            except FileNotFoundError:
-                print("Error: File not found.")
-            except Exception as e:
-                print(f"Error reading file: {e}")
+            import_keys_routine(b)
 
         elif option == "4":
             print("\n--- Archive Wallet & Start Fresh ---")
