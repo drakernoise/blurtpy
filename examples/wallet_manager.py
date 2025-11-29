@@ -448,6 +448,17 @@ def add_key_routine(b):
     wif = getpass.getpass("Enter WIF Key (starts with 5...): ")
     
     try:
+        # Basic Validation
+        if not wif:
+            print("Error: Empty key entered.")
+            return
+        
+        if wif.startswith("STM") or wif.startswith("BLT"):
+            print("\n[!] Error: You entered a PUBLIC key.")
+            print("    Please enter the PRIVATE key (WIF), which usually starts with '5'.")
+            input("Press Enter to continue...")
+            return
+
         # Check if key exists
         try:
             pub = b.wallet.publickey_from_wif(wif)
