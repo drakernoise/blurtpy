@@ -317,21 +317,62 @@ def manage_keys_loop(b):
 
             elif choice == "2":
                 # Delete Logic
-                if get_user_confirmation("Are you sure you want to DELETE all orphan keys? (y/N): "):
-                    if backup_wallet():
-                        deleted_count = 0
-                        for k in orphans:
-                            try:
-                                b.wallet.removePrivateKeyFromPublicKey(k)
-                                deleted_count += 1
-                            except Exception as e:
-                                print(f"Error deleting {k}: {e}")
-                        print(f"Successfully deleted {deleted_count} orphan keys.")
-                        should_refresh = True
+                print("\n--- Delete Orphan Keys ---")
+                print("1. Delete ALL orphan keys")
+                print("2. Delete specific orphan key")
+                print("3. Cancel")
+                
+                del_choice = input("Choose an option: ")
+                
+                if del_choice == "1":
+                    if get_user_confirmation(f"Are you sure you want to DELETE ALL {len(orphans)} orphan keys? (y/N): "):
+                        if backup_wallet():
+                            deleted_count = 0
+                            for k in orphans:
+                                try:
+                                    b.wallet.removePrivateKeyFromPublicKey(k)
+                                    deleted_count += 1
+                                except Exception as e:
+                                    print(f"Error deleting {k}: {e}")
+                            print(f"Successfully deleted {deleted_count} orphan keys.")
+                            should_refresh = True
+                        else:
+                            print("Backup failed. Aborting deletion.")
                     else:
-                        print("Backup failed. Aborting deletion.")
+                        print("Deletion cancelled.")
+
+                elif del_choice == "2":
+                    # Select specific key to delete
+                    if len(orphans) == 1:
+                        target_key = orphans[0]
+                        print(f"Selected Key: {target_key}")
+                    else:
+                        print("Select key to delete:")
+                        for idx, k in enumerate(orphans):
+                            print(f"{idx+1}. {k}")
+                        try:
+                            sel = int(input("Enter number: "))
+                            target_key = orphans[sel-1]
+                        except:
+                            print("Invalid selection.")
+                            target_key = None
+                    
+                    if target_key:
+                        if get_user_confirmation(f"Are you sure you want to DELETE key {target_key[:10]}...? (y/N): "):
+                            if backup_wallet():
+                                try:
+                                    b.wallet.removePrivateKeyFromPublicKey(target_key)
+                                    print(f"Successfully deleted key {target_key[:10]}...")
+                                    should_refresh = True
+                                except Exception as e:
+                                    print(f"Error deleting key: {e}")
+                            else:
+                                print("Backup failed. Aborting.")
+                        else:
+                            print("Deletion cancelled.")
+                
                 else:
-                    print("Deletion cancelled.")
+                    print("Cancelled.")
                 
                 if should_refresh:
                     continue
