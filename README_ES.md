@@ -94,7 +94,7 @@ En la carpeta `docs/` encontrarás:
 
 ## Créditos
 
-`blurtpy` es un fork de [beem](https://github.com/holgern/beem) creado por Holger Hattendorf, quien a su vez se basó en `python-bitshares` de Fabian Schuh.
+`blurtpy` es un fork de la librería modificada por Samuel Alphée Richard (Saboin), la cual es un fork de [beem](https://github.com/holgern/beem) creado por Holger Hattendorf, quien a su vez se basó en `python-bitshares` de Fabian Schuh.
 Agradecemos a la comunidad de código abierto por sentar las bases de este proyecto.
 
 ## Licencia
