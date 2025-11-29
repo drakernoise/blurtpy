@@ -318,7 +318,7 @@ def add_key_routine(b):
         # Transition to Manage Keys Loop
         print("Transitioning to Key Management view...")
         time.sleep(1)
-        manage_keys_loop(b)
+        # manage_keys_loop(b)  <-- Removed recursive call
             
     except Exception as e:
         print(f"Error adding key: {e}")
@@ -411,19 +411,6 @@ def import_keys_routine(b):
                     except Exception as e:
                         print(f"  Warning: Could not verify/update blockchain state: {e}")
 
-                except Exception as e:
-                    print(f"  Error adding {role} key: {e}")
-            
-            print("Import complete. Transitioning to Key Management view...")
-            time.sleep(1)
-            manage_keys_loop(b)
-                        
-    except FileNotFoundError:
-        print("Error: File not found.")
-    except Exception as e:
-        print(f"Error reading file: {e}")
-
-def setup_wallet():
     """
     Interactive script to setup a secure wallet and add keys.
     """
@@ -479,12 +466,14 @@ def setup_wallet():
         
         if option == "1":
             add_key_routine(b)
+            manage_keys_loop(b) # Explicit transition
                 
         elif option == "2":
             manage_keys_loop(b)
 
         elif option == "3":
             import_keys_routine(b)
+            manage_keys_loop(b) # Explicit transition
 
         elif option == "4":
             print("\n--- Archive Wallet & Start Fresh ---")
