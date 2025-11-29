@@ -220,6 +220,227 @@ def manage_keys_loop(b):
 
         # Management Menu
         should_refresh = False
+        
+        print("\nWhat would you like to do?")
+        if orphans:
+            print("1. Promote an orphan key to be active on the blockchain")
+            print("2. Delete orphan keys")
+            print("3. Add a new private key (WIF)")
+            print("4. Import keys from file")
+            print("5. Return to Main Menu")
+        else:
+            print("1. Add a new private key (WIF)")
+            print("2. Import keys from file")
+            print("3. Return to Main Menu")
+        
+        choice = input("Choose an option: ")
+        
+        if orphans:
+            if choice == "1":
+                # Promote Logic
+                print("\n--- Promote Orphan Key ---")
+                
+                # Select Orphan
+                if len(orphans) == 1:
+                    target_key = orphans[0]
+                    try:
+                        wif = b.wallet.getPrivateKeyForPublicKey(target_key)
+                        print(f"Selected Key (WIF): {wif[:15]}...{wif[-5:]}")
+                    except:
+                        print(f"Selected Key: {target_key}")
+                else:
+                    print("Select key to promote (WIF):")
+                    for idx, k in enumerate(orphans):
+                        try:
+                            wif = b.wallet.getPrivateKeyForPublicKey(k)
+                            display_str = f"{wif[:15]}...{wif[-5:]}"
+                        except:
+                            display_str = k
+                        print(f"{idx+1}. {display_str}")
+                    try:
+                        sel = int(input("Enter number: "))
+                        target_key = orphans[sel-1]
+                    except:
+                        print("Invalid selection.")
+                        target_key = None
+                
+                if target_key:
+                    # Select Account
+                    target_account = ""
+                    if account_cache:
+                        known_accounts = list(account_cache.keys())
+                        if len(known_accounts) == 1:
+                            target_account = known_accounts[0]
+                            print(f"Target Account: {target_account}")
+                        else:
+                            print("Select Account to update:")
+                            for idx, acc in enumerate(known_accounts):
+                                print(f"{idx+1}. {acc}")
+                            try:
+                                sel = int(input("Enter number: "))
+                                target_account = known_accounts[sel-1]
+                            except:
+                                print("Invalid selection.")
+                    
+                    if not target_account:
+                        target_account = input("Enter the account name to update: ")
+                    
+                    if target_account:
+                        # Get WIF for display
+                        try:
+                            target_wif = b.wallet.getPrivateKeyForPublicKey(target_key)
+                            display_wif = f"{target_wif[:10]}..."
+                        except:
+                            display_wif = target_key[:10]
+
+                        print(f"Select role to assign to key {display_wif}...:")
+                        print("1. Owner (DANGEROUS)")
+                        print("2. Active")
+                        print("3. Posting")
+                        print("4. Memo")
+                        
+                        try:
+                            role_sel = int(input("Enter number: "))
+                            role_map = {1: "owner", 2: "active", 3: "posting", 4: "memo"}
+                            target_role = role_map.get(role_sel)
+                            
+                            if target_role:
+                                if target_role == "owner":
+                                    print("WARNING: Changing Owner key is critical. Ensure you have a backup!")
+                                    if not get_user_confirmation("Type 'yes' to confirm: ", strict=True):
+                                        print("Aborted.")
+                                        continue
+                                
+                                if not backup_wallet():
+                                    print("Backup failed. Aborting.")
+                                else:
+                                    print(f"Updating {target_role} key on blockchain...")
+                                    try:
+                                        resp = update_account_key(b, target_account, target_key, target_role)
+                                        print(f"[SUCCESS] Updated {target_role} key! Block: {resp.get('ref_block_num')}")
+                                        print("Waiting 3s for blockchain propagation...")
+                                        time.sleep(3)
+                                        print("Refreshing data to verify changes...")
+                                        should_refresh = True
+                                    except Exception as e:
+                                        print(f"Update failed: {e}")
+                            else:
+                                print("Invalid role.")
+                        except Exception as e:
+                            print(f"Update failed: {e}")
+                
+                if should_refresh:
+                    continue
+                else:
+                    input("Press Enter to continue...")
+                    continue
+
+            elif choice == "2":
+                # Delete Logic
+                print("\n--- Delete Orphan Keys ---")
+                print("1. Delete ALL orphan keys")
+                print("2. Delete specific orphan key")
+                print("3. Cancel")
+                
+                del_choice = input("Choose an option: ")
+                
+                if del_choice == "1":
+                    if get_user_confirmation(f"Are you sure you want to DELETE ALL {len(orphans)} orphan keys? (y/N): "):
+                        if backup_wallet():
+                            deleted_count = 0
+                            for k in orphans:
+                                try:
+                                    b.wallet.removePrivateKeyFromPublicKey(k)
+                                    deleted_count += 1
+                                except Exception as e:
+                                    print(f"Error deleting {k}: {e}")
+                            print(f"Successfully deleted {deleted_count} orphan keys.")
+                            should_refresh = True
+                        else:
+                            print("Backup failed. Aborting deletion.")
+                    else:
+                        print("Deletion cancelled.")
+
+                elif del_choice == "2":
+                    # Select specific key to delete
+                    if len(orphans) == 1:
+                        target_key = orphans[0]
+                        try:
+                            wif = b.wallet.getPrivateKeyForPublicKey(target_key)
+                            print(f"Selected Key (WIF): {wif[:15]}...{wif[-5:]}")
+                        except:
+                            print(f"Selected Key: {target_key}")
+                    else:
+                        print("Select key to delete (WIF):")
+                        for idx, k in enumerate(orphans):
+                            try:
+                                wif = b.wallet.getPrivateKeyForPublicKey(k)
+                                display_str = f"{wif[:15]}...{wif[-5:]}"
+                            except:
+                                display_str = k
+                            print(f"{idx+1}. {display_str}")
+                        try:
+                            sel = int(input("Enter number: "))
+                            target_key = orphans[sel-1]
+                        except:
+                            print("Invalid selection.")
+                            target_key = None
+                    
+                    if target_key:
+                        # Get WIF for confirmation display
+                        try:
+                            target_wif = b.wallet.getPrivateKeyForPublicKey(target_key)
+                            display_wif = f"{target_wif[:15]}...{target_wif[-5:]}"
+                        except:
+                            display_wif = target_key[:10] + "..."
+
+                        if get_user_confirmation(f"Are you sure you want to DELETE key {display_wif}? (y/N): "):
+                            if backup_wallet():
+                                try:
+                                    b.wallet.removePrivateKeyFromPublicKey(target_key)
+                                    print(f"Successfully deleted key {display_wif}...")
+                                    should_refresh = True
+                                except Exception as e:
+                                    print(f"Error deleting key: {e}")
+                            else:
+                                print("Backup failed. Aborting.")
+                        else:
+                            print("Deletion cancelled.")
+                
+                else:
+                    print("Cancelled.")
+                
+                if should_refresh:
+                    continue
+                else:
+                    input("Press Enter to continue...")
+                    continue
+
+            elif choice == "3":
+                add_key_routine(b)
+                continue
+            elif choice == "4":
+                import_keys_routine(b)
+                continue
+            elif choice == "5":
+                break
+            
+            else:
+                print("Invalid option.")
+                continue
+
+        else: # No orphans
+            if choice == "1":
+                add_key_routine(b)
+                continue
+            elif choice == "2":
+                import_keys_routine(b)
+                continue
+            elif choice == "3":
+                break
+            else:
+                print("Invalid option.")
+                continue
 def add_key_routine(b):
     print("\n--- Add a New Private Key ---")
     print("Valid types: Posting, Active, Owner, Memo.")
