@@ -341,6 +341,7 @@ def manage_keys_loop(b):
                 print("Invalid option.")
                 continue
 
+def setup_wallet():
     """
     Interactive script to setup a secure wallet and add keys.
     """
