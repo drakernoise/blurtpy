@@ -243,7 +243,12 @@ def manage_keys_loop(b):
                 else:
                     print("Select key to promote:")
                     for idx, k in enumerate(orphans):
-                        print(f"{idx+1}. {k}")
+                        try:
+                            wif = b.wallet.getPrivateKeyForPublicKey(k)
+                            display_str = f"{k} | {wif[:10]}...{wif[-5:]}"
+                        except:
+                            display_str = k
+                        print(f"{idx+1}. {display_str}")
                     try:
                         sel = int(input("Enter number: "))
                         target_key = orphans[sel-1]
@@ -349,7 +354,12 @@ def manage_keys_loop(b):
                     else:
                         print("Select key to delete:")
                         for idx, k in enumerate(orphans):
-                            print(f"{idx+1}. {k}")
+                            try:
+                                wif = b.wallet.getPrivateKeyForPublicKey(k)
+                                display_str = f"{k} | {wif[:10]}...{wif[-5:]}"
+                            except:
+                                display_str = k
+                            print(f"{idx+1}. {display_str}")
                         try:
                             sel = int(input("Enter number: "))
                             target_key = orphans[sel-1]
