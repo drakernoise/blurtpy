@@ -423,6 +423,7 @@ def import_keys_routine(b):
     except Exception as e:
         print(f"Error reading file: {e}")
 
+def setup_wallet():
     """
     Interactive script to setup a secure wallet and add keys.
     """
