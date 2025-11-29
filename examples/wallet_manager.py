@@ -239,13 +239,17 @@ def manage_keys_loop(b):
                 # Select Orphan
                 if len(orphans) == 1:
                     target_key = orphans[0]
-                    print(f"Selected Key: {target_key}")
+                    try:
+                        wif = b.wallet.getPrivateKeyForPublicKey(target_key)
+                        print(f"Selected Key (WIF): {wif[:15]}...{wif[-5:]}")
+                    except:
+                        print(f"Selected Key: {target_key}")
                 else:
-                    print("Select key to promote:")
+                    print("Select key to promote (WIF):")
                     for idx, k in enumerate(orphans):
                         try:
                             wif = b.wallet.getPrivateKeyForPublicKey(k)
-                            display_str = f"{k} | {wif[:10]}...{wif[-5:]}"
+                            display_str = f"{wif[:15]}...{wif[-5:]}"
                         except:
                             display_str = k
                         print(f"{idx+1}. {display_str}")
@@ -278,7 +282,14 @@ def manage_keys_loop(b):
                         target_account = input("Enter the account name to update: ")
                     
                     if target_account:
-                        print(f"Select role to assign to key {target_key[:10]}...:")
+                        # Get WIF for display
+                        try:
+                            target_wif = b.wallet.getPrivateKeyForPublicKey(target_key)
+                            display_wif = f"{target_wif[:10]}..."
+                        except:
+                            display_wif = target_key[:10]
+
+                        print(f"Select role to assign to key {display_wif}...:")
                         print("1. Owner (DANGEROUS)")
                         print("2. Active")
                         print("3. Posting")
@@ -350,13 +361,17 @@ def manage_keys_loop(b):
                     # Select specific key to delete
                     if len(orphans) == 1:
                         target_key = orphans[0]
-                        print(f"Selected Key: {target_key}")
+                        try:
+                            wif = b.wallet.getPrivateKeyForPublicKey(target_key)
+                            print(f"Selected Key (WIF): {wif[:15]}...{wif[-5:]}")
+                        except:
+                            print(f"Selected Key: {target_key}")
                     else:
-                        print("Select key to delete:")
+                        print("Select key to delete (WIF):")
                         for idx, k in enumerate(orphans):
                             try:
                                 wif = b.wallet.getPrivateKeyForPublicKey(k)
-                                display_str = f"{k} | {wif[:10]}...{wif[-5:]}"
+                                display_str = f"{wif[:15]}...{wif[-5:]}"
                             except:
                                 display_str = k
                             print(f"{idx+1}. {display_str}")
@@ -368,11 +383,18 @@ def manage_keys_loop(b):
                             target_key = None
                     
                     if target_key:
-                        if get_user_confirmation(f"Are you sure you want to DELETE key {target_key[:10]}...? (y/N): "):
+                        # Get WIF for confirmation display
+                        try:
+                            target_wif = b.wallet.getPrivateKeyForPublicKey(target_key)
+                            display_wif = f"{target_wif[:15]}...{target_wif[-5:]}"
+                        except:
+                            display_wif = target_key[:10] + "..."
+
+                        if get_user_confirmation(f"Are you sure you want to DELETE key {display_wif}? (y/N): "):
                             if backup_wallet():
                                 try:
                                     b.wallet.removePrivateKeyFromPublicKey(target_key)
-                                    print(f"Successfully deleted key {target_key[:10]}...")
+                                    print(f"Successfully deleted key {display_wif}...")
                                     should_refresh = True
                                 except Exception as e:
                                     print(f"Error deleting key: {e}")
