@@ -75,6 +75,18 @@ def print_banner():
   ____  _             _              
  | __ )| |_   _ _ __| |_ _ __  _   _ 
  |  _ \| | | | | '__| __| '_ \| | | |
+ | |_) | | |_| | |  | |_| |_) | |_| |
+ |____/|_|\__,_|_|   \__| .__/ \__, |
+                        |_|    |___/ 
+      Wallet Manager v1.0
+    """)
+
+def backup_wallet():
+    """Creates a timestamped backup of the wallet file."""
+    try:
+        appauthor = "blurtpy"
+        appname = "blurtpy"
+        data_dir = user_data_dir(appname, appauthor)
         db_file = os.path.join(data_dir, "blurtpy.sqlite")
         
         if os.path.exists(db_file):
