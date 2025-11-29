@@ -445,23 +445,36 @@ def add_key_routine(b):
     print("\n--- Add a New Private Key ---")
     print("Valid types: Posting, Active, Owner, Memo.")
     print("(Note: The Master Password is NOT a WIF key).")
-    wif = getpass.getpass("Enter WIF Key (starts with 5...): ")
     
-    try:
-        # Basic Validation
-        if not wif:
-            print("Error: Empty key entered.")
+    while True:
+        wif = getpass.getpass("Enter WIF Key (starts with 5...) [or 'c' to cancel]: ").strip()
+        
+        if wif.lower() == 'c':
+            print("Cancelled.")
             return
+
+        if not wif:
+            print("Error: Empty key.")
+            continue
         
         if wif.startswith("STM") or wif.startswith("BLT"):
             print("\n[!] Error: You entered a PUBLIC key.")
             print("    Please enter the PRIVATE key (WIF), which usually starts with '5'.")
-            input("Press Enter to continue...")
-            return
+            continue
 
+        try:
+            # Validate format immediately
+            pub = b.wallet.publickey_from_wif(wif)
+            break # Valid key
+        except Exception as e:
+            print(f"\n[!] Invalid Key format. Error: {e}")
+            print("    Ensure it is a valid WIF private key.")
+    
+    try:
         # Check if key exists
         try:
-            pub = b.wallet.publickey_from_wif(wif)
+            # pub is already derived
+            b.wallet.getPrivateKeyForPublicKey(pub)
             b.wallet.getPrivateKeyForPublicKey(pub)
             print("\n[!] Key already in wallet.")
             if not get_user_confirmation("Do you want to replace it? (y/N): "):
