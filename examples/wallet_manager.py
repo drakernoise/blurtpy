@@ -411,6 +411,18 @@ def import_keys_routine(b):
                     except Exception as e:
                         print(f"  Warning: Could not verify/update blockchain state: {e}")
 
+                except Exception as e:
+                    print(f"  Error adding {role} key: {e}")
+            
+            print("Import complete. Transitioning to Key Management view...")
+            time.sleep(1)
+            return
+                        
+    except FileNotFoundError:
+        print("Error: File not found.")
+    except Exception as e:
+        print(f"Error reading file: {e}")
+
     """
     Interactive script to setup a secure wallet and add keys.
     """
