@@ -224,7 +224,7 @@ def manage_keys_loop(b):
         print("\nWhat would you like to do?")
         if orphans:
             print("1. Promote an orphan key to be active on the blockchain")
-            print("2. Delete all orphan keys")
+            print("2. Delete orphan keys")
             print("3. Return to Main Menu")
         else:
             print("1. Return to Main Menu")
