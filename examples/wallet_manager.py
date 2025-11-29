@@ -75,18 +75,6 @@ def print_banner():
   ____  _             _              
  | __ )| |_   _ _ __| |_ _ __  _   _ 
  |  _ \| | | | | '__| __| '_ \| | | |
- | |_) | | |_| | |  | |_| |_) | |_| |
- |____/|_|\__,_|_|   \__| .__/ \__, |
-                        |_|    |___/ 
-      Wallet Manager v1.0
-    """)
-
-def backup_wallet():
-    """Creates a timestamped backup of the wallet file."""
-    try:
-        appauthor = "blurtpy"
-        appname = "blurtpy"
-        data_dir = user_data_dir(appname, appauthor)
         db_file = os.path.join(data_dir, "blurtpy.sqlite")
         
         if os.path.exists(db_file):
@@ -100,7 +88,259 @@ def backup_wallet():
         return False
 
 
-def setup_wallet():
+def get_user_confirmation(prompt, strict=False):
+    """
+    Helper to get user confirmation.
+    strict=False: accepts 'y', 'n' (case insensitive).
+    strict=True: requires 'yes', 'no' (case insensitive).
+    """
+    while True:
+        response = input(prompt).strip().lower()
+        if strict:
+            if response == 'yes':
+                return True
+            elif response == 'no':
+                return False
+            else:
+                print("  [!] Invalid input. Please type 'yes' or 'no'.")
+        else:
+            if response in ['y', 'yes']:
+                return True
+            elif response in ['n', 'no']:
+                return False
+            else:
+                print("  [!] Invalid input. Please type 'y' or 'n'.")
+
+def manage_keys_loop(b):
+    """
+    Displays keys, analyzes roles, and offers management options.
+    Replaces the old Option 2 logic.
+    """
+    while True: # Analysis Refresh Loop
+        keys = b.wallet.getPublicKeys()
+        print(f"\nThere are {len(keys)} saved keys. Analyzing on blockchain...")
+        
+        analyzed_keys = []
+        orphans = []
+        account_cache = {}
+        
+        for k in keys:
+            key_info = {"pub": k, "roles": []}
+            try:
+                accounts = list(b.wallet.getAccountsFromPublicKey(k))
+                if accounts:
+                    for acc_name in accounts:
+                        try:
+                            if acc_name in account_cache:
+                                acc = account_cache[acc_name]
+                            else:
+                                acc = Account(acc_name, blockchain_instance=b)
+                                account_cache[acc_name] = acc
+                            
+                            # Check roles
+                            found_role = False
+                            # Owner
+                            for auth in acc["owner"]["key_auths"]:
+                                if auth[0] == k:
+                                    key_info["roles"].append(f"[OWNER] {acc_name}")
+                                    found_role = True
+                            # Active
+                            for auth in acc["active"]["key_auths"]:
+                                if auth[0] == k:
+                                    key_info["roles"].append(f"[ACTIVE] {acc_name}")
+                                    found_role = True
+                            # Posting
+                            for auth in acc["posting"]["key_auths"]:
+                                if auth[0] == k:
+                                    key_info["roles"].append(f"[POSTING] {acc_name}")
+                                    found_role = True
+                            # Memo
+                            if acc["memo_key"] == k:
+                                key_info["roles"].append(f"[MEMO] {acc_name}")
+                                found_role = True
+                            
+                            if not found_role:
+                                    key_info["roles"].append(f"[UNKNOWN-ROLE] {acc_name}")
+                        except Exception:
+                            key_info["roles"].append(f"[ERROR-CHECKING] {acc_name}")
+                else:
+                    key_info["roles"].append("[ORPHAN] (No account found)")
+                    orphans.append(k)
+            except Exception as e:
+                key_info["roles"].append(f"[ERROR] {e}")
+            
+            analyzed_keys.append(key_info)
+
+        # Second Pass: Check orphans against found accounts for Memo keys
+        if orphans and account_cache:
+                print(f"Performing second pass check for Memo keys on {len(orphans)} orphan(s)...")
+                for orphan_k in list(orphans):
+                    for acc_name, acc in account_cache.items():
+                        try:
+                            if acc["memo_key"] == orphan_k:
+                                # Update analyzed_keys
+                                for item in analyzed_keys:
+                                    if item["pub"] == orphan_k:
+                                        item["roles"] = [f"[MEMO] {acc_name}"]
+                                orphans.remove(orphan_k)
+                                break 
+                        except:
+                            pass
+
+        # Display Results using PrettyTable (Always show Private Keys)
+        print("\n" + "!"*60)
+        print(" [WARNING] DISPLAYING PRIVATE KEYS - ENSURE NO ONE IS WATCHING ")
+        print("!"*60 + "\n")
+
+        t = PrettyTable()
+        t.field_names = ["Public Key", "Role / Status", "Private Key (WIF)"]
+        t.align = "l"
+        
+        for item in analyzed_keys:
+            roles_str = ", ".join(item["roles"])
+            try:
+                priv = b.wallet.getPrivateKeyForPublicKey(item["pub"])
+            except Exception as e:
+                priv = f"Error: {e}"
+            t.add_row([item['pub'], roles_str, priv])
+        
+        print(t)
+
+        # Management Menu
+        should_refresh = False
+        
+        print("\nWhat would you like to do?")
+        if orphans:
+            print("1. Promote an orphan key to be active on the blockchain")
+            print("2. Delete all orphan keys")
+            print("3. Return to Main Menu")
+        else:
+            print("1. Return to Main Menu")
+        
+        choice = input("Choose an option: ")
+        
+        if orphans:
+            if choice == "1":
+                # Promote Logic
+                print("\n--- Promote Orphan Key ---")
+                
+                # Select Orphan
+                if len(orphans) == 1:
+                    target_key = orphans[0]
+                    print(f"Selected Key: {target_key}")
+                else:
+                    print("Select key to promote:")
+                    for idx, k in enumerate(orphans):
+                        print(f"{idx+1}. {k}")
+                    try:
+                        sel = int(input("Enter number: "))
+                        target_key = orphans[sel-1]
+                    except:
+                        print("Invalid selection.")
+                        target_key = None
+                
+                if target_key:
+                    # Select Account
+                    target_account = ""
+                    if account_cache:
+                        known_accounts = list(account_cache.keys())
+                        if len(known_accounts) == 1:
+                            target_account = known_accounts[0]
+                            print(f"Target Account: {target_account}")
+                        else:
+                            print("Select Account to update:")
+                            for idx, acc in enumerate(known_accounts):
+                                print(f"{idx+1}. {acc}")
+                            try:
+                                sel = int(input("Enter number: "))
+                                target_account = known_accounts[sel-1]
+                            except:
+                                print("Invalid selection.")
+                    
+                    if not target_account:
+                        target_account = input("Enter the account name to update: ")
+                    
+                    if target_account:
+                        print(f"Select role to assign to key {target_key[:10]}...:")
+                        print("1. Owner (DANGEROUS)")
+                        print("2. Active")
+                        print("3. Posting")
+                        print("4. Memo")
+                        
+                        try:
+                            role_sel = int(input("Enter number: "))
+                            role_map = {1: "owner", 2: "active", 3: "posting", 4: "memo"}
+                            target_role = role_map.get(role_sel)
+                            
+                            if target_role:
+                                if target_role == "owner":
+                                    print("WARNING: Changing Owner key is critical. Ensure you have a backup!")
+                                    if not get_user_confirmation("Type 'yes' to confirm: ", strict=True):
+                                        print("Aborted.")
+                                        continue
+                                
+                                if not backup_wallet():
+                                    print("Backup failed. Aborting.")
+                                else:
+                                    print(f"Updating {target_role} key on blockchain...")
+                                    try:
+                                        resp = update_account_key(b, target_account, target_key, target_role)
+                                        print(f"[SUCCESS] Updated {target_role} key! Block: {resp.get('ref_block_num')}")
+                                        print("Waiting 3s for blockchain propagation...")
+                                        time.sleep(3)
+                                        print("Refreshing data to verify changes...")
+                                        should_refresh = True
+                                    except Exception as e:
+                                        print(f"Update failed: {e}")
+                            else:
+                                print("Invalid role.")
+                        except Exception as e:
+                            print(f"Update failed: {e}")
+                
+                if should_refresh:
+                    continue
+                else:
+                    input("Press Enter to continue...")
+                    continue
+
+            elif choice == "2":
+                # Delete Logic
+                if get_user_confirmation("Are you sure you want to DELETE all orphan keys? (y/N): "):
+                    if backup_wallet():
+                        deleted_count = 0
+                        for k in orphans:
+                            try:
+                                b.wallet.removePrivateKeyFromPublicKey(k)
+                                deleted_count += 1
+                            except Exception as e:
+                                print(f"Error deleting {k}: {e}")
+                        print(f"Successfully deleted {deleted_count} orphan keys.")
+                        should_refresh = True
+                    else:
+                        print("Backup failed. Aborting deletion.")
+                else:
+                    print("Deletion cancelled.")
+                
+                if should_refresh:
+                    continue
+                else:
+                    input("Press Enter to continue...")
+                    continue
+
+            elif choice == "3":
+                break
+            
+            else:
+                print("Invalid option.")
+                continue
+
+        else: # No orphans
+            if choice == "1":
+                break
+            else:
+                print("Invalid option.")
+                continue
+
     """
     Interactive script to setup a secure wallet and add keys.
     """
@@ -172,10 +412,8 @@ def setup_wallet():
                 try:
                     b.wallet.getPrivateKeyForPublicKey(b.wallet.publickey_from_wif(wif))
                     print("\n[!] Key already in wallet.")
-                    replace = input("Do you want to replace it? (y/N): ")
-                    if replace.lower() != 'y':
+                    if not get_user_confirmation("Do you want to replace it? (y/N): "):
                         print("Skipped.")
-                        input("\nPress Enter to continue...")
                         continue
                 except Exception:
                     pass # Key not in wallet
@@ -186,375 +424,27 @@ def setup_wallet():
                     continue
 
                 # If we are replacing, we must remove the old key first
-                # (We know it exists if we are here and didn't continue)
-                # But wait, the try/except block above handles the "exists" check.
-                # If we are here, either it didn't exist, OR it existed and user said 'y'.
-                # If it existed, we need to remove it.
-                # Re-check existence to be safe or use a flag?
-                # Let's just try to remove it if we can, or rely on addPrivateKey raising.
-                # But addPrivateKey raises.
-                
                 pub = b.wallet.publickey_from_wif(wif)
                 try:
                     b.wallet.getPrivateKeyForPublicKey(pub)
-                    # It exists, so we must be in "replace=y" mode
                     b.wallet.removePrivateKeyFromPublicKey(pub)
                 except:
-                    pass # Didn't exist
+                    pass 
 
                 b.wallet.addPrivateKey(wif)
                 print("Key added successfully!")
                 
-                # Try to identify which account it belongs to
-                pub = b.wallet.publickey_from_wif(wif)
-                account = b.wallet.getAccountFromPublicKey(pub)
-                
-                if account:
-                    print(f"This key belongs to account: {account}")
-                    
-                    # Check if this key matches the blockchain state for any role
-                    # If not, it might be a new key the user wants to set
-                    try:
-                        acc_data = Account(account, blockchain_instance=b)
-                        
-                        # Determine which role this key MIGHT be intended for
-                        # This is tricky because we don't know what the user intends.
-                        # But if it's NOT in the blockchain, we can ask.
-                        
-                        is_on_chain = False
-                        roles_on_chain = []
-                        
-                        # Check Owner
-                        for auth in acc_data["owner"]["key_auths"]:
-                            if auth[0] == pub:
-                                is_on_chain = True
-                                roles_on_chain.append("OWNER")
-                        # Check Active
-                        for auth in acc_data["active"]["key_auths"]:
-                            if auth[0] == pub:
-                                is_on_chain = True
-                                roles_on_chain.append("ACTIVE")
-                        # Check Posting
-                        for auth in acc_data["posting"]["key_auths"]:
-                            if auth[0] == pub:
-                                is_on_chain = True
-                                roles_on_chain.append("POSTING")
-                        # Check Memo
-                        if acc_data["memo_key"] == pub:
-                            is_on_chain = True
-                            roles_on_chain.append("MEMO")
-                            
-                        if is_on_chain:
-                            print(f"Blockchain Status: Active as {', '.join(roles_on_chain)} key.")
-                        else:
-                            print("\n[NOTICE] This key is NOT currently active on the blockchain for account '{}'.".format(account))
-                            update = input("Do you want to UPDATE your account to use this key? (y/N): ")
-                            if update.lower() == 'y':
-                                print("Select role to assign to this key:")
-                                print("1. Owner (DANGEROUS)")
-                                print("2. Active")
-                                print("3. Posting")
-                                print("4. Memo")
-                                
-                                try:
-                                    role_sel = int(input("Enter number: "))
-                                    role_map = {1: "owner", 2: "active", 3: "posting", 4: "memo"}
-                                    target_role = role_map.get(role_sel)
-                                    
-                                    if target_role:
-                                        if target_role == "owner":
-                                            print("WARNING: Changing Owner key is critical. Ensure you have a backup!")
-                                            confirm = input("Type 'CONFIRM' to proceed: ")
-                                            if confirm != "CONFIRM":
-                                                print("Aborted.")
-                                                raise Exception("Cancelled by user")
-                                        
-                                        print(f"Updating {target_role} key on blockchain...")
-                                        resp = update_account_key(b, account, pub, target_role)
-                                        print(f"[SUCCESS] Updated {target_role} key! Block: {resp.get('ref_block_num')}")
-                                    else:
-                                        print("Invalid role selected.")
-                                except Exception as e:
-                                    print(f"Update failed: {e}")
-
-                    except Exception as e:
-                        print(f"Error checking blockchain state: {e}")
-
-                else:
-                    print("Key saved. (Note: Could not automatically identify the account,")
-                    print("this is normal for Memo keys or if there are connection issues).")
-                    
-                    # If we can't identify the account, we can't update it easily without asking for the account name.
-                    # For now, let's leave it simple.
+                # Transition to Manage Keys Loop
+                print("Transitioning to Key Management view...")
+                time.sleep(1)
+                manage_keys_loop(b)
                     
             except Exception as e:
                 print(f"Error adding key: {e}")
-            
-            input("\nPress Enter to continue...")
+                input("Press Enter to continue...")
                 
         elif option == "2":
-            while True: # Analysis Refresh Loop
-                keys = b.wallet.getPublicKeys()
-                print(f"\nThere are {len(keys)} saved keys. Analyzing on blockchain...")
-                
-                analyzed_keys = []
-                orphans = []
-                account_cache = {}
-                
-                for k in keys:
-                    key_info = {"pub": k, "roles": []}
-                    try:
-                        accounts = list(b.wallet.getAccountsFromPublicKey(k))
-                        if accounts:
-                            for acc_name in accounts:
-                                try:
-                                    if acc_name in account_cache:
-                                        acc = account_cache[acc_name]
-                                    else:
-                                        acc = Account(acc_name, blockchain_instance=b)
-                                        account_cache[acc_name] = acc
-                                    
-                                    # Check roles
-                                    found_role = False
-                                    # Owner
-                                    for auth in acc["owner"]["key_auths"]:
-                                        if auth[0] == k:
-                                            key_info["roles"].append(f"[OWNER] {acc_name}")
-                                            found_role = True
-                                    # Active
-                                    for auth in acc["active"]["key_auths"]:
-                                        if auth[0] == k:
-                                            key_info["roles"].append(f"[ACTIVE] {acc_name}")
-                                            found_role = True
-                                    # Posting
-                                    for auth in acc["posting"]["key_auths"]:
-                                        if auth[0] == k:
-                                            key_info["roles"].append(f"[POSTING] {acc_name}")
-                                            found_role = True
-                                    # Memo
-                                    if acc["memo_key"] == k:
-                                        key_info["roles"].append(f"[MEMO] {acc_name}")
-                                        found_role = True
-                                    
-                                    if not found_role:
-                                         key_info["roles"].append(f"[UNKNOWN-ROLE] {acc_name}")
-                                except Exception:
-                                    key_info["roles"].append(f"[ERROR-CHECKING] {acc_name}")
-                        else:
-                            key_info["roles"].append("[ORPHAN] (No account found)")
-                            orphans.append(k)
-                    except Exception as e:
-                        key_info["roles"].append(f"[ERROR] {e}")
-                    
-                    analyzed_keys.append(key_info)
-
-                # Second Pass: Check orphans against found accounts for Memo keys
-                if orphans and account_cache:
-                     print(f"Performing second pass check for Memo keys on {len(orphans)} orphan(s)...")
-                     for orphan_k in list(orphans):
-                         for acc_name, acc in account_cache.items():
-                             try:
-                                 if acc["memo_key"] == orphan_k:
-                                     # Update analyzed_keys
-                                     for item in analyzed_keys:
-                                         if item["pub"] == orphan_k:
-                                             item["roles"] = [f"[MEMO] {acc_name}"]
-                                     orphans.remove(orphan_k)
-                                     break 
-                             except:
-                                 pass
-
-                # Display Results using PrettyTable
-                t = PrettyTable()
-                t.field_names = ["Public Key", "Role / Status"]
-                t.align = "l"
-                
-                for item in analyzed_keys:
-                    roles_str = ", ".join(item["roles"])
-                    t.add_row([item['pub'], roles_str])
-                
-                print(t)
-
-                # Inline Handling for Orphans
-                should_refresh = False
-                if orphans:
-                    while True:
-                        print(f"\n[NOTICE] Found {len(orphans)} orphan key(s) that are not used by any account.")
-                        print("What would you like to do?")
-                        print("1. Promote an orphan key to be active on the blockchain")
-                        print("2. Delete all orphan keys")
-                        print("3. Keep them (Do nothing)")
-                        print("4. Reveal Private Keys (Inspect before deciding)")
-                        
-                        choice = input("Choose an option (1-4): ")
-                        
-                        if choice == "1":
-                            # Promote Logic
-                            print("\n--- Promote Orphan Key ---")
-                            
-                            # Select Orphan
-                            if len(orphans) == 1:
-                                target_key = orphans[0]
-                                print(f"Selected Key: {target_key}")
-                            else:
-                                print("Select key to promote:")
-                                for idx, k in enumerate(orphans):
-                                    print(f"{idx+1}. {k}")
-                                try:
-                                    sel = int(input("Enter number: "))
-                                    target_key = orphans[sel-1]
-                                except:
-                                    print("Invalid selection.")
-                                    target_key = None
-                            
-                            if target_key:
-                                # Select Account
-                                target_account = ""
-                                if account_cache:
-                                    known_accounts = list(account_cache.keys())
-                                    if len(known_accounts) == 1:
-                                        target_account = known_accounts[0]
-                                        print(f"Target Account: {target_account}")
-                                    else:
-                                        print("Select Account to update:")
-                                        for idx, acc in enumerate(known_accounts):
-                                            print(f"{idx+1}. {acc}")
-                                        try:
-                                            sel = int(input("Enter number: "))
-                                            target_account = known_accounts[sel-1]
-                                        except:
-                                            print("Invalid selection.")
-                                
-                                if not target_account:
-                                    target_account = input("Enter the account name to update: ")
-                                
-                                if target_account:
-                                    print(f"Select role to assign to key {target_key[:10]}...:")
-                                    print("1. Owner (DANGEROUS)")
-                                    print("2. Active")
-                                    print("3. Posting")
-                                    print("4. Memo")
-                                    
-                                    try:
-                                        role_sel = int(input("Enter number: "))
-                                        role_map = {1: "owner", 2: "active", 3: "posting", 4: "memo"}
-                                        target_role = role_map.get(role_sel)
-                                        
-                                        if target_role:
-                                            if target_role == "owner":
-                                                print("WARNING: Changing Owner key is critical. Ensure you have a backup!")
-                                                confirm = input("Type 'CONFIRM' to proceed: ")
-                                                if confirm != "CONFIRM":
-                                                    print("Aborted.")
-                                                    continue
-                                            
-                                            if not backup_wallet():
-                                                print("Backup failed. Aborting.")
-                                            else:
-                                                print(f"Updating {target_role} key on blockchain...")
-                                                try:
-                                                    resp = update_account_key(b, target_account, target_key, target_role)
-                                                    print(f"[SUCCESS] Updated {target_role} key! Block: {resp.get('ref_block_num')}")
-                                                    print("Waiting 3s for blockchain propagation...")
-                                                    time.sleep(3)
-                                                    print("Refreshing data to verify changes...")
-                                                    should_refresh = True
-                                                    break 
-                                                except Exception as e:
-                                                    print(f"Update failed: {e}")
-                                    except Exception as e:
-                                        print(f"Update failed: {e}")
-                            continue 
-
-                        elif choice == "2":
-                            # Delete Logic
-                            confirm = input("Are you sure you want to DELETE all orphan keys? (y/N): ")
-                            if confirm.lower() == 'y':
-                                if backup_wallet():
-                                    deleted_count = 0
-                                    for k in orphans:
-                                        try:
-                                            b.wallet.removePrivateKeyFromPublicKey(k)
-                                            deleted_count += 1
-                                        except Exception as e:
-                                            print(f"Error deleting {k}: {e}")
-                                    print(f"Successfully deleted {deleted_count} orphan keys.")
-                                    should_refresh = True
-                                    break
-                                else:
-                                    print("Backup failed. Aborting deletion.")
-                            else:
-                                print("Deletion cancelled.")
-                            continue
-
-                        elif choice == "3":
-                            print("Keeping orphan keys.")
-                            break
-                        
-                        elif choice == "4":
-                            print("\n" + "!"*60)
-                            print(" [WARNING] DISPLAYING PRIVATE KEYS - ENSURE NO ONE IS WATCHING ")
-                            print("!"*60 + "\n")
-                            
-                            pt = PrettyTable()
-                            pt.field_names = ["Public Key", "Role", "Private Key"]
-                            pt.align = "l"
-                            
-                            for item in analyzed_keys:
-                                try:
-                                    priv = b.wallet.getPrivateKeyForPublicKey(item["pub"])
-                                    roles_str = ", ".join(item["roles"])
-                                    pt.add_row([item['pub'], roles_str, priv])
-                                except Exception as e:
-                                    pt.add_row([item['pub'], "Error", str(e)])
-                            print(pt)
-                            input("\nPress Enter to return to menu...")
-                            continue
-
-                        else:
-                            print("Invalid option.")
-                            continue
-                
-                if should_refresh:
-                    continue
-
-                if analyzed_keys and not orphans: # Only ask if we haven't already dealt with orphans (or if there were none)
-                     # But if we just refreshed, we might have orphans again or not.
-                     # If we are here, it means we are NOT refreshing.
-                     pass
-
-                if analyzed_keys:
-                    show_priv = input("\nDo you want to reveal the PRIVATE keys for the remaining keys? (yes/NO): ")
-                    if show_priv.lower() == "yes":
-                        print("\n" + "!"*60)
-                        print(" [WARNING] DISPLAYING PRIVATE KEYS - ENSURE NO ONE IS WATCHING ")
-                        print("!"*60 + "\n")
-                        
-                        pt = PrettyTable()
-                        pt.field_names = ["Public Key", "Role", "Private Key"]
-                        pt.align = "l"
-                        
-                        for item in analyzed_keys:
-                            try:
-                                priv = b.wallet.getPrivateKeyForPublicKey(item["pub"])
-                                roles_str = ", ".join(item["roles"])
-                                pt.add_row([item['pub'], roles_str, priv])
-                            except Exception as e:
-                                pt.add_row([item['pub'], "Error", str(e)])
-                        print(pt)
-                        input("\nPress Enter to clear screen and continue...")
-                        clear_screen()
-                        # continue # This would restart the analysis loop, effectively refreshing.
-                        # But maybe user wants to exit Option 2.
-                        # Let's break to go back to Main Menu.
-                        break
-                    else:
-                        break # Go back to Main Menu
-                else:
-                    print("\nNo keys remaining in wallet.")
-                    break
-            
-            input("\nPress Enter to continue...")
+            manage_keys_loop(b)
 
         elif option == "3":
             print("\n--- Import Keys from File ---")
@@ -589,15 +479,12 @@ def setup_wallet():
                         t.add_row([role, wif[:10] + "..." + wif[-5:]]) # Mask WIF for preview
                     print(t)
                     
-                    confirm_import = input("\nDo you want to import these keys? (y/n): ")
-                    if confirm_import.lower() != 'y':
+                    if not get_user_confirmation("\nDo you want to import these keys? (y/n): "):
                         print("Import cancelled.")
-                        input("\nPress Enter to continue...")
                         continue
 
                     if not backup_wallet():
                         print("Backup failed. Aborting import.")
-                        input("\nPress Enter to continue...")
                         continue
 
                     for role, wif in matches:
@@ -608,8 +495,7 @@ def setup_wallet():
                                 pub = b.wallet.publickey_from_wif(wif)
                                 b.wallet.getPrivateKeyForPublicKey(pub)
                                 print(f"  [WARN] Key for {role} is already in the wallet.")
-                                replace = input(f"  Do you want to replace the existing {role} key? (y/N): ")
-                                if replace.lower() == 'y':
+                                if get_user_confirmation(f"  Do you want to replace the existing {role} key? (y/N): "):
                                     try:
                                         b.wallet.removePrivateKeyFromPublicKey(pub)
                                     except:
@@ -646,8 +532,7 @@ def setup_wallet():
                                 
                                 if not is_on_chain:
                                     print(f"  [NOTICE] This {role} key is NOT active on the blockchain.")
-                                    update = input(f"  Do you want to update your {role} key on the blockchain? (y/N): ")
-                                    if update.lower() == 'y':
+                                    if get_user_confirmation(f"  Do you want to update your {role} key on the blockchain? (y/N): "):
                                         print(f"  Updating {role} key...")
                                         resp = update_account_key(b, account_name, pub, role.lower())
                                         print(f"  [SUCCESS] Updated {role} key! Block: {resp.get('ref_block_num')}")
@@ -657,8 +542,9 @@ def setup_wallet():
                         except Exception as e:
                             print(f"  Error adding {role} key: {e}")
                     
-                    input("\nImport complete. Press Enter to continue...")
-                    clear_screen()
+                    print("Import complete. Transitioning to Key Management view...")
+                    time.sleep(1)
+                    manage_keys_loop(b)
                     continue
                                 
             except FileNotFoundError:
