@@ -39,8 +39,8 @@ pip install cryptography
 ```python
 from blurtpy import Blurt
 
-# Connect to a public node
-b = Blurt(node=["https://rpc.blurt.world"])
+# Connect to a public node (see docs/nodes.md for a list)
+b = Blurt(node=["<RPC_NODE_URL>"])
 
 print(b.info())
 ```
@@ -50,7 +50,7 @@ print(b.info())
 from blurtpy.account import Account
 
 # Read account information
-acc = Account("tekraze", blockchain_instance=b)
+acc = Account("<YOUR_USERNAME>", blockchain_instance=b)
 print(f"Balance: {acc.balances['available']}")
 print(f"Voting Power: {acc.vp:.2f}%")
 ```
@@ -59,23 +59,23 @@ print(f"Voting Power: {acc.vp:.2f}%")
 ```python
 from blurtpy import Blurt
 
-# You need the active key to transfer
-wif = "5YourActivePrivateKey..." 
-b = Blurt(keys=[wif], node=["https://rpc.blurt.world"])
+# Use the secure local wallet (recommended)
+b = Blurt(node=["<RPC_NODE_URL>"])
+b.wallet.unlock("your-wallet-password")
 
-b.transfer("recipient", 10, "BLURT", "test memo", account="your-username")
+b.transfer("<RECIPIENT>", 10, "BLURT", "test memo", account="<YOUR_USERNAME>")
 ```
 
 ### Voting on a Post
 ```python
 from blurtpy import Blurt
 
-# You need the posting key
-wif = "5YourPostingPrivateKey..."
-b = Blurt(keys=[wif], node=["https://rpc.blurt.world"])
+# Use the secure local wallet (recommended)
+b = Blurt(node=["<RPC_NODE_URL>"])
+b.wallet.unlock("your-wallet-password")
 
 # Vote at 100%
-b.vote("@author/permlink", 100, account="your-username")
+b.vote("@<AUTHOR_USERNAME>/<PERMLINK>", 100, account="<YOUR_USERNAME>")
 ```
 
 ## Security
