@@ -17,7 +17,10 @@ It is a direct fork of the popular `beem` library, optimized and cleaned specifi
 *   Python 3.8 or higher.
 *   `pip` and `setuptools`.
 
-### Installation from Source
+### Detailed Installation Guide
+For step-by-step instructions on **Windows, Linux, and macOS**, please see the [Installation Guide](docs/installation.md).
+
+### Quick Install (Developers)
 ```bash
 git clone https://gitlab.com/your-username/blurtpy.git
 cd blurtpy
