@@ -11,16 +11,20 @@ from blurtgraphenebase.account import PasswordKey
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Constants for placeholders
+PLACEHOLDER_KEY = "YOUR_ACTIVE_KEY_HERE"
+PLACEHOLDER_ACCOUNT = "your_account_name_here"
+
 # User provided key for testing
 # !!! IMPORTANT: YOU MUST UPDATE THESE VALUES BEFORE RUNNING TESTS !!!
-ACTIVE_KEY = "YOUR_ACTIVE_KEY_HERE"
-ACCOUNT_NAME = "your_account_name_here"
+ACTIVE_KEY = PLACEHOLDER_KEY
+ACCOUNT_NAME = PLACEHOLDER_ACCOUNT
 
 class TestNativeBlurt(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # Check if user has configured the tests
-        if ACTIVE_KEY == "YOUR_ACTIVE_KEY_HERE" or ACCOUNT_NAME == "your_account_name_here":
+        if ACTIVE_KEY == PLACEHOLDER_KEY or ACCOUNT_NAME == PLACEHOLDER_ACCOUNT:
             raise ValueError(
                 "\n\n"
                 "!!! TEST CONFIGURATION ERROR !!!\n"
