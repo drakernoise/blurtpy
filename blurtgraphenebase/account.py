@@ -598,6 +598,15 @@ class PublicKey(Prefix):
     def compressed_key(self):
         return PublicKey(self.compressed())
 
+    def __format__(self, _format):
+        return format(self._pk, _format)
+
+    def __str__(self):
+        return str(self._pk)
+
+    def __repr__(self):
+        return repr(self._pk)
+
     def _derive_y_from_x(self, x, is_even):
         """ Derive y point from x point """
         curve = ecdsa.SECP256k1.curve
@@ -737,6 +746,15 @@ class PrivateKey(Prefix):
 
         assert len(repr(self._wif)) == 64
 
+    def __format__(self, _format):
+        return format(self._wif, _format)
+
+    def __str__(self):
+        return str(self._wif)
+
+    def __repr__(self):
+        return repr(self._wif)
+
     @property
     def bitcoin(self):
         return BitcoinPublicKey.from_privkey(self)
@@ -802,15 +820,7 @@ class PrivateKey(Prefix):
         """
         return format(self._wif, _format)
 
-    def __repr__(self):
-        """ Gives the hex representation of the Graphene private key."""
-        return "<PrivateKey: %s>" % str(self.pubkey)
 
-    def __str__(self):
-        """ Returns the readable (uncompressed wif format) Graphene private key. This
-            call is equivalent to ``format(PrivateKey, "WIF")``
-        """
-        return "<PrivateKey: %s>" % str(self.pubkey)
 
     def __bytes__(self):
         """ Returns the raw private key """

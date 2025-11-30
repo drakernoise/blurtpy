@@ -25,8 +25,8 @@ class TestNativeBlurt(unittest.TestCase):
             "https://blurt-rpc.saboin.com",
             "https://rpc.blurt.one"
         ]
-        # Initialize Blurt with the active key
-        cls.blurt = Blurt(node=cls.nodes, keys=[ACTIVE_KEY], num_retries=3)
+        # Initialize Blurt with the active key and nobroadcast=True for safety
+        cls.blurt = Blurt(node=cls.nodes, keys=[ACTIVE_KEY], num_retries=3, nobroadcast=True)
         logger.info(f"Initialized Blurt with nodes: {cls.nodes}")
 
     def test_01_connection_and_props(self):
@@ -108,6 +108,91 @@ class TestNativeBlurt(unittest.TestCase):
                 break
         self.assertTrue(len(history) > 0)
         logger.info(f"Retrieved {len(history)} history items.")
+
+    def test_07_memo_encryption(self):
+        """
+        CRYPTO: Test Memo encryption and decryption using ephemeral keys.
+        This verifies the AES encryption logic without needing account keys.
+        """
+        logger.info("Testing Memo encryption/decryption...")
+        from blurtpy.memo import Memo
+        from blurtgraphenebase.account import PasswordKey
+
+        # Generate two temporary keys
+        sender_wif = PasswordKey("sender", "password", role="memo").get_private_key()
+        receiver_wif = PasswordKey("receiver", "password", role="memo").get_private_key()
+        receiver_pub = receiver_wif.pubkey
+
+        # Initialize Memo with these keys
+        # We pass keys directly to avoid looking up accounts on chain
+        # Note: Memo expects strings for length check, so we convert objects to strings
+        memo_obj = Memo(
+            from_account=format(sender_wif, 'WIF'),
+            to_account=format(receiver_pub.pubkey, "STM"),
+            blockchain_instance=self.blurt
+        )
+
+        # Encrypt
+        message = "Secret Blurt Message"
+        encrypted = memo_obj.encrypt(message)
+        self.assertTrue(encrypted['message'].startswith('#'))
+        logger.info(f"Encrypted message: {encrypted['message']}")
+
+        # Decrypt (requires initializing a new Memo object or unlocking wallet, 
+        # but here we use the low-level decrypt with known keys if possible, 
+        # or we simulate the receiver)
+        
+        # To test decryption, we need to simulate the receiver having the private key.
+        # The library's decrypt method looks up keys in the wallet.
+        # Let's inject the receiver key into the wallet for this test.
+        self.blurt.wallet.setKeys([format(receiver_wif, 'WIF')])
+        
+        decrypted = memo_obj.decrypt(encrypted['message'])
+        # Note: blurtbase implementation prepends '#' to decrypted message
+        self.assertEqual(decrypted, '#' + message)
+        logger.info("Decryption successful!")
+
+    def test_08_power_up_dry_run(self):
+        """
+        OPERATION: Construct and sign a Transfer to Vesting (Power Up) operation.
+        """
+        logger.info("Testing Power Up (dry-run)...")
+        account = Account(ACCOUNT_NAME, blockchain_instance=self.blurt)
+        # transfer_to_vesting(amount, to, account)
+        tx = account.transfer_to_vesting(
+            0.001, ACCOUNT_NAME, account=ACCOUNT_NAME, nobroadcast=True
+        )
+        self.assertIsNotNone(tx.get('signatures'))
+        logger.info("Power Up transaction signed.")
+
+    def test_09_claim_rewards_dry_run(self):
+        """
+        OPERATION: Construct and sign a Claim Reward Balance operation.
+        """
+        logger.info("Testing Claim Rewards (dry-run)...")
+        account = Account(ACCOUNT_NAME, blockchain_instance=self.blurt)
+        # claim_reward_balance(reward_blurt, reward_vests, account)
+        tx = account.claim_reward_balance(
+            0, 0, account=ACCOUNT_NAME, nobroadcast=True
+        )
+        self.assertIsNotNone(tx.get('signatures'))
+        logger.info("Claim Rewards transaction signed.")
+
+    def test_10_vote_operation_dry_run(self):
+        """
+        OPERATION: Construct and sign a Vote operation.
+        Validates posting authority logic (even if using Active key).
+        """
+        logger.info("Testing Vote operation (dry-run)...")
+        # vote(identifier, weight, account)
+        # Using a known valid identifier (or random, since it's dry-run structure check)
+        # We use a real-looking identifier to pass validation if any
+        identifier = "@draktest/test-post" 
+        tx = self.blurt.vote(
+            identifier, 100, account=ACCOUNT_NAME, nobroadcast=True
+        )
+        self.assertIsNotNone(tx.get('signatures'))
+        logger.info("Vote transaction signed.")
 
 if __name__ == '__main__':
     unittest.main()
