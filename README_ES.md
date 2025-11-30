@@ -96,6 +96,28 @@ En la carpeta `docs/` encontrarás:
 *   [Guía de Migración y Walkthrough](docs/walkthrough.md)
 *   [Reporte de Auditoría de Seguridad](docs/security_audit_report.md)
 
+## Pruebas (Testing)
+
+`blurtpy` incluye una suite de pruebas nativa y robusta.
+
+### Ejecutar Pruebas
+Para ejecutar todas las pruebas:
+```bash
+python -m unittest discover tests
+```
+
+### Prueba de Sanidad (Sanity Check)
+Verifica rápidamente la conectividad con la red Blurt:
+```bash
+python tests/test_sanity_check.py
+```
+
+### Pruebas de Seguridad (Red Teaming)
+Ejecuta pruebas ofensivas para verificar la robustez de la librería:
+```bash
+python -m unittest discover tests/red_team
+```
+
 ## Créditos
 
 `blurtpy` es un fork de la librería modificada por [Samuel Alphée Richard (Saboin)](https://gitlab.com/saboin), la cual es un fork de [beem](https://github.com/holgern/beem) creado por [Holger Hattendorf](https://github.com/holgern), quien a su vez se basó en `python-bitshares` de [Fabian Schuh](https://github.com/xeroc).

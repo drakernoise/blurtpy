@@ -1,0 +1,299 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.1, pytest-9.0.1, pluggy-1.6.0
+rootdir: C:\Users\pablo\Movistar Cloud\Gravity\blurtpy
+configfile: pytest.ini
+collected 11 items
+
+tests\blurtpy\test_blockchain.py ....FF.....                             [100%]
+
+================================== FAILURES ===================================
+___________________ Testcases.test_get_account_reputations ____________________
+
+self = <blurtapi.noderpc.NodeRPC object at 0x0000016241FC6240>
+payload = {'id': 58, 'jsonrpc': '2.0', 'method': 'follow_api.get_account_reputations', 'params': {'account_lower_bound': None, 'limit': 1000.0}}
+
+    def rpcexec(self, payload):
+        """ Execute a call by sending the payload.
+            It makes use of the GrapheneRPC library.
+            In here, we mostly deal with Blurt specific error handling
+    
+            :param json payload: Payload data
+            :raises ValueError: if the server does not respond in proper JSON format
+            :raises RPCError: if the server returns an error
+        """
+        if self.url is None:
+            raise exceptions.RPCConnection("RPC is not connected!")
+        doRetry = True
+        maxRetryCountReached = False
+        while doRetry and not maxRetryCountReached:
+            doRetry = False
+            try:
+                # Forward call to GrapheneWebsocketRPC and catch+evaluate errors
+>               reply = super(NodeRPC, self).rpcexec(payload)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+blurtapi\noderpc.py:62: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <blurtapi.noderpc.NodeRPC object at 0x0000016241FC6240>
+payload = {'id': 58, 'jsonrpc': '2.0', 'method': 'follow_api.get_account_reputations', 'params': {'account_lower_bound': None, 'limit': 1000.0}}
+
+    def rpcexec(self, payload):
+        """
+        Execute a call by sending the payload.
+    
+        :param json payload: Payload data
+        :raises ValueError: if the server does not respond in proper JSON format
+        :raises RPCError: if the server returns an error
+        """
+        log.debug(json.dumps(payload))
+        if self.nodes.working_nodes_count == 0:
+            raise WorkingNodeMissing
+        if self.url is None:
+            raise RPCConnection("RPC is not connected!")
+        reply = {}
+        response = None
+        while True:
+            self.nodes.increase_error_cnt_call()
+            try:
+                if self.current_rpc == self.rpc_methods['ws'] or \
+                   self.current_rpc == self.rpc_methods['wsappbase']:
+                    reply = self.ws_send(json.dumps(payload, ensure_ascii=False).encode('utf8'))
+                else:
+                    response = self.request_send(json.dumps(payload, ensure_ascii=False).encode('utf8'))
+                    reply = response.text
+                if not bool(reply):
+                    try:
+                        self.nodes.sleep_and_check_retries("Empty Reply", call_retry=True)
+                    except CallRetriesReached:
+                        self.nodes.increase_error_cnt()
+                        self.nodes.sleep_and_check_retries("Empty Reply", sleep=False, call_retry=False)
+                        self.rpcconnect()
+                else:
+                    break
+            except KeyboardInterrupt:
+                raise
+            except WebSocketConnectionClosedException as e:
+                if self.nodes.num_retries_call_reached:
+                    self.nodes.increase_error_cnt()
+                    self.nodes.sleep_and_check_retries(str(e), sleep=False, call_retry=False)
+                    self.rpcconnect()
+                else:
+                    # self.nodes.sleep_and_check_retries(str(e), sleep=True, call_retry=True)
+                    self.rpcconnect(next_url=False)
+            except ConnectionError as e:
+                self.nodes.increase_error_cnt()
+                self.nodes.sleep_and_check_retries(str(e), sleep=False, call_retry=False)
+                self.rpcconnect()
+            except WebSocketTimeoutException as e:
+                self.nodes.increase_error_cnt()
+                self.nodes.sleep_and_check_retries(str(e), sleep=False, call_retry=False)
+                self.rpcconnect()
+            except Exception as e:
+                self.nodes.increase_error_cnt()
+                self.nodes.sleep_and_check_retries(str(e), sleep=False, call_retry=False)
+                self.rpcconnect()
+    
+        ret = {}
+        try:
+            if response is None:
+                ret = json.loads(reply, strict=False, encoding="utf-8")
+            else:
+                ret = response.json()
+        except ValueError:
+            self._check_for_server_error(reply)
+    
+        log.debug(json.dumps(reply))
+    
+        if isinstance(ret, dict) and 'error' in ret:
+            if 'detail' in ret['error']:
+                raise RPCError(ret['error']['detail'])
+            else:
+>               raise RPCError(ret['error']['message'])
+E               blurtapi.exceptions.RPCError: Server error
+
+blurtapi\graphenerpc.py:457: RPCError
+
+During handling of the above exception, another exception occurred:
+
+self = <tests.blurtpy.test_blockchain.Testcases testMethod=test_get_account_reputations>
+
+    def test_get_account_reputations(self):
+        b = Blockchain(blockchain_instance=self.bts)
+        limit = 100  # get the first 100 account reputations
+>       reps_limit = list(b.get_account_reputations(limit=limit))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\blurtpy\test_blockchain.py:239: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+blurtpy\blockchain.py:886: in get_account_reputations
+    ret = self.blockchain.rpc.get_account_reputations({'account_lower_bound': lastname, 'limit': steps},
+blurtapi\graphenerpc.py:508: in method
+    r = self.rpcexec(query)
+        ^^^^^^^^^^^^^^^^^^^
+blurtapi\noderpc.py:84: in rpcexec
+    doRetry = self._check_error_message(e, self.error_cnt_call)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+blurtapi\noderpc.py:158: in _check_error_message
+    self._switch_to_next_node(str(e))
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <blurtapi.noderpc.NodeRPC object at 0x0000016241FC6240>
+msg = 'Server error', error_type = 'UnhandledRPCError'
+
+    def _switch_to_next_node(self, msg, error_type="UnhandledRPCError"):
+        if self.nodes.working_nodes_count == 1:
+            if error_type == "UnhandledRPCError":
+>               raise exceptions.UnhandledRPCError(msg)
+E               blurtapi.exceptions.UnhandledRPCError: Server error
+
+blurtapi\noderpc.py:182: UnhandledRPCError
+_______________________ Testcases.test_get_all_accounts _______________________
+
+self = <blurtapi.noderpc.NodeRPC object at 0x0000016241FC6240>
+payload = {'id': 59, 'jsonrpc': '2.0', 'method': 'database_api.list_accounts', 'params': {'limit': 100, 'order': 'by_name', 'start': None}}
+
+    def rpcexec(self, payload):
+        """ Execute a call by sending the payload.
+            It makes use of the GrapheneRPC library.
+            In here, we mostly deal with Blurt specific error handling
+    
+            :param json payload: Payload data
+            :raises ValueError: if the server does not respond in proper JSON format
+            :raises RPCError: if the server returns an error
+        """
+        if self.url is None:
+            raise exceptions.RPCConnection("RPC is not connected!")
+        doRetry = True
+        maxRetryCountReached = False
+        while doRetry and not maxRetryCountReached:
+            doRetry = False
+            try:
+                # Forward call to GrapheneWebsocketRPC and catch+evaluate errors
+>               reply = super(NodeRPC, self).rpcexec(payload)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+blurtapi\noderpc.py:62: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <blurtapi.noderpc.NodeRPC object at 0x0000016241FC6240>
+payload = {'id': 59, 'jsonrpc': '2.0', 'method': 'database_api.list_accounts', 'params': {'limit': 100, 'order': 'by_name', 'start': None}}
+
+    def rpcexec(self, payload):
+        """
+        Execute a call by sending the payload.
+    
+        :param json payload: Payload data
+        :raises ValueError: if the server does not respond in proper JSON format
+        :raises RPCError: if the server returns an error
+        """
+        log.debug(json.dumps(payload))
+        if self.nodes.working_nodes_count == 0:
+            raise WorkingNodeMissing
+        if self.url is None:
+            raise RPCConnection("RPC is not connected!")
+        reply = {}
+        response = None
+        while True:
+            self.nodes.increase_error_cnt_call()
+            try:
+                if self.current_rpc == self.rpc_methods['ws'] or \
+                   self.current_rpc == self.rpc_methods['wsappbase']:
+                    reply = self.ws_send(json.dumps(payload, ensure_ascii=False).encode('utf8'))
+                else:
+                    response = self.request_send(json.dumps(payload, ensure_ascii=False).encode('utf8'))
+                    reply = response.text
+                if not bool(reply):
+                    try:
+                        self.nodes.sleep_and_check_retries("Empty Reply", call_retry=True)
+                    except CallRetriesReached:
+                        self.nodes.increase_error_cnt()
+                        self.nodes.sleep_and_check_retries("Empty Reply", sleep=False, call_retry=False)
+                        self.rpcconnect()
+                else:
+                    break
+            except KeyboardInterrupt:
+                raise
+            except WebSocketConnectionClosedException as e:
+                if self.nodes.num_retries_call_reached:
+                    self.nodes.increase_error_cnt()
+                    self.nodes.sleep_and_check_retries(str(e), sleep=False, call_retry=False)
+                    self.rpcconnect()
+                else:
+                    # self.nodes.sleep_and_check_retries(str(e), sleep=True, call_retry=True)
+                    self.rpcconnect(next_url=False)
+            except ConnectionError as e:
+                self.nodes.increase_error_cnt()
+                self.nodes.sleep_and_check_retries(str(e), sleep=False, call_retry=False)
+                self.rpcconnect()
+            except WebSocketTimeoutException as e:
+                self.nodes.increase_error_cnt()
+                self.nodes.sleep_and_check_retries(str(e), sleep=False, call_retry=False)
+                self.rpcconnect()
+            except Exception as e:
+                self.nodes.increase_error_cnt()
+                self.nodes.sleep_and_check_retries(str(e), sleep=False, call_retry=False)
+                self.rpcconnect()
+    
+        ret = {}
+        try:
+            if response is None:
+                ret = json.loads(reply, strict=False, encoding="utf-8")
+            else:
+                ret = response.json()
+        except ValueError:
+            self._check_for_server_error(reply)
+    
+        log.debug(json.dumps(reply))
+    
+        if isinstance(ret, dict) and 'error' in ret:
+            if 'detail' in ret['error']:
+                raise RPCError(ret['error']['detail'])
+            else:
+>               raise RPCError(ret['error']['message'])
+E               blurtapi.exceptions.RPCError: Assert Exception:method_itr != api_itr->second.end(): Could not find method list_accounts
+
+blurtapi\graphenerpc.py:457: RPCError
+
+During handling of the above exception, another exception occurred:
+
+self = <tests.blurtpy.test_blockchain.Testcases testMethod=test_get_all_accounts>
+
+    def test_get_all_accounts(self):
+        bts = self.bts
+        b = Blockchain(blockchain_instance=bts)
+        accounts = []
+        limit = 200
+>       for acc in b.get_all_accounts(steps=100, limit=limit):
+
+tests\blurtpy\test_blockchain.py:77: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+blurtpy\blockchain.py:840: in get_all_accounts
+    ret = self.blockchain.rpc.list_accounts({'start': lastname, 'limit': steps, 'order': 'by_name'}, api="database")["accounts"]
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+blurtapi\graphenerpc.py:508: in method
+    r = self.rpcexec(query)
+        ^^^^^^^^^^^^^^^^^^^
+blurtapi\noderpc.py:84: in rpcexec
+    doRetry = self._check_error_message(e, self.error_cnt_call)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <blurtapi.noderpc.NodeRPC object at 0x0000016241FC6240>
+e = RPCError('Assert Exception:method_itr != api_itr->second.end(): Could not find method list_accounts')
+cnt = 2
+
+    def _check_error_message(self, e, cnt):
+        """Check error message and decide what to do"""
+        doRetry = False
+        msg = exceptions.decodeRPCErrorMsg(e).strip()
+        if re.search("missing required active authority", msg):
+            raise exceptions.MissingRequiredActiveAuthority
+        elif re.match("^no method with name.*", msg):
+            raise exceptions.NoMethodWithName(msg)
+        elif re.search("Could not find method", msg):
+>           raise exceptions.NoMethodWithName(msg)
+E           blurtapi.exceptions.NoMethodWithName: Assert Exception:method_itr != api_itr->second.end(): Could not find method list_accounts
+
+blurtapi\noderpc.py:113: NoMethodWithName
+=================== 2 failed, 9 passed in 71.21s (0:01:11) ====================

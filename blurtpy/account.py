@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import pytz
+import re
 import json
 from datetime import datetime, timezone, timedelta, date, time
 import math
@@ -101,6 +102,8 @@ class Account(BlockchainObject):
         self.blockchain = blockchain_instance or shared_blockchain_instance()
         if isinstance(account, dict):
             account = self._parse_json_data(account)
+        elif isinstance(account, str):
+            self.validate_account_name(account)
         super(Account, self).__init__(
             account,
             lazy=lazy,
@@ -108,6 +111,23 @@ class Account(BlockchainObject):
             id_item="name",
             blockchain_instance=blockchain_instance
         )
+
+    def validate_account_name(self, name):
+        """ Validate account name according to Blurt rules """
+        if not isinstance(name, str):
+            raise ValueError("Account name must be a string")
+        if len(name) < 3:
+            raise ValueError("Account name must be at least 3 chars long")
+        if len(name) > 16:
+            raise ValueError("Account name must be at most 16 chars long")
+        if not re.match(r"^[a-z]", name):
+            raise ValueError("Account name must start with a letter")
+        if not re.match(r"^[a-z0-9\-\.]+$", name):
+            raise ValueError("Account name contains invalid characters")
+        if "--" in name or ".." in name or ".-" in name or "-." in name:
+            raise ValueError("Account name cannot contain consecutive separators")
+        if name.endswith(".") or name.endswith("-"):
+            raise ValueError("Account name cannot end with a separator")
 
     def refresh(self):
         """ Refresh/Obtain an account's data from the API server

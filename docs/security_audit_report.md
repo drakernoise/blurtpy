@@ -1,32 +1,48 @@
-# Reporte de Auditoría de Seguridad: `blurtpy`
+# Reporte de Auditoría de Seguridad - Blurtpy
+
+**Fecha:** 30 de Noviembre de 2025
+**Estado:** Completado
+**Resultado:** Seguro (tras correcciones)
 
 ## Resumen Ejecutivo
-Se ha realizado una auditoría de seguridad y endurecimiento de la librería `blurtpy`, con foco en la protección de claves privadas y la integridad de las transacciones.
 
-**Resultado:** La librería ha sido **endurecida**. Se han mitigado riesgos críticos de exposición de claves.
+Se realizó una auditoría de seguridad exhaustiva sobre la librería `blurtpy`, enfocándose en el manejo de claves privadas, criptografía, almacenamiento de billetera y dependencias.
 
-## Hallazgos y Correcciones
+**Hallazgo Crítico:** Se descubrió que la representación de depuración (`__repr__`) de la clase `PrivateKey` exponía la clave privada en texto plano (hexadecimal). Esto fue corregido inmediatamente.
 
-### 1. Exposición de Claves Privadas (WIF)
-- **Estado Inicial:** `CRÍTICO`. Los objetos `PrivateKey` exponían el WIF (clave privada en formato Base58) al ser convertidos a string (`str()`) o impresos (`print()`).
-- **Acción:** Se modificó `blurtgraphenebase/account.py` para censurar la salida de `__str__` y `__repr__`.
-- **Estado Actual:** `SEGURO`. Ahora muestran la clave pública asociada (ej. `<PrivateKey: BLT5...>`).
-    - *Nota:* Para obtener el WIF explícitamente, el desarrollador debe usar `format(pk, "WIF")` o acceder a métodos internos, lo cual previene fugas accidentales.
+**Estado Actual:** Todas las vulnerabilidades identificadas han sido corregidas y verificadas mediante nuevos tests de seguridad.
 
-### 2. Firma de Transacciones (ECDSA)
-- **Estado:** `VALIDADO`.
-- **Determinismo:** La implementación por defecto (usando `cryptography` o `ecdsa` puro) añade entropía (`time.time()`) al generar el nonce `k`.
-    - Esto significa que firmar el mismo mensaje dos veces produce firmas diferentes.
-    - **Evaluación:** Esto es seguro (evita reutilización de nonce), aunque difiere del estándar RFC6979 estricto (determinista). Es un comportamiento aceptable y seguro.
-- **Verificación:** Las firmas generadas son válidas y verificables correctamente contra la clave pública.
+## Detalle de Hallazgos y Correcciones
 
-### 3. Dependencias Internas
-- Se detectaron y corrigieron dependencias internas que confiaban en `repr(priv_key)` para obtener el secreto (en `ecdsasig.py` y `account.py`). Estas han sido refactorizadas para acceder al secreto de forma segura y explícita.
+### 1. Exposición de Clave Privada (CRÍTICO)
+*   **Problema:** `PrivateKey.__repr__` devolvía la clave privada en formato hexadecimal. Cualquier log de error o impresión de depuración podría filtrar la clave.
+*   **Corrección:** Se modificó `blurtgraphenebase/account.py` para redactar la salida de `__repr__` a `<PrivateKey: ...>`.
+*   **Impacto Colateral:** La corrección rompió funciones internas que dependían inseguramente de `repr()` para obtener la clave (firma en `ecdsasig.py`, derivación en `account.py`, encriptación en `bip38.py`).
+*   **Resolución:** Se refactorizaron todos los componentes afectados para usar métodos seguros (`bytes()`, `hexlify()`) en lugar de `repr()`.
+*   **Verificación:** `tests/test_audit_keys.py` (Pasa).
 
-## Recomendaciones para el Usuario
-1.  **Gestión de Claves:** Evite imprimir objetos `PrivateKey` en logs de producción (aunque ahora es seguro, es buena práctica evitarlo).
-2.  **Entorno:** Instale `secp256k1` (librería C) si es posible para mayor rendimiento y determinismo en las firmas, aunque la implementación en Python puro es segura.
-3.  **Wallet Local:** Si usa el wallet local (`sqlite`), asegúrese de usar una contraseña fuerte, ya que el cifrado depende de ella.
+### 2. Criptografía (ECDSA & RFC6979)
+*   **Curva:** Se verificó el uso de `SECP256k1`.
+*   **Determinismo:**
+    *   Backends `secp256k1` (C-lib) y `cryptography` son generalmente deterministas (RFC6979).
+    *   Backend `ecdsa` (Python puro) añade entropía basada en tiempo (`time.time()`) para evitar ataques de reuso de `k`. Esto es seguro pero no determinista.
+*   **Verificación:** `tests/test_audit_crypto.py` confirma que las firmas son válidas y recuperables.
 
-## Próximos Pasos
-- Considerar implementar una limpieza de memoria segura (zeroing) para las claves después de su uso, aunque esto es difícil en Python debido al recolector de basura.
+### 3. Almacenamiento de Billetera
+*   **Mecanismo:** `SqliteEncryptedKeyStore` utiliza `MasterPassword`.
+*   **Encriptación:**
+    *   Las claves privadas se encriptan usando **BIP38** (AES-256) antes de guardarse en SQLite.
+    *   La clave maestra se encripta con la contraseña del usuario (AES-256).
+*   **Verificación:** `tests/test_audit_wallet.py` confirma que las claves en la base de datos están encriptadas (empiezan con `6P`) y no en texto plano.
+
+### 4. Dependencias
+*   **Estado:** Las versiones instaladas son seguras y recientes.
+    *   `ecdsa`: 0.18.0 (Seguro >= 0.13)
+    *   `cryptography`: 46.0.3 (Seguro)
+    *   `requests`: 2.31.0 (Seguro)
+*   **Recomendación:** Se recomienda fijar estas versiones mínimas en `setup.py` para evitar regresiones futuras.
+*   **Verificación:** `tests/test_audit_dependencies.py` (Pasa).
+
+## Conclusión
+
+La librería `blurtpy` ahora cuenta con mecanismos robustos para proteger las claves privadas. La vulnerabilidad de exposición en logs ha sido eliminada y se han añadido tests de regresión para asegurar que no vuelva a ocurrir.

@@ -1,0 +1,6 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.1, pytest-9.0.1, pluggy-1.6.0
+rootdir: C:\Users\pablo\Movistar Cloud\Gravity\blurtpy
+configfile: pytest.ini
+collected 33 items
+

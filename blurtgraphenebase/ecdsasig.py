@@ -183,7 +183,7 @@ def sign_message(message, wif, hashfn=hashlib.sha256):
                 break
     elif SECP256K1_MODULE == "cryptography":
         cnt = 0
-        private_key = ec.derive_private_key(int(repr(priv_key), 16), ec.SECP256K1(), default_backend())
+        private_key = ec.derive_private_key(int(hexlify(bytes(priv_key)).decode('ascii'), 16), ec.SECP256K1(), default_backend())
         public_key = private_key.public_key()
         while True:
             cnt += 1

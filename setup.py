@@ -16,17 +16,17 @@ except LookupError:
     ascii = codecs.lookup('ascii')
     codecs.register(lambda name, enc=ascii: {True: enc}.get(name == 'mbcs'))
 
-VERSION = '0.24.22'
+VERSION = '1.0.0'
 
 tests_require = ['mock >= 2.0.0', 'pytest', 'pytest-mock', 'parameterized']
 
 requires = [
-    "ecdsa",
-    "requests",
-    "websocket-client",
+    "ecdsa>=0.13",
+    "requests>=2.20",
+    "websocket-client>=0.57.0",
     "appdirs",
-    "scrypt",
-    "pycryptodomex",
+    "scrypt>=0.8.0",
+    "pycryptodomex>=3.9",
     "pytz",
     "Click",
     "click_shell",

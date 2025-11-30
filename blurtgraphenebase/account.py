@@ -648,7 +648,7 @@ class PublicKey(Prefix):
     def from_privkey(cls, privkey, prefix=None):
         """ Derive uncompressed public key """
         privkey = PrivateKey(privkey, prefix=prefix or Prefix.prefix)
-        secret = unhexlify(repr(privkey))
+        secret = bytes(privkey)
         order = ecdsa.SigningKey.from_string(
             secret, curve=ecdsa.SECP256k1
         ).curve.generator.order()
@@ -804,7 +804,7 @@ class PrivateKey(Prefix):
 
     def __repr__(self):
         """ Gives the hex representation of the Graphene private key."""
-        return repr(self._wif)
+        return "<PrivateKey: ...>"
 
     def __str__(self):
         """ Returns the readable (uncompressed wif format) Graphene private key. This

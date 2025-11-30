@@ -1,0 +1,87 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.1, pytest-9.0.1, pluggy-1.6.0
+rootdir: C:\Users\pablo\Movistar Cloud\Gravity\blurtpy
+configfile: pytest.ini
+collected 6 items
+
+tests\test_native_blurt.py ....F.                                        [100%]
+
+================================== FAILURES ===================================
+_______________ TestNativeBlurt.test_05_missing_key_protection ________________
+
+self = <tests.test_native_blurt.TestNativeBlurt testMethod=test_05_missing_key_protection>
+
+    def test_05_missing_key_protection(self):
+        """
+        SECURITY: Ensure operations fail safely when the key is missing.
+        """
+        logger.info("Testing missing key protection...")
+        # Instance without keys
+        b_no_key = Blurt(node=self.nodes)
+    
+        with self.assertRaises(MissingKeyError):
+>           b_no_key.transfer(ACCOUNT_NAME, 0.001, "BLURT", account=ACCOUNT_NAME, nobroadcast=True)
+
+tests\test_native_blurt.py:94: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+blurtpy\blurt.py:504: in transfer
+    return Account(account, blockchain_instance=self).transfer(to, amount, asset, memo, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+blurtpy\account.py:2906: in transfer
+    return self.blockchain.finalizeOp(op, account, "active", **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+blurtpy\blockchaininstance.py:936: in finalizeOp
+    self.txbuffer.appendSigner(account, permission)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def appendSigner(self, account, permission):
+        """ Try to obtain the wif key from the wallet by telling which account
+            and permission is supposed to sign the transaction
+            It is possible to add more than one signer.
+    
+            :param str account: account to sign transaction with
+            :param str permission: type of permission, e.g. "active", "owner" etc
+        """
+        if not self.blockchain.is_connected():
+            return
+        if permission not in ["active", "owner", "posting"]:
+            raise AssertionError("Invalid permission")
+        account = Account(account, blockchain_instance=self.blockchain)
+        auth_field = self._get_auth_field(permission)
+        if auth_field not in account:
+            account = Account(account, blockchain_instance=self.blockchain, lazy=False, full=True)
+            account.clear_cache()
+            account.refresh()
+        if auth_field not in account:
+            account = Account(account, blockchain_instance=self.blockchain)
+        if auth_field not in account:
+            raise AssertionError("Could not access permission")
+    
+        if self._use_ledger:
+            if not self._is_constructed() or self._is_require_reconstruction():
+                self.constructTx()
+    
+            key_found = False
+            if self.path is not None:
+                current_pubkey = self.ledgertx.get_pubkey(self.path)
+                for authority in account[auth_field]["key_auths"]:
+                    if str(current_pubkey) == authority[0]:
+                        key_found = True
+                if permission == "posting" and not key_found:
+                        for authority in account["active"]["key_auths"]:
+                            if str(current_pubkey) == authority[0]:
+                                key_found = True
+                if not key_found:
+                        for authority in account["owner"]["key_auths"]:
+                            if str(current_pubkey) == authority[0]:
+                                key_found = True
+            if not key_found:
+                raise AssertionError("Could not find pubkey from %s in path: %s!" % (account["name"], self.path))
+            return
+    
+        if self.blockchain.wallet.locked():
+>           raise WalletLocked()
+E           blurtstorage.exceptions.WalletLocked
+
+blurtpy\transactionbuilder.py:247: WalletLocked
+========================= 1 failed, 5 passed in 4.83s =========================

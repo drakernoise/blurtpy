@@ -1,0 +1,79 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.1, pytest-9.0.1, pluggy-1.6.0
+rootdir: C:\Users\pablo\Movistar Cloud\Gravity\blurtpy
+configfile: pytest.ini
+collected 1 item
+
+tests\blurtpy\test_account.py F
+
+================================== FAILURES ===================================
+___________________________ Testcases.test_account ____________________________
+
+self = <tests.blurtpy.test_account.Testcases testMethod=test_account>
+
+    def test_account(self):
+        stm = self.bts
+        account = self.account
+        Account("draktest", blurt_instance=stm)
+        with self.assertRaises(
+            exceptions.AccountDoesNotExistsException
+        ):
+            Account("DoesNotExistsXXX", blurt_instance=stm)
+        # asset = Asset("1.3.0")
+        # symbol = asset["symbol"]
+        self.assertEqual(account.name, "draktest")
+        self.assertEqual(account["name"], account.name)
+        self.assertIsInstance(account.get_balance("available", "BLURT"), Amount)
+>       account.print_info()
+
+tests\blurtpy\test_account.py:50: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <Account draktest>, force_refresh = False, return_str = False
+use_table = False, kwargs = {}, bandwidth = {'allocated': None, 'used': None}
+last_vote_time_str = '85:25:00'
+ret = 'draktest (25.00) \n--- Voting Power ---\n100.00 %, '
+
+    def print_info(self, force_refresh=False, return_str=False, use_table=False, **kwargs):
+        """ Prints import information about the account
+        """
+        if force_refresh:
+            self.refresh()
+            self.blockchain.refresh_data(True)
+        bandwidth = self.get_bandwidth()
+        if bandwidth is not None and bandwidth["allocated"] is not None and bandwidth["allocated"] > 0:
+            remaining = 100 - bandwidth["used"] / bandwidth["allocated"] * 100
+            used_kb = bandwidth["used"] / 1024
+            allocated_mb = bandwidth["allocated"] / 1024 / 1024
+        last_vote_time_str = formatTimedelta(addTzInfo(datetime.now(timezone.utc)) - self["last_vote_time"])
+    
+        if use_table:
+            t = PrettyTable(["Key", "Value"])
+            t.align = "l"
+            t.add_row(["Name (rep)", self.name + " (%.2f)" % (self.rep)])
+            t.add_row(["Voting Power", "%.2f %%, " % (self.get_voting_power())])
+            t.add_row(["Downvoting Power", "%.2f %%, " % (self.get_downvoting_power())])
+            t.add_row(["Vote Value", "%.2f $" % (self.get_voting_value_BLURT())])
+            t.add_row(["Last vote", "%s ago" % last_vote_time_str])
+            t.add_row(["Full in ", "%s" % (self.get_recharge_time_str())])
+            t.add_row(["Token Power", "%.2f %s" % (self.get_token_power(), self.blockchain.token_symbol)])
+            t.add_row(["Balance", "%s, %s" % (str(self.balances["available"][0]), str(self.balances["available"][1]))])
+            if False and bandwidth is not None and bandwidth["allocated"] is not None and bandwidth["allocated"] > 0:
+                t.add_row(["Remaining Bandwidth", "%.2f %%" % (remaining)])
+                t.add_row(["used/allocated Bandwidth", "(%.0f kb of %.0f mb)" % (used_kb, allocated_mb)])
+    
+    
+            if return_str:
+                return t.get_string(**kwargs)
+            else:
+                print(t.get_string(**kwargs))
+        else:
+            ret = self.name + " (%.2f) \n" % (self.rep)
+            ret += "--- Voting Power ---\n"
+            ret += "%.2f %%, " % (self.get_voting_power())
+>           ret += " %.2f $\n" % (self.get_voting_value_BLURT())
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: 'Account' object has no attribute 'get_voting_value_BLURT'. Did you mean: 'get_voting_value_Blurt'?
+
+blurtpy\account.py:370: AttributeError
+============================== 1 failed in 3.49s ==============================
