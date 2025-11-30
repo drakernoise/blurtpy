@@ -36,6 +36,18 @@ These tests construct and sign complex operations to ensure the library generate
 
 > **🛡️ Note on Safety:** All transaction tests are configured as **Dry-Runs** (`nobroadcast=True`). They generate and sign the transaction to prove cryptographic correctness but **DO NOT** broadcast it to the network. No funds are spent.
 
+## ⚙️ Configuration
+
+The tests use a default account (`draktest`) and a public Active Key for verification. **You can (and should) edit these values** in `tests/test_native_blurt.py` to test with your own account or verify different permissions.
+
+Look for these constants at the top of the file:
+
+```python
+# User provided key for 'draktest'
+ACTIVE_KEY = "5K8sEXDvidZijhKpYDyWxyKSP22T3UdU8276YEsmcDgwbmgRS6K"
+ACCOUNT_NAME = "draktest"
+```
+
 ## 🚀 How to Run Tests
 
 You need `pytest` installed. Run the following command from the root of the project:
