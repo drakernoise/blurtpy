@@ -1,16 +1,15 @@
 # Tests Directory
 
-This directory contains the test suite for `blurtpy`. It includes unit tests and integration tests to ensure the stability and correctness of the library.
+This directory contains the native test suite for `blurtpy`.
 
 ## Structure
 
-*   **`blurtpy/`:** Tests specific to the `blurtpy` core and modules.
-*   **Legacy Folders (`beem*`):** Tests inherited from the original fork, maintained for regression testing of base components.
+*   **`test_native_blurt.py`:** The main test suite for the library. It verifies connection, authentication, and basic operations.
 
 ## Running Tests
 
-You can run the tests using `pytest` from the root directory:
+You can run the native test suite using `pytest` from the root directory:
 
 ```bash
-pytest
+pytest tests/test_native_blurt.py
 ```
