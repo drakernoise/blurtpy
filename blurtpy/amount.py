@@ -38,7 +38,7 @@ class Amount(dict):
 
         Way to obtain a proper instance:
 
-            * ``args`` can be a string, e.g.:  "1 SBD"
+            * ``args`` can be a string, e.g.:  "1 TBD"
             * ``args`` can be a dictionary containing ``amount`` and ``asset_id``
             * ``args`` can be a dictionary containing ``amount`` and ``asset``
             * ``args`` can be a list of a ``float`` and ``str`` (symbol)
@@ -58,9 +58,9 @@ class Amount(dict):
 
             from blurtpy.amount import Amount
             from blurtpy.asset import Asset
-            a = Amount("1 STEEM")
-            b = Amount(1, "STEEM")
-            c = Amount("20", Asset("STEEM"))
+            a = Amount("1 BLURT")
+            b = Amount(1, "BLURT")
+            c = Amount("20", Asset("BLURT"))
             a + b
             a * 2
             a += b
@@ -68,8 +68,8 @@ class Amount(dict):
 
         .. testoutput::
 
-            2.000 STEEM
-            2.000 STEEM
+            2.000 BLURT
+            2.000 BLURT
 
     """
     def __init__(self, amount, asset=None, fixed_point_arithmetic=False, new_appbase_format=True, blockchain_instance=None, **kwargs):

@@ -1181,10 +1181,10 @@ class Account(BlockchainObject):
                 .. code-block:: js
 
                     {
-                        'available': [102.985 STEEM, 0.008 BLURT, 146273.695970 VESTS],
-                        'savings': [0.000 STEEM, 0.000 BLURT],
-                        'rewards': [0.000 STEEM, 0.000 BLURT, 0.000000 VESTS],
-                        'total': [102.985 STEEM, 0.008 BLURT, 146273.695970 VESTS]
+                        'available': [102.985 BLURT, 0.008 BLURT, 146273.695970 VESTS],
+                        'savings': [0.000 BLURT, 0.000 BLURT],
+                        'rewards': [0.000 BLURT, 0.000 BLURT, 0.000000 VESTS],
+                        'total': [102.985 BLURT, 0.008 BLURT, 146273.695970 VESTS]
                     }
 
         """
@@ -1205,7 +1205,7 @@ class Account(BlockchainObject):
             * "total"
 
             :param str balances: Defines the balance type
-            :param symbol: Can be "BLURT", "STEEM" or "VESTS
+            :param symbol: Can be "BLURT", "BLURT" or "VESTS
             :type symbol: str, dict
 
             .. code-block:: python
@@ -2934,7 +2934,7 @@ class Account(BlockchainObject):
         return self.blockchain.finalizeOp(op, account, "posting", **kwargs)
 
     def transfer_to_vesting(self, amount, to=None, account=None, skip_account_check=False, **kwargs):
-        """ Vest STEEM
+        """ Vest BLURT
 
             :param float amount: Amount to transfer
             :param str to: Recipient (optional) if not set equal to account
@@ -2997,10 +2997,10 @@ class Account(BlockchainObject):
         return self.blockchain.finalizeOp(op, account, "active")
 
     def transfer_to_savings(self, amount, asset, memo, to=None, account=None, **kwargs):
-        """ Transfer BLURT or STEEM into a 'savings' account.
+        """ Transfer BLURT or BLURT into a 'savings' account.
 
-            :param float amount: STEEM or BLURT amount
-            :param float asset: 'STEEM' or 'BLURT'
+            :param float amount: BLURT or BLURT amount
+            :param float asset: 'BLURT' or 'BLURT'
             :param str memo: (optional) Memo
             :param str to: (optional) the source account for the transfer if
                 not ``default_account``
@@ -3039,10 +3039,10 @@ class Account(BlockchainObject):
                               request_id=None,
                               to=None,
                               account=None, **kwargs):
-        """ Withdraw BLURT or STEEM from 'savings' account.
+        """ Withdraw BLURT or BLURT from 'savings' account.
 
-            :param float amount: STEEM or BLURT amount
-            :param float asset: 'STEEM' or 'BLURT'
+            :param float amount: BLURT or BLURT amount
+            :param float asset: 'BLURT' or 'BLURT'
             :param str memo: (optional) Memo
             :param str request_id: (optional) identifier for tracking or
                 cancelling the withdrawal
@@ -3125,7 +3125,7 @@ class Account(BlockchainObject):
         this behaviour, set desired claim amount by setting any of
         `reward_blurt`/``reward_blurt, `reward_blurt`/``reward_blurt or `reward_vests`.
 
-        :param str reward_blurt: Amount of STEEM you would like to claim.
+        :param str reward_blurt: Amount of BLURT you would like to claim.
         :param str reward_blurt: Amount of BLURT you would like to claim.
         :param str reward_blurt: Amount of BLURT you would like to claim.
         :param str reward_blurt: Amount of BLURT you would like to claim.
@@ -3254,7 +3254,7 @@ class Account(BlockchainObject):
             :param str account: (optional) the vesting account
             :param bool auto_vest: Set to true if the 'to' account
                 should receive the VESTS as VESTS, or false if it should
-                receive them as STEEM. (defaults to ``False``)
+                receive them as BLURT. (defaults to ``False``)
 
         """
         if account is None:

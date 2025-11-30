@@ -324,7 +324,7 @@ class Comment(BlockchainObject):
 
     @property
     def reward(self):
-        """ Return the estimated total SBD reward.
+        """ Return the estimated total TBD reward.
         """
         a_zero = Amount(0, self.blockchain.backed_token_symbol, blockchain_instance=self.blockchain)
         author = Amount(self.get("total_payout_value", a_zero), blockchain_instance=self.blockchain)
@@ -363,7 +363,7 @@ class Comment(BlockchainObject):
     def estimate_curation_SBD(self, vote_value_SBD, estimated_value_SBD=None):
         """ Estimates curation reward
 
-            :param float vote_value_SBD: The vote value in SBD for which the curation
+            :param float vote_value_SBD: The vote value in TBD for which the curation
                 should be calculated
             :param float estimated_value_SBD: When set, this value is used for calculate
                 the curation. When not set, the current post value is used.
@@ -448,7 +448,7 @@ class Comment(BlockchainObject):
         return weight / 100.
 
     def get_rewards(self):
-        """ Returns the total_payout, author_payout and the curator payout in SBD.
+        """ Returns the total_payout, author_payout and the curator payout in TBD.
             When the payout is still pending, the estimated payout is given out.
 
             .. note:: Potential beneficiary rewards were already deducted from the
@@ -457,9 +457,9 @@ class Comment(BlockchainObject):
             Example:::
 
                 {
-                    'total_payout': 9.956 SBD,
-                    'author_payout': 7.166 SBD,
-                    'curator_payout': 2.790 SBD
+                    'total_payout': 9.956 TBD,
+                    'author_payout': 7.166 TBD,
+                    'curator_payout': 2.790 TBD
                 }
 
         """
@@ -482,9 +482,9 @@ class Comment(BlockchainObject):
 
                 {
                     'pending_rewards': True,
-                    'payout_SP': 0.912 STEEM,
-                    'payout_SBD': 3.583 SBD,
-                    'total_payout_SBD': 7.166 SBD
+                    'payout_SP': 0.912 BLURT,
+                    'payout_SBD': 3.583 TBD,
+                    'total_payout_SBD': 7.166 TBD
                 }
 
         """
@@ -521,7 +521,7 @@ class Comment(BlockchainObject):
     def get_curation_rewards(self, pending_payout_SBD=False, pending_payout_value=None):
         """ Returns the curation rewards. The split between creator/curator is currently 50%/50%.
 
-            :param bool pending_payout_SBD: If True, the rewards are returned in SBD and not in STEEM (default is False)
+            :param bool pending_payout_SBD: If True, the rewards are returned in TBD and not in BLURT (default is False)
             :param pending_payout_value: When not None this value instead of the current
                 value is used for calculating the rewards
             :type pending_payout_value: float, str
@@ -534,15 +534,15 @@ class Comment(BlockchainObject):
             Example::
 
                 {
-                    'pending_rewards': True, 'unclaimed_rewards': 0.245 STEEM,
+                    'pending_rewards': True, 'unclaimed_rewards': 0.245 BLURT,
                     'active_votes': {
-                        'leprechaun': 0.006 STEEM, 'timcliff': 0.186 STEEM,
-                        'st3llar': 0.000 STEEM, 'crokkon': 0.015 STEEM, 'feedyourminnows': 0.003 STEEM,
-                        'isnochys': 0.003 STEEM, 'loshcat': 0.001 STEEM, 'greenorange': 0.000 STEEM,
-                        'qustodian': 0.123 STEEM, 'jpphotography': 0.002 STEEM, 'thinkingmind': 0.001 STEEM,
-                        'oups': 0.006 STEEM, 'mattockfs': 0.001 STEEM, 'holger80': 0.003 STEEM, 'michaelizer': 0.004 STEEM,
-                        'flugschwein': 0.010 STEEM, 'ulisessabeque': 0.000 STEEM, 'hakancelik': 0.002 STEEM, 'sbi2': 0.008 STEEM,
-                        'zcool': 0.000 STEEM, 'blurthq': 0.002 STEEM, 'rowdiya': 0.000 STEEM, 'qurator-tier-1-2': 0.012 STEEM
+                        'leprechaun': 0.006 BLURT, 'timcliff': 0.186 BLURT,
+                        'st3llar': 0.000 BLURT, 'crokkon': 0.015 BLURT, 'feedyourminnows': 0.003 BLURT,
+                        'isnochys': 0.003 BLURT, 'loshcat': 0.001 BLURT, 'greenorange': 0.000 BLURT,
+                        'qustodian': 0.123 BLURT, 'jpphotography': 0.002 BLURT, 'thinkingmind': 0.001 BLURT,
+                        'oups': 0.006 BLURT, 'mattockfs': 0.001 BLURT, 'holger80': 0.003 BLURT, 'michaelizer': 0.004 BLURT,
+                        'flugschwein': 0.010 BLURT, 'ulisessabeque': 0.000 BLURT, 'hakancelik': 0.002 BLURT, 'sbi2': 0.008 BLURT,
+                        'zcool': 0.000 BLURT, 'blurthq': 0.002 BLURT, 'rowdiya': 0.000 BLURT, 'qurator-tier-1-2': 0.012 BLURT
                     }
                 }
 

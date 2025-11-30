@@ -99,8 +99,8 @@ class Blurt(BlockChainInstance):
 
             from blurtpy import Blurt
             stm = Blurt(node=["https://mytstnet.com"], custom_chains={"MYTESTNET":
-                {'chain_assets': [{'asset': 'SBD', 'id': 0, 'precision': 3, 'symbol': 'SBD'},
-                                  {'asset': 'STEEM', 'id': 1, 'precision': 3, 'symbol': 'STEEM'},
+                {'chain_assets': [{'asset': 'TBD', 'id': 0, 'precision': 3, 'symbol': 'TBD'},
+                                  {'asset': 'BLURT', 'id': 1, 'precision': 3, 'symbol': 'BLURT'},
                                   {'asset': 'VESTS', 'id': 2, 'precision': 6, 'symbol': 'VESTS'}],
                  'chain_id': '79276aea5d4877d9a25892eaa01b0adf019d3e5cb12a97478df3298ccdd01674',
                  'min_version': '0.0.0',
@@ -157,14 +157,14 @@ class Blurt(BlockChainInstance):
         return self.rshares_to_sbd(rshares, not_broadcasted_vote=not_broadcasted_vote, use_stored_data=use_stored_data)        
 
     def rshares_to_sbd(self, rshares, not_broadcasted_vote=False, use_stored_data=True):
-        """ Calculates the current SBD value of a vote
+        """ Calculates the current TBD value of a vote
         """
         payout = float(rshares) * self.get_sbd_per_rshares(use_stored_data=use_stored_data,
                                                            not_broadcasted_vote_rshares=rshares if not_broadcasted_vote else 0)
         return payout
 
     def get_sbd_per_rshares(self, not_broadcasted_vote_rshares=0, use_stored_data=True):
-        """ Returns the current rshares to SBD ratio
+        """ Returns the current rshares to TBD ratio
         """
         reward_fund = self.get_reward_funds(use_stored_data=use_stored_data)
         reward_balance = float(Amount(reward_fund["reward_balance"], blockchain_instance=self))
@@ -182,10 +182,10 @@ class Blurt(BlockChainInstance):
         return fund_per_share * SBD_price
 
     def get_blurt_per_mvest(self, time_stamp=None, use_stored_data=True):
-        """ Returns the MVEST to STEEM ratio
+        """ Returns the MVEST to BLURT ratio
 
             :param int time_stamp: (optional) if set, return an estimated
-                STEEM per MVEST ratio for the given time stamp. If unset the
+                BLURT per MVEST ratio for the given time stamp. If unset the
                 current ratio is returned (default). (can also be a datetime object)
         """
         if self.offline and time_stamp is None:
@@ -252,7 +252,7 @@ class Blurt(BlockChainInstance):
         return self.sp_to_sbd(token_power, post_rshares=post_rshares, voting_power=voting_power, vote_pct=vote_pct, not_broadcasted_vote=not_broadcasted_vote, use_stored_data=use_stored_data)
 
     def sp_to_sbd(self, sp, post_rshares=0, voting_power=BLURT_100_PERCENT, vote_pct=BLURT_100_PERCENT, not_broadcasted_vote=True, use_stored_data=True):
-        """ Obtain the resulting SBD vote value from Blurt power
+        """ Obtain the resulting TBD vote value from Blurt power
 
             :param number blurt_power: Blurt Power
             :param int post_rshares: rshares of post which is voted
@@ -267,7 +267,7 @@ class Blurt(BlockChainInstance):
         return self.vests_to_sbd(vesting_shares, post_rshares=post_rshares, voting_power=voting_power, vote_pct=vote_pct, not_broadcasted_vote=not_broadcasted_vote, use_stored_data=use_stored_data)
 
     def vests_to_sbd(self, vests, post_rshares=0, voting_power=BLURT_100_PERCENT, vote_pct=BLURT_100_PERCENT, not_broadcasted_vote=True, use_stored_data=True):
-        """ Obtain the resulting SBD vote value from vests
+        """ Obtain the resulting TBD vote value from vests
 
             :param number vests: vesting shares
             :param int post_rshares: rshares of post which is voted
@@ -328,23 +328,23 @@ class Blurt(BlockChainInstance):
         return rshares
 
     def sbd_to_rshares(self, sbd, not_broadcasted_vote=False, use_stored_data=True):
-        """ Obtain the r-shares from SBD
+        """ Obtain the r-shares from TBD
 
-        :param sbd: SBD
-        :type sbd: str, int, amount.Amount
+        :param tbd: TBD
+        :type tbd: str, int, amount.Amount
         :param bool not_broadcasted_vote: not_broadcasted or already broadcasted vote (True = not_broadcasted vote).
-         Only impactful for very high amounts of SBD. Slight modification to the value calculation, as the not_broadcasted
+         Only impactful for very high amounts of TBD. Slight modification to the value calculation, as the not_broadcasted
          vote rshares decreases the reward pool.
 
         """
-        if isinstance(sbd, Amount):
-            sbd = Amount(sbd, blockchain_instance=self)
-        elif isinstance(sbd, string_types):
-            sbd = Amount(sbd, blockchain_instance=self)
+        if isinstance(tbd, Amount):
+            tbd = Amount(tbd, blockchain_instance=self)
+        elif isinstance(tbd, string_types):
+            tbd = Amount(tbd, blockchain_instance=self)
         else:
             sbd = Amount(sbd, self.sbd_symbol, blockchain_instance=self)
         if sbd['symbol'] != self.sbd_symbol:
-            raise AssertionError('Should input SBD, not any other asset!')
+            raise AssertionError('Should input TBD, not any other asset!')
 
         # If the vote was already broadcasted we can assume the blockchain values to be true
         if not not_broadcasted_vote:
@@ -364,8 +364,8 @@ class Blurt(BlockChainInstance):
              median_price = 1.0
 
         reward_pool_sbd = median_price * float(reward_balance)
-        if sbd > reward_pool_sbd:
-            raise ValueError('Provided more SBD than available in the reward pool.')
+        if tbd > reward_pool_sbd:
+            raise ValueError('Provided more TBD than available in the reward pool.')
 
         # This is the formula we can use to determine the "true" rshares.
         # We get this formula by some math magic using the previous used formulas
@@ -375,7 +375,7 @@ class Blurt(BlockChainInstance):
         # (balance / (claims + newShares)) * price = amount / newShares
         # Now we resolve for newShares resulting in:
         # newShares = claims * amount / (balance * price - amount)
-        rshares = recent_claims * float(sbd) / ((float(reward_balance) * float(median_price)) - float(sbd))
+        rshares = recent_claims * float(tbd) / ((float(reward_balance) * float(median_price)) - float(tbd))
         return int(rshares)
 
     def rshares_to_vote_pct(self, rshares, post_rshares=0, blurt_power=None, vests=None, voting_power=BLURT_100_PERCENT, use_stored_data=True):
@@ -421,27 +421,27 @@ class Blurt(BlockChainInstance):
         return int(math.copysign(vote_pct, rshares))
 
     def sbd_to_vote_pct(self, sbd, post_rshares=0, blurt_power=None, vests=None, voting_power=BLURT_100_PERCENT, not_broadcasted_vote=True, use_stored_data=True):
-        """ Obtain the voting percentage for a desired SBD value
+        """ Obtain the voting percentage for a desired TBD value
             for a given Blurt Power or vesting shares and voting power
             Give either Blurt Power or vests, not both.
             When the output is greater than 10000 or smaller than -10000,
-            the SBD value is too high.
+            the TBD value is too high.
 
             Returns the required voting percentage (100% = 10000)
 
-            :param sbd: desired SBD value
-            :type sbd: str, int, amount.Amount
+            :param tbd: desired TBD value
+            :type tbd: str, int, amount.Amount
             :param number blurt_power: Blurt Power
             :param number vests: vesting shares
             :param bool not_broadcasted_vote: not_broadcasted or already broadcasted vote (True = not_broadcasted vote).
-             Only impactful for very high amounts of SBD. Slight modification to the value calculation, as the not_broadcasted
+             Only impactful for very high amounts of TBD. Slight modification to the value calculation, as the not_broadcasted
              vote rshares decreases the reward pool.
 
         """
-        if isinstance(sbd, Amount):
-            sbd = Amount(sbd, blockchain_instance=self)
-        elif isinstance(sbd, string_types):
-            sbd = Amount(sbd, blockchain_instance=self)
+        if isinstance(tbd, Amount):
+            tbd = Amount(tbd, blockchain_instance=self)
+        elif isinstance(tbd, string_types):
+            tbd = Amount(tbd, blockchain_instance=self)
         else:
             sbd = Amount(sbd, self.sbd_symbol, blockchain_instance=self)
         if sbd['symbol'] != self.sbd_symbol:
@@ -474,8 +474,8 @@ class Blurt(BlockChainInstance):
 
     @property
     def sbd_symbol(self):
-        """ get the current chains symbol for SBD (e.g. "TBD" on testnet) """
-        # some networks (e.g. whaleshares) do not have SBD
+        """ get the current chains symbol for TBD (e.g. "TBD" on testnet) """
+        # some networks (e.g. whaleshares) do not have TBD
         try:
             symbol = self._get_asset_symbol(0)
         except KeyError:
@@ -484,7 +484,7 @@ class Blurt(BlockChainInstance):
 
     @property
     def blurt_symbol(self):
-        """ get the current chains symbol for STEEM (e.g. "TESTS" on testnet) """
+        """ get the current chains symbol for BLURT (e.g. "TESTS" on testnet) """
         return self._get_asset_symbol(1)
 
     @property
@@ -493,7 +493,7 @@ class Blurt(BlockChainInstance):
         return self._get_asset_symbol(2)
 
     def transfer(self, to, amount, asset, memo="", account=None, **kwargs):
-        """ Transfer BLURT or SBD to another account.
+        """ Transfer BLURT or TBD to another account.
 
             :param str to: Recipient
             :param float amount: Amount to transfer

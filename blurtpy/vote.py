@@ -197,11 +197,11 @@ class Vote(BlockchainObject):
         return self["weight"]
 
     @property
-    def sbd(self):
+    def tbd(self):
         return self.blockchain.rshares_to_sbd(int(self.get("rshares", 0)))
 
     @property
-    def hbd(self):
+    def tbd(self):
         return self.blockchain.rshares_to_hbd(int(self.get("rshares", 0)))
 
     @property
@@ -237,7 +237,7 @@ class VotesObject(list):
     def get_sorted_list(self, sort_key="time", reverse=True):
         utc = pytz.timezone('UTC')
 
-        if sort_key == 'sbd' or sort_key == "hbd":
+        if sort_key == 'tbd' or sort_key == "tbd":
             sortedList = sorted(self, key=lambda self: self.rshares, reverse=reverse)
         elif sort_key == 'time':
             sortedList = sorted(self, key=lambda self: (utc.localize(datetime.now(timezone.utc)) - self.time).total_seconds(), reverse=reverse)
@@ -251,7 +251,7 @@ class VotesObject(list):
 
     def printAsTable(self, voter=None, votee=None, start=None, stop=None, start_percent=None, stop_percent=None, sort_key="time", reverse=True, allow_refresh=True, return_str=False, **kwargs):
         utc = pytz.timezone('UTC')
-        table_header = ["Voter", "Votee", "SBD/HBD", "Time", "Rshares", "Percent", "Weight"]
+        table_header = ["Voter", "Votee", "TBD/TBD", "Time", "Rshares", "Percent", "Weight"]
         t = PrettyTable(table_header)
         t.align = "l"
         start = addTzInfo(start)
@@ -315,7 +315,7 @@ class VotesObject(list):
                     v = vote["voter"]
                 elif var == "votee":
                     v = vote.votee
-                elif var == "sbd" or var == "hbd":
+                elif var == "tbd" or var == "tbd":
                     v = vote.token_backed_dollar
                 elif var == "time":
                     v = d_time
@@ -330,7 +330,7 @@ class VotesObject(list):
 
     def print_stats(self, return_str=False, **kwargs):
         # utc = pytz.timezone('UTC')
-        table_header = ["voter", "votee", "sbd/hbd", "time", "rshares", "percent", "weight"]
+        table_header = ["voter", "votee", "tbd/tbd", "time", "rshares", "percent", "weight"]
         t = PrettyTable(table_header)
         t.align = "l"
 

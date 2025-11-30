@@ -692,7 +692,7 @@ class Blockchain(object):
                     'type': 'transfer',
                     'from': 'johngreenfield',
                     'to': 'thundercurator',
-                    'amount': '0.080 SBD',
+                    'amount': '0.080 TBD',
                     'memo': 'https://blurtit.com/lofi/@johngreenfield/lofi-joji-yeah-right',
                     '_id': '6d4c5f2d4d8ef1918acaee4a8dce34f9da384786',
                     'timestamp': datetime.datetime(2018, 5, 9, 11, 23, 6, tzinfo=<UTC>),
@@ -710,7 +710,7 @@ class Blockchain(object):
                             'transfer',
                                 {
                                     'from': 'johngreenfield', 'to': 'thundercurator',
-                                    'amount': '0.080 SBD',
+                                    'amount': '0.080 TBD',
                                     'memo': 'https://blurtit.com/lofi/@johngreenfield/lofi-joji-yeah-right'
                                 }
                         ],

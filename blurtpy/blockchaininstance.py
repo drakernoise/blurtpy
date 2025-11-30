@@ -113,8 +113,8 @@ class BlockChainInstance(object):
 
             from blurtpy import Blurt
             stm = Blurt(node=["https://mytstnet.com"], custom_chains={"MYTESTNET":
-                {'chain_assets': [{'asset': 'SBD', 'id': 0, 'precision': 3, 'symbol': 'SBD'},
-                                  {'asset': 'STEEM', 'id': 1, 'precision': 3, 'symbol': 'STEEM'},
+                {'chain_assets': [{'asset': 'TBD', 'id': 0, 'precision': 3, 'symbol': 'TBD'},
+                                  {'asset': 'BLURT', 'id': 1, 'precision': 3, 'symbol': 'BLURT'},
                                   {'asset': 'VESTS', 'id': 2, 'precision': 6, 'symbol': 'VESTS'}],
                  'chain_id': '79276aea5d4877d9a25892eaa01b0adf019d3e5cb12a97478df3298ccdd01674',
                  'min_version': '0.0.0',
@@ -685,7 +685,7 @@ class BlockChainInstance(object):
         raise Exception("not implemented")
 
     def rshares_to_token_backed_dollar(self, rshares, not_broadcasted_vote=False, use_stored_data=True):
-        """ Calculates the current HBD value of a vote
+        """ Calculates the current TBD value of a vote
         """
         raise Exception("not implemented")
 
@@ -709,7 +709,7 @@ class BlockChainInstance(object):
             Properties:::
 
                 {
-                    'account_creation_fee': '30.000 STEEM',
+                    'account_creation_fee': '30.000 BLURT',
                     'maximum_block_size': 65536,
                     'sbd_interest_rate': 250
                 }
@@ -1050,7 +1050,7 @@ class BlockChainInstance(object):
 
             :param str creator: which account should pay the registration fee (RC or BLURT)
                     (defaults to ``default_account``)
-            :param str fee: when set to 0 STEEM (default), claim account is paid by RC
+            :param str fee: when set to 0 BLURT (default), claim account is paid by RC
         """
         fee = fee if fee is not None else "0 %s" % (self.token_symbol)
         if not creator and self.config["default_account"]:
@@ -1688,7 +1688,7 @@ class BlockChainInstance(object):
             Properties:::
 
                 {
-                    "account_creation_fee": "3.000 STEEM",
+                    "account_creation_fee": "3.000 BLURT",
                     "maximum_block_size": 65536,
                     "sbd_interest_rate": 0,
                 }
@@ -1848,7 +1848,7 @@ class BlockChainInstance(object):
         Example::
 
             comment_options = {
-                'max_accepted_payout': '1000000.000 SBD',
+                'max_accepted_payout': '1000000.000 TBD',
                 'percent_blurt_dollars': 10000,
                 'allow_votes': True,
                 'allow_curation_rewards': True,
@@ -2073,7 +2073,7 @@ class BlockChainInstance(object):
                 {
                     "author": "",
                     "permlink": "",
-                    "max_accepted_payout": "1000000.000 SBD",
+                    "max_accepted_payout": "1000000.000 TBD",
                     "percent_blurt_dollars": 10000,
                     "allow_votes": True,
                     "allow_curation_rewards": True,
@@ -2190,7 +2190,7 @@ class BlockChainInstance(object):
     def _get_asset_symbol(self, asset_id):
         """ get the asset symbol from an asset id
 
-            :@param int asset_id: 0 -> SBD, 1 -> STEEM, 2 -> VESTS
+            :@param int asset_id: 0 -> TBD, 1 -> BLURT, 2 -> VESTS
 
         """
         for asset in self.chain_params['chain_assets']:
@@ -2201,8 +2201,8 @@ class BlockChainInstance(object):
 
     @property
     def backed_token_symbol(self):
-        """ get the current chains symbol for SBD (e.g. "TBD" on testnet) """
-        # some networks (e.g. whaleshares) do not have SBD
+        """ get the current chains symbol for TBD (e.g. "TBD" on testnet) """
+        # some networks (e.g. whaleshares) do not have TBD
         try:
             symbol = self._get_asset_symbol(0)
         except KeyError:
@@ -2211,7 +2211,7 @@ class BlockChainInstance(object):
 
     @property
     def token_symbol(self):
-        """ get the current chains symbol for STEEM (e.g. "TESTS" on testnet) """
+        """ get the current chains symbol for BLURT (e.g. "TESTS" on testnet) """
         return self._get_asset_symbol(1)
 
     @property

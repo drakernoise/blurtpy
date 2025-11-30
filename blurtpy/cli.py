@@ -1488,7 +1488,7 @@ def changerecovery(new_recovery_account, account, export):
 @click.option('--account', '-a', help='Powerup from this account')
 @click.option('--export', '-e', help='When set, transaction is stored in a file')
 def convert(amount, account, export):
-    """Convert SBD/HBD to Blurt/Blurt (takes a week to settle)"""
+    """Convert TBD/TBD to Blurt/Blurt (takes a week to settle)"""
     stm = shared_blockchain_instance()
     if stm.rpc is not None:
         stm.rpc.rpcconnect()
@@ -1896,7 +1896,7 @@ def disallow(foreign_account, permission, account, threshold, export):
 @cli.command()
 @click.argument('creator', nargs=1, required=True)
 @click.option('--fee', help='When fee is 0 (default) a subsidized account is claimed and can be created later with create_claimed_account', default=0.0)
-@click.option('--number', '-n', help='Number of subsidized accounts to be claimed (default = 1), when fee = 0 STEEM', default=1)
+@click.option('--number', '-n', help='Number of subsidized accounts to be claimed (default = 1), when fee = 0 BLURT', default=1)
 @click.option('--export', '-e', help='When set, transaction is stored in a file (should be used with number = 1)')
 def claimaccount(creator, fee, number, export):
     """Claim account for claimed account creation."""
@@ -2567,9 +2567,9 @@ def download(permlink, account, save, export):
 @click.option('--tags', '-g', help='A komma separated list of tags to go with the post.')
 @click.option('--community', '-c', help=' Name of the community (optional)')
 @click.option('--beneficiaries', '-b', help='Post beneficiaries (komma separated, e.g. a:10%,b:20%)')
-@click.option('--percent-blurt-dollars', '-d', help='50% SBD /50% SP is 10000 (default), 100% SP is 0')
-@click.option('--percent-hbd', '-h', help='50% HBD /50% HP is 10000 (default), 100% HP is 0')
-@click.option('--max-accepted-payout', '-m', help='Default is 1000000.000 [SBD]')
+@click.option('--percent-blurt-dollars', '-d', help='50% TBD /50% SP is 10000 (default), 100% SP is 0')
+@click.option('--percent-tbd', '-h', help='50% TBD /50% HP is 10000 (default), 100% HP is 0')
+@click.option('--max-accepted-payout', '-m', help='Default is 1000000.000 [TBD]')
 @click.option('--no-parse-body', '-n', help='Disable parsing of links, tags and images', is_flag=True, default=False)
 def createpost(markdown_file, account, title, tags, community, beneficiaries, percent_blurt_dollars, percent_hbd, max_accepted_payout, no_parse_body):
     """Creates a new markdown file with YAML header"""
@@ -2657,9 +2657,9 @@ def createpost(markdown_file, account, title, tags, community, beneficiaries, pe
 @click.option('--community', '-c', help=' Name of the community (optional)')
 @click.option('--canonical-url', '-u', help='Canonical url, can also set to https://blurt.blog or https://peakd.com (optional)')
 @click.option('--beneficiaries', '-b', help='Post beneficiaries (komma separated, e.g. a:10%,b:20%)')
-@click.option('--percent-blurt-dollars', '-d', help='50% SBD /50% SP is 10000 (default), 100% SP is 0')
-@click.option('--percent-hbd', '-h', help='50% SBD /50% SP is 10000 (default), 100% SP is 0')
-@click.option('--max-accepted-payout', '-m', help='Default is 1000000.000 [SBD]')
+@click.option('--percent-blurt-dollars', '-d', help='50% TBD /50% SP is 10000 (default), 100% SP is 0')
+@click.option('--percent-tbd', '-h', help='50% TBD /50% SP is 10000 (default), 100% SP is 0')
+@click.option('--max-accepted-payout', '-m', help='Default is 1000000.000 [TBD]')
 @click.option('--no-parse-body', '-n', help='Disable parsing of links, tags and images', is_flag=True, default=False)
 @click.option('--no-patch-on-edit', '-e', help='Disable patch posting on edits (when the permlink already exists)', is_flag=True, default=False)
 @click.option('--export', help='When set, transaction is stored in a file')
@@ -2702,7 +2702,7 @@ def post(markdown_file, account, title, permlink, tags, reply_identifier, commun
         parameter["percent_blurt_dollars"] = parameter["percent-blurt-dollars"]
     if percent_hbd is not None:
         parameter["percent_hbd"] = percent_hbd
-    elif "percent-hbd" in parameter:
+    elif "percent-tbd" in parameter:
         parameter["percent_hbd"] = parameter["percent-hbd"]
     if max_accepted_payout is not None:
         parameter["max_accepted_payout"] = max_accepted_payout
@@ -3093,8 +3093,8 @@ def stream(lines, head, table, follow):
                 return
 
 @cli.command()
-@click.option('--sbd-to-blurt', help='Show ticker in SBD/STEEM', is_flag=True, default=False)
-@click.option('--hbd-to-blurt', '-i', help='Show ticker in TBD/BLURT', is_flag=True, default=False)
+@click.option('--tbd-to-blurt', help='Show ticker in TBD/BLURT', is_flag=True, default=False)
+@click.option('--tbd-to-blurt', '-i', help='Show ticker in TBD/BLURT', is_flag=True, default=False)
 def ticker(sbd_to_blurt, hbd_to_blurt):
     """ Show ticker
     """
@@ -3155,8 +3155,8 @@ def pricehistory(width, height, ascii):
 @cli.command()
 @click.option('--days', '-d', help='Limit the days of shown trade history (default 7)', default=7.)
 @click.option('--hours', help='Limit the intervall history intervall (default 2 hours)', default=2.0)
-@click.option('--sbd-to-blurt', help='Show ticker in SBD/STEEM', is_flag=True, default=False)
-@click.option('--hbd-to-blurt', '-i', help='Show ticker in HBD/HIVE', is_flag=True, default=False)
+@click.option('--tbd-to-blurt', help='Show ticker in TBD/BLURT', is_flag=True, default=False)
+@click.option('--tbd-to-blurt', '-i', help='Show ticker in TBD/BLURT', is_flag=True, default=False)
 @click.option('--limit', '-l', help='Limit number of trades which is fetched at each intervall point (default 100)', default=100)
 @click.option('--width', '-w', help='Plot width (default 75)', default=75)
 @click.option('--height', '-h', help='Plot height (default 15)', default=15)
@@ -3943,9 +3943,9 @@ def votes(account, direction, outgoing, incoming, days, export):
 @click.option('--limit', '-m', help='Show only the first minutes')
 @click.option('--min-vote', '-v', help='Show only votes higher than the given value')
 @click.option('--max-vote', '-w', help='Show only votes lower than the given value')
-@click.option('--min-performance', '-x', help='Show only votes with performance higher than the given value in HBD/SBD')
-@click.option('--max-performance', '-y', help='Show only votes with performance lower than the given value in HBD/SBD')
-@click.option('--payout', default=None, help="Show the curation for a potential payout in SBD as float")
+@click.option('--min-performance', '-x', help='Show only votes with performance higher than the given value in TBD/TBD')
+@click.option('--max-performance', '-y', help='Show only votes with performance lower than the given value in TBD/TBD')
+@click.option('--payout', default=None, help="Show the curation for a potential payout in TBD as float")
 @click.option('--export', '-e', default=None, help="Export results to HTML-file")
 @click.option('--short', '-s', is_flag=True, default=False, help="Show only Curation without sum")
 @click.option('--length', '-l', help='Limits the permlink character length', default=None)

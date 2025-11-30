@@ -143,7 +143,7 @@ class AccountSnapshot(list):
         din = self.delegated_vests_in[index]
         dout = self.delegated_vests_out[index]
         blurt = self.own_blurt[index]
-        sbd = self.own_sbd[index]
+        tbd = self.own_sbd[index]
         sum_in = sum([din[key].amount for key in din])
         sum_out = sum([dout[key].amount for key in dout])
         from blurtpy import Blurt
@@ -157,7 +157,7 @@ class AccountSnapshot(list):
             sp_own = self.blockchain.vests_to_hp(own, timestamp=ts)            
         sp_eff = sp_own + sp_in - sp_out
         return {"timestamp": ts, "vests": own, "delegated_vests_in": din, "delegated_vests_out": dout,
-                "sp_own": sp_own, "sp_eff": sp_eff, "blurt": blurt, "sbd": sbd, "index": index}
+                "sp_own": sp_own, "sp_eff": sp_eff, "blurt": blurt, "tbd": tbd, "index": index}
 
     def get_account_history(self, start=None, stop=None, use_block_num=True):
         """ Uses account history to fetch all related ops
@@ -182,7 +182,7 @@ class AccountSnapshot(list):
     def update_rewards(self, timestamp, curation_reward, author_vests, author_blurt, author_sbd):
         self.reward_timestamps.append(timestamp)
         self.curation_rewards.append(curation_reward)
-        self.author_rewards.append({"vests": author_vests, "blurt": author_blurt, "sbd": author_sbd})
+        self.author_rewards.append({"vests": author_vests, "blurt": author_blurt, "tbd": author_sbd})
 
     def update_out_vote(self, timestamp, weight):
         self.out_vote_timestamp.append(timestamp)
@@ -200,7 +200,7 @@ class AccountSnapshot(list):
             print("Could not find: %s" % v)
             return
 
-    def update(self, timestamp, own, delegated_in=None, delegated_out=None, blurt=0, sbd=0):
+    def update(self, timestamp, own, delegated_in=None, delegated_out=None, blurt=0, tbd=0):
         """ Updates the internal state arrays
 
             :param datetime timestamp: datetime of the update
@@ -210,8 +210,8 @@ class AccountSnapshot(list):
             :param dict delegated_out: Outgoing delegation
             :param blurt: blurt
             :type blurt: amount.Amount, float
-            :param sbd: sbd
-            :type sbd: amount.Amount, float
+            :param tbd: tbd
+            :type tbd: amount.Amount, float
 
         """
         self.timestamps.append(timestamp - timedelta(seconds=1))
@@ -224,7 +224,7 @@ class AccountSnapshot(list):
         self.timestamps.append(timestamp)
         self.own_vests.append(self.own_vests[-1] + own)
         self.own_blurt.append(self.own_blurt[-1] + blurt)
-        self.own_sbd.append(self.own_sbd[-1] + sbd)
+        self.own_sbd.append(self.own_sbd[-1] + tbd)
 
         new_deleg = dict(self.delegated_vests_in[-1])
         if delegated_in is not None and delegated_in:
@@ -382,7 +382,7 @@ class AccountSnapshot(list):
             vests = Amount(op['reward_vests'], blockchain_instance=self.blockchain)
             blurt = Amount(op['reward_blurt'], blockchain_instance=self.blockchain)
             sbd = Amount(op['reward_sbd'], blockchain_instance=self.blockchain)
-            self.update(ts, vests, 0, 0, blurt, sbd)
+            self.update(ts, vests, 0, 0, blurt, tbd)
             return
 
         elif op['type'] == "curation_reward":
@@ -400,9 +400,9 @@ class AccountSnapshot(list):
                 blurt = Amount(op['blurt_payout'], blockchain_instance=self.blockchain)
                 sbd = Amount(op['sbd_payout'], blockchain_instance=self.blockchain)
             if "author_reward" in only_ops:
-                self.update(ts, vests, 0, 0, blurt, sbd)
+                self.update(ts, vests, 0, 0, blurt, tbd)
             if enable_rewards:
-                self.update_rewards(ts, 0, vests, blurt, sbd)
+                self.update_rewards(ts, 0, vests, blurt, tbd)
             return
 
         elif op['type'] == "producer_reward":
@@ -419,7 +419,7 @@ class AccountSnapshot(list):
                     vests = Amount(op['vesting_payout'], blockchain_instance=self.blockchain)
                     blurt = Amount(op['blurt_payout'], blockchain_instance=self.blockchain)
                     sbd = Amount(op['sbd_payout'], blockchain_instance=self.blockchain)
-                    self.update(ts, vests, 0, 0, blurt, sbd)
+                    self.update(ts, vests, 0, 0, blurt, tbd)
                 return
             else:
                 return
@@ -448,9 +448,9 @@ class AccountSnapshot(list):
 
         elif op['type'] == 'hardfork_blurt':
             vests = Amount(op['vests_converted'])
-            hbd = Amount(op['blurt_transferred'])
+            tbd = Amount(op['blurt_transferred'])
             blurt = Amount(op['sbd_transferred'])
-            self.update(ts, vests * (-1), 0, 0, blurt * (-1), hbd * (-1))
+            self.update(ts, vests * (-1), 0, 0, blurt * (-1), tbd * (-1))
 
         elif op['type'] in ['comment', 'feed_publish', 'shutdown_witness',
                             'account_witness_vote', 'witness_update', 'custom_json',

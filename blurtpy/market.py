@@ -252,7 +252,7 @@ class Market(dict):
                                 'order_price': {'base': '8.000 BLURT', 'quote': '9.618 TBD'},
                                 'real_price': '1.20225000000000004',
                                 'blurt': 4565,
-                                'sbd': 5488,
+                                'tbd': 5488,
                                 'created': '2018-04-30T21:12:45'
                             }
                         ],
@@ -261,7 +261,7 @@ class Market(dict):
                                 'order_price': {'base': '10.000 TBD', 'quote': '8.333 BLURT'},
                                 'real_price': '1.20004800192007677',
                                 'blurt': 8333,
-                                'sbd': 10000,
+                                'tbd': 10000,
                                 'created': '2018-04-30T20:29:33'
                             }
                         ]

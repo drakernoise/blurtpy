@@ -49,7 +49,7 @@ class Amount(object):
             if self.precision is None:
                 raise Exception("Asset unknown")
             self.amount = round(value_to_decimal(self.amount, self.precision) * 10 ** self.precision)
-            # Workaround to allow transfers in HIVE
+            # Workaround to allow transfers in BLURT
 
             self.str_repr = '{:.{}f} {}'.format((float(self.amount) / 10 ** self.precision), self.precision, self.symbol)
         elif isinstance(d, list):
@@ -93,10 +93,10 @@ class Amount(object):
 
     def __bytes__(self):
         # padding
-        # Workaround to allow transfers in HIVE
-        if self.symbol == "HBD":
+        # Workaround to allow transfers in BLURT
+        if self.symbol == "TBD":
             self.symbol = "TBD"
-        elif self.symbol == "HIVE":
+        elif self.symbol == "BLURT":
             self.symbol = "BLURT"
         symbol = self.symbol + "\x00" * (7 - len(self.symbol))
         return (struct.pack("<q", int(self.amount)) + struct.pack("<b", self.precision) +
