@@ -11,13 +11,23 @@ from blurtgraphenebase.account import PasswordKey
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# User provided key for 'draktest'
-ACTIVE_KEY = "5K8sEXDvidZijhKpYDyWxyKSP22T3UdU8276YEsmcDgwbmgRS6K"
-ACCOUNT_NAME = "draktest"
+# User provided key for testing
+# !!! IMPORTANT: YOU MUST UPDATE THESE VALUES BEFORE RUNNING TESTS !!!
+ACTIVE_KEY = "YOUR_ACTIVE_KEY_HERE"
+ACCOUNT_NAME = "your_account_name_here"
 
 class TestNativeBlurt(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        # Check if user has configured the tests
+        if ACTIVE_KEY == "YOUR_ACTIVE_KEY_HERE" or ACCOUNT_NAME == "your_account_name_here":
+            raise ValueError(
+                "\n\n"
+                "!!! TEST CONFIGURATION ERROR !!!\n"
+                "You must configure 'tests/test_native_blurt.py' with your own account details.\n"
+                "Please edit the file and update ACTIVE_KEY and ACCOUNT_NAME at the top.\n"
+            )
+
         # Use a robust node list to test failover capabilities
         cls.nodes = [
             "https://rpc.blurt.world",

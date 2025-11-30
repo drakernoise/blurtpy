@@ -38,14 +38,17 @@ Estos tests construyen y firman operaciones complejas para asegurar que la libre
 
 ## ⚙️ Configuración
 
-Los tests usan una cuenta por defecto (`draktest`) y una Active Key pública para verificación. **Puedes (y deberías) editar estos valores** en `tests/test_native_blurt.py` para probar con tu propia cuenta o verificar diferentes permisos.
+Los tests requieren una cuenta de Blurt válida y su Active Key para verificar la firma de transacciones (dry-run).
+
+> **⚠️ IMPORTANTE:** **DEBES** editar `tests/test_native_blurt.py` y poner tus propias credenciales. Si no configuras esto, los tests **FALLARÁN** con un `ValueError`.
 
 Busca estas constantes al inicio del archivo:
 
 ```python
-# User provided key for 'draktest'
-ACTIVE_KEY = "5K8sEXDvidZijhKpYDyWxyKSP22T3UdU8276YEsmcDgwbmgRS6K"
-ACCOUNT_NAME = "draktest"
+# User provided key for testing
+# !!! IMPORTANT: YOU MUST UPDATE THESE VALUES BEFORE RUNNING TESTS !!!
+ACTIVE_KEY = "YOUR_ACTIVE_KEY_HERE"
+ACCOUNT_NAME = "your_account_name_here"
 ```
 
 ## 🚀 Cómo Ejecutar los Tests
