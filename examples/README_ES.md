@@ -9,6 +9,17 @@ Asegúrate de tener instalada la librería y configurada tu clave privada (WIF) 
 pip install blurtpy
 ```
 
+## ⚙️ Configuración
+
+Los scripts de ejemplo utilizan un marcador de posición (placeholder) para el nombre de usuario. **Debes editar los scripts** para poner tu nombre de usuario real de Blurt antes de ejecutarlos.
+
+Busca esta línea al principio de cada script (`account_management.py`, `social_actions.py`, `wallet_actions.py`):
+
+```python
+# Configuration
+USERNAME = "your_username"  # <--- Cambia esto por tu usuario real de Blurt
+```
+
 ## Configuración Inicial (¡IMPORTANTE!)
 
 Antes de ejecutar los ejemplos, debes configurar tu **Wallet Seguro**. Esto creará una base de datos local cifrada (`blurtpy.sqlite`) para almacenar tus claves privadas, evitando tener que escribirlas en el código.
