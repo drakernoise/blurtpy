@@ -4,9 +4,12 @@ from blurtpy import Blurt
 from blurtpy.account import Account
 from blurtpy.amount import Amount
 
+from blurtpy.nodelist import NodeList
+
 # Configuration
 USERNAME = "your_username"
-NODE = ["https://rpc.blurt.world"]
+nl = NodeList()
+NODE = [n["url"] for n in nl]
 
 # Initialize Blurt
 b = Blurt(node=NODE)

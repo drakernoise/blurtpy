@@ -1,8 +1,11 @@
 from blurtpy import Blurt
+from blurtpy.nodelist import NodeList
 import json
 
-# Connect to Blurt
-b = Blurt(node=["https://rpc.blurt.world"])
+# Connect to Blurt using NodeList
+nl = NodeList()
+nodes = [n["url"] for n in nl]
+b = Blurt(node=nodes)
 
 import sys
 

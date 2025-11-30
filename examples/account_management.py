@@ -3,9 +3,12 @@ from blurtpy import Blurt
 from blurtpy.account import Account
 from blurtgraphenebase.account import PasswordKey
 
+from blurtpy.nodelist import NodeList
+
 # Configuration
 USERNAME = "your_username"  # <--- Change this to your actual Blurt username
-NODE = ["https://rpc.blurt.world"]
+nl = NodeList()
+NODE = [n["url"] for n in nl]
 
 # Initialize Blurt
 b = Blurt(node=NODE)

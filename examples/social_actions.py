@@ -6,9 +6,12 @@ from blurtpy.comment import Comment
 from blurtpy.discussions import Query, Discussions_by_created
 from blurtpy.wallet import Wallet
 
+from blurtpy.nodelist import NodeList
+
 # Configuration
 USERNAME = "your_username"
-NODE = ["https://rpc.blurt.world"]
+nl = NodeList()
+NODE = [n["url"] for n in nl]
 
 # Initialize Blurt without hardcoded keys
 # It will use the local wallet (blurtpy.sqlite)
