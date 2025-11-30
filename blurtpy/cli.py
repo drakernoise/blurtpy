@@ -550,62 +550,35 @@ def currentnode(version, url):
     '--show', '-s', is_flag=True, default=False,
     help="Prints the updated nodes")
 @click.option(
-    '--blurt', '-h', is_flag=True, default=False,
-    help="Switch to HIVE blockchain, when set to true.")
-@click.option(
-    '--blurt', '-e', is_flag=True, default=False,
-    help="Switch to STEEM nodes, when set to true.")
-@click.option(
-    '--blurt', '-b', is_flag=True, default=False,
-    help="Switch to BLURT nodes, when set to true.")
-@click.option(
     '--test', '-t', is_flag=True, default=False,
-    help="Do change the node list, only print the newest nodes setup.")
+    help="Do not change the node list, only print the newest nodes setup.")
 @click.option(
     '--only-https', is_flag=True, default=False,
     help="Use only https nodes.")
 @click.option(
     '--only-wss', is_flag=True, default=False,
     help="Use only websocket nodes.")
-def updatenodes(show, blurt, test, only_https, only_wss):
-    """ Update the nodelist from @fullnodeupdate
+def updatenodes(show, test, only_https, only_wss):
+    """ Update the nodelist from @fullnodeupdate for Blurt blockchain
     """
     stm = shared_blockchain_instance()
     if stm.rpc is not None:
         stm.rpc.rpcconnect()
-    if blurt and blurt:
-        print("blurt and blurt cannot be active both")
-        return
+    
     t = PrettyTable(["node", "Version", "score"])
     t.align = "l"
-    if blurt:
-        blockchain = "blurt"
-    elif blurt:
-        blockchain = "blurt"
-    elif blurt:
-        blockchain = "blurt"
-    else:
-        blockchain = stm.config["default_chain"]
+    
+    # Initialize NodeList and update from @fullnodeupdate
     nodelist = NodeList()
     nodelist.update_nodes(blockchain_instance=stm)
-    if blurt:
-        nodes = nodelist.get_blurt_nodes(wss=not only_https, https=not only_wss)
-        if stm.config["default_chain"] != "blurt":
-            stm.config["default_chain"] = "blurt"
-    elif blurt:
-        nodes = nodelist.get_blurt_nodes(wss=not only_https, https=not only_wss)
-        if stm.config["default_chain"] != "blurt":
-            stm.config["default_chain"] = "blurt"
-    elif blurt:
-        nodes = ["https://rpc.blurt.world", "https://blurt-rpc.blurt.buzz"]
-        if stm.config["default_chain"] != "blurt":
-            stm.config["default_chain"] = "blurt"
-    elif stm.config["default_chain"] == "blurt":
-        nodes = nodelist.get_blurt_nodes(wss=not only_https, https=not only_wss)
-    elif stm.config["default_chain"] == "blurt":
-        nodes = ["https://rpc.blurt.world", "https://blurt-rpc.blurt.buzz"]
-    else:
-        nodes = nodelist.get_blurt_nodes(wss=not only_https, https=not only_wss)
+    
+    # Get Blurt nodes based on protocol preferences
+    nodes = nodelist.get_blurt_nodes(wss=not only_https, https=not only_wss)
+    
+    # Ensure default chain is set to blurt
+    if stm.config["default_chain"] != "blurt":
+        stm.config["default_chain"] = "blurt"
+    
     if show or test:
         sorted_nodes = sorted(nodelist, key=lambda node: node["score"], reverse=True)
         for node in sorted_nodes:
@@ -613,6 +586,7 @@ def updatenodes(show, blurt, test, only_https, only_wss):
                 score = float("{0:.1f}".format(node["score"]))
                 t.add_row([node["url"], node["version"], score])
         print(t)
+    
     if not test:
         stm.set_default_nodes(nodes)
         stm.rpc.nodes.set_node_urls(nodes)
