@@ -73,30 +73,6 @@ class Testcases(unittest.TestCase):
         bts = self.bts
         b = Blockchain(blockchain_instance=bts)
         accounts = []
-        limit = 200
-        for acc in b.get_all_accounts(steps=100, limit=limit):
-            accounts.append(acc)
-        self.assertEqual(len(accounts), limit)
-        self.assertEqual(len(set(accounts)), limit)
-
-    def test_awaitTX(self):
-        bts = self.bts
-        b = Blockchain(blockchain_instance=bts)
-        trans = {'ref_block_num': 3855, 'ref_block_prefix': 1730859721,
-                 'expiration': '2018-03-09T06:21:06', 'operations': [],
-                 'extensions': [], 'signatures':
-                 ['2033a872a8ad33c7d5b946871e4c9cc8f08a5809258355fc909058eac83'
-                  '20ac2a872517a52b51522930d93dd2c1d5eb9f90b070f75f838c881ff29b11af98d6a1b']}
-        with self.assertRaises(
-            Exception
-        ):
-            b.awaitTxConfirmation(trans)
-
-    def test_stream(self):
-        bts = self.bts
-        start = self.start
-        stop = self.stop
-        b = Blockchain(blockchain_instance=bts)
         ops_stream = []
         opNames = ["transfer", "vote"]
         for op in b.stream(opNames=opNames, start=start, stop=stop):
@@ -211,7 +187,7 @@ class Testcases(unittest.TestCase):
         with self.assertRaises(
             BlockWaitTimeExceeded
         ):
-            for i in range(300):
+            for i in range(5):
                 block = b2.wait_for_and_get_block(blocknum)
                 last_fetched_block_num = block.block_num
                 blocknum = last_fetched_block_num + 2

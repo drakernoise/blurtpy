@@ -836,10 +836,9 @@ class Blockchain(object):
             lastname = start
         self.blockchain.rpc.set_next_node_on_empty_reply(self.blockchain.rpc.get_use_appbase())
         while True:
-            if self.blockchain.rpc.get_use_appbase():
-                ret = self.blockchain.rpc.list_accounts({'start': lastname, 'limit': steps, 'order': 'by_name'}, api="database")["accounts"]
-            else:
-                ret = self.blockchain.rpc.lookup_accounts(lastname, steps)
+            if lastname is None:
+                lastname = ""
+            ret = self.blockchain.rpc.lookup_accounts(lastname, steps)
             for account in ret:
                 if isinstance(account, dict):
                     account_name = account["name"]

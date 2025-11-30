@@ -96,6 +96,22 @@ In the `docs/` folder you will find:
 *   [Migration Guide and Walkthrough](docs/walkthrough.md)
 *   [Security Audit Report](docs/security_audit_report.md)
 
+## Testing
+
+`blurtpy` includes a native test suite to ensure robustness and compatibility.
+
+### Running Tests
+To run the native test suite:
+```bash
+pytest tests/test_native_blurt.py
+```
+
+This suite verifies:
+*   Connection to multiple Blurt RPC nodes.
+*   Data integrity for account operations.
+*   Transaction signing (dry-run) using Active Key.
+*   Error handling for missing keys or invalid accounts.
+
 ## Credits
 
 `blurtpy` is a fork of the library modified by [Samuel Alphée Richard (Saboin)](https://gitlab.com/saboin), which is a fork of [beem](https://github.com/holgern/beem) created by [Holger Hattendorf](https://github.com/holgern), who in turn based it on `python-bitshares` by [Fabian Schuh](https://github.com/xeroc).

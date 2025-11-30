@@ -14,7 +14,7 @@ from blurtpy.utils import formatTimeString
 from blurtpy.instance import set_shared_blockchain_instance
 #from .nodes import get_blurt_nodes, get_blurt_nodes
 from .nodes import get_blurt_nodes
-wif = "5JAbFs7AAxisVWbvSSMocADEZHny2f9S534PwS6ERyifGxrQmCb"
+wif = "5K8sEXDvidZijhKpYDyWxyKSP22T3UdU8276YEsmcDgwbmgRS6K"
 
 
 class Testcases(unittest.TestCase):
@@ -22,7 +22,7 @@ class Testcases(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
       
-        cls.bts = blurt(
+        cls.bts = Blurt(
             node=get_blurt_nodes(),
             nobroadcast=True,
             bundle=False,
@@ -31,20 +31,20 @@ class Testcases(unittest.TestCase):
             keys={"active": wif},
             num_retries=10
         )
-        cls.account = Account("blurtpybot", blurt_instance=cls.bts)      
+        cls.account = Account("draktest", blurt_instance=cls.bts)      
         set_shared_blockchain_instance(cls.bts)
 
     def test_account(self):
         stm = self.bts
         account = self.account
-        Account("blurtpybot", blurt_instance=stm)
+        Account("draktest", blurt_instance=stm)
         with self.assertRaises(
             exceptions.AccountDoesNotExistsException
         ):
             Account("DoesNotExistsXXX", blurt_instance=stm)
         # asset = Asset("1.3.0")
         # symbol = asset["symbol"]
-        self.assertEqual(account.name, "blurtpybot")
+        self.assertEqual(account.name, "draktest")
         self.assertEqual(account["name"], account.name)
         self.assertIsInstance(account.get_balance("available", "BLURT"), Amount)
         account.print_info()
@@ -59,7 +59,7 @@ class Testcases(unittest.TestCase):
         self.assertIn("id", account)
         account.cached = False
         # self.assertEqual(account["id"], "1.2.1")
-        self.assertEqual(str(account), "<Account blurtpybot>")
+        self.assertEqual(str(account), "<Account draktest>")
         self.assertIsInstance(Account(account), Account)
 
     def test_history(self):
@@ -171,7 +171,7 @@ class Testcases(unittest.TestCase):
 
     def test_history2(self):
         stm = self.bts
-        account = Account("blurtpybot", blurt_instance=stm)
+        account = Account("draktest", blurt_instance=stm)
         h_list = []
         max_index = account.virtual_op_count()
         for h in account.history(start=max_index - 4, stop=max_index, use_block_num=False, batch_size=2, raw_output=False):
@@ -203,7 +203,7 @@ class Testcases(unittest.TestCase):
 
     def test_history_index(self):
         stm = self.bts
-        account = Account("blurtpybot", blurt_instance=stm)
+        account = Account("draktest", blurt_instance=stm)
         h_list = []
         for h in account.history(start=1, stop=10, use_block_num=False, batch_size=10, raw_output=True):
             h_list.append(h)
@@ -218,7 +218,7 @@ class Testcases(unittest.TestCase):
 
     def test_history_reverse2(self):
         stm = self.bts
-        account = Account("blurtpybot", blurt_instance=stm)
+        account = Account("draktest", blurt_instance=stm)
         h_list = []
         max_index = account.virtual_op_count()
         for h in account.history_reverse(start=max_index, stop=max_index - 4, use_block_num=False, batch_size=2, raw_output=False):
@@ -251,7 +251,7 @@ class Testcases(unittest.TestCase):
     def test_history_block_num(self):
         stm = self.bts
         zero_element = 0
-        account = Account("blurtpybot", blurt_instance=stm)
+        account = Account("draktest", blurt_instance=stm)
         h_all_raw = []
         for h in account.history_reverse(use_block_num=False, stop=-15, raw_output=True):
             h_all_raw.append(h)
@@ -315,7 +315,7 @@ class Testcases(unittest.TestCase):
         )
         op = tx["operations"][0][1]
         self.assertIn(
-            "blurtpybot",
+            "draktest",
             op["account"])
 
     def test_delegate_vesting_shares(self):
@@ -328,7 +328,7 @@ class Testcases(unittest.TestCase):
         )
         op = tx["operations"][0][1]
         self.assertIn(
-            "blurtpybot",
+            "draktest",
             op["delegator"])
 
     def test_claim_reward_balance(self):
@@ -341,7 +341,7 @@ class Testcases(unittest.TestCase):
         )
         op = tx["operations"][0][1]
         self.assertIn(
-            "blurtpybot",
+            "draktest",
             op["account"])
 
     def test_cancel_transfer_from_savings(self):
@@ -354,7 +354,7 @@ class Testcases(unittest.TestCase):
         )
         op = tx["operations"][0][1]
         self.assertIn(
-            "blurtpybot",
+            "draktest",
             op["from"])
 
     def test_transfer_from_savings(self):
@@ -367,7 +367,7 @@ class Testcases(unittest.TestCase):
         )
         op = tx["operations"][0][1]
         self.assertIn(
-            "blurtpybot",
+            "draktest",
             op["from"])
 
     def test_transfer_to_savings(self):
@@ -380,7 +380,7 @@ class Testcases(unittest.TestCase):
         )
         op = tx["operations"][0][1]
         self.assertIn(
-            "blurtpybot",
+            "draktest",
             op["from"])
 
     def test_convert(self):
@@ -393,7 +393,7 @@ class Testcases(unittest.TestCase):
         )
         op = tx["operations"][0][1]
         self.assertIn(
-            "blurtpybot",
+            "draktest",
             op["owner"])
 
     def test_proxy(self):
@@ -419,7 +419,7 @@ class Testcases(unittest.TestCase):
         )
         op = tx["operations"][0][1]
         self.assertIn(
-            "blurtpybot",
+            "draktest",
             op["from"])
 
         w.blockchain.txbuffer.clear()
@@ -430,41 +430,41 @@ class Testcases(unittest.TestCase):
         )
         op = tx["operations"][0][1]
         self.assertIn(
-            "blurtpybot",
+            "draktest",
             op["from"])
 
     def test_transfer(self):
         w = self.account
         w.blockchain.txbuffer.clear()
-        tx = w.transfer("blurtpybot", "1", "blurt")
+        tx = w.transfer("draktest", "1", "blurt")
         self.assertEqual(
             (tx["operations"][0][0]),
             "transfer"
         )
         op = tx["operations"][0][1]
         self.assertIn(
-            "blurtpybot",
+            "draktest",
             op["from"])
         self.assertIn(
-            "blurtpybot",
+            "draktest",
             op["to"])        
 
         w.blockchain.txbuffer.clear()
-        tx = w.transfer("blurtpybot", "1", "blurt", skip_account_check=True)
+        tx = w.transfer("draktest", "1", "blurt", skip_account_check=True)
         self.assertEqual(
             (tx["operations"][0][0]),
             "transfer"
         )
         op = tx["operations"][0][1]
         self.assertIn(
-            "blurtpybot",
+            "draktest",
             op["from"])
         self.assertIn(
-            "blurtpybot",
+            "draktest",
             op["to"])        
 
     def test_json_export(self):
-        account = Account("blurtpybot", blurt_instance=self.bts)
+        account = Account("draktest", blurt_instance=self.bts)
         if account.blockchain.rpc.get_use_appbase():
             content = self.bts.rpc.find_accounts({'accounts': [account["name"]]}, api="database")["accounts"][0]
         else:
@@ -538,7 +538,7 @@ class Testcases(unittest.TestCase):
             votes_list2.append(v)
         self.assertTrue(abs(len(votes_list) - len(votes_list2)) < 2)
 
-        account = Account("blurtpybot", blockchain_instance=stm)
+        account = Account("draktest", blockchain_instance=stm)
         votes_list = list(account.history(only_ops=["vote"]))
         votes_list2 = list(account.history_reverse(only_ops=["vote"]))
         self.assertEqual(len(votes_list), len(votes_list2))
@@ -546,8 +546,8 @@ class Testcases(unittest.TestCase):
         self.assertEqual(votes_list[-1]["voter"], votes_list2[0]["voter"])
 
     def test_history_op_filter(self):
-        stm = blurt("https://api.blurt.blog")
-        account = Account("blurtpybot", blockchain_instance=stm)
+        stm = Blurt("https://api.blurt.blog")
+        account = Account("draktest", blockchain_instance=stm)
         votes_list = list(account.history(only_ops=["vote"]))
         other_list = list(account.history(exclude_ops=["vote"]))
         all_list = list(account.history())
@@ -566,9 +566,9 @@ class Testcases(unittest.TestCase):
             index += 1        
 
     def test_history_op_filter2(self):
-        stm = blurt("https://api.blurt.blog")
+        stm = Blurt("https://api.blurt.blog")
         batch_size = 100
-        account = Account("blurtpybot", blockchain_instance=stm)
+        account = Account("draktest", blockchain_instance=stm)
         votes_list = list(account.history(only_ops=["vote"], batch_size=batch_size))
         other_list = list(account.history(exclude_ops=["vote"], batch_size=batch_size))
         all_list = list(account.history(batch_size=batch_size))
@@ -647,8 +647,8 @@ class Testcases(unittest.TestCase):
         self.assertEqual(extract_account_name(""), "")
 
     def test_get_blocknum_from_hist(self):
-        stm = blurt("https://api.blurt.blog")
-        account = Account("blurtpybot", blockchain_instance=stm)
+        stm = Blurt("https://api.blurt.blog")
+        account = Account("draktest", blockchain_instance=stm)
         created, min_index = account._get_first_blocknum()
         if min_index == 0:
             self.assertEqual(created, 23687631)
