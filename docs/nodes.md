@@ -12,7 +12,20 @@ Here is a list of known public RPC nodes for the Blurt blockchain. You can use a
 | `https://rpc.blurt.live` | Blurt.live |
 | `https://blurtdev.techcoderx.com` | TechCoderx |
 
-## Usage Example
+## Automatic Node Selection (Recommended for Performance)
+
+`blurtpy` has a built-in feature to automatically benchmark known nodes and connect to the fastest one. To use this, set `node="best"`.
+
+```python
+from blurtpy import Blurt
+
+# Automatically find and connect to the best node
+b = Blurt(node="best")
+```
+
+## Manual Node Selection
+
+If you prefer to connect to a specific node (e.g., for consistency or debugging), you can pass a list of URLs. The library will try to connect to them in order.
 
 ```python
 from blurtpy import Blurt
@@ -21,4 +34,4 @@ from blurtpy import Blurt
 b = Blurt(node=["https://rpc.beblurt.com"])
 ```
 
-> **Note:** Node availability and performance may vary. If one node is down, try another from the list.
+> **Note:** Node availability and performance may vary. Using `node="best"` is generally more reliable as it adapts to network conditions.
