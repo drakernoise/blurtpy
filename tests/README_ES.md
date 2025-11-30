@@ -51,6 +51,20 @@ ACTIVE_KEY = "YOUR_ACTIVE_KEY_HERE"
 ACCOUNT_NAME = "your_account_name_here"
 ```
 
+## 📦 Requisitos
+
+Para ejecutar los tests, necesitas tener instalado lo siguiente:
+
+*   **Python 3.6+**
+*   **blurtpy** (instalado en tu entorno)
+*   **pytest** (para ejecutar la suite)
+
+Instálalos vía pip:
+
+```bash
+pip install pytest
+```
+
 ## 🚀 Cómo Ejecutar los Tests
 
 Necesitas tener `pytest` instalado. Ejecuta el siguiente comando desde la raíz del proyecto:
