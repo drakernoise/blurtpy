@@ -38,7 +38,7 @@ class Amount(dict):
 
         Way to obtain a proper instance:
 
-            * ``args`` can be a string, e.g.:  "1 TBD"
+            * ``args`` can be a string, e.g.:  "1 BLURT"
             * ``args`` can be a dictionary containing ``amount`` and ``asset_id``
             * ``args`` can be a dictionary containing ``amount`` and ``asset``
             * ``args`` can be a list of a ``float`` and ``str`` (symbol)

@@ -198,19 +198,19 @@ class Vote(BlockchainObject):
 
     @property
     def tbd(self):
-        return self.blockchain.rshares_to_sbd(int(self.get("rshares", 0)))
+        return self.blockchain.rshares_to_tbd(int(self.get("rshares", 0)))
 
     @property
     def tbd(self):
-        return self.blockchain.rshares_to_hbd(int(self.get("rshares", 0)))
+        return self.blockchain.rshares_to_tbd(int(self.get("rshares", 0)))
 
     @property
     def token_backed_dollar(self):
         from blurtpy import Blurt
         if isinstance(self.blockchain, Blurt):
-            return self.blockchain.rshares_to_hbd(int(self.get("rshares", 0)))
+            return self.blockchain.rshares_to_tbd(int(self.get("rshares", 0)))
         else:
-            return self.blockchain.rshares_to_sbd(int(self.get("rshares", 0)))
+            return self.blockchain.rshares_to_tbd(int(self.get("rshares", 0)))
 
     @property
     def rshares(self):

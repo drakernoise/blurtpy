@@ -711,7 +711,7 @@ class BlockChainInstance(object):
                 {
                     'account_creation_fee': '30.000 BLURT',
                     'maximum_block_size': 65536,
-                    'sbd_interest_rate': 250
+                    'tbd_interest_rate': 250
                 }
 
         """
@@ -1653,8 +1653,8 @@ class BlockChainInstance(object):
                     "account_subsidy_decay": x,
                     "maximum_block_size": x,
                     "url": x,
-                    "sbd_exchange_rate": x,
-                    "sbd_interest_rate": x,
+                    "tbd_exchange_rate": x,
+                    "tbd_interest_rate": x,
                     "new_signing_key": x
                 }
 
@@ -1690,7 +1690,7 @@ class BlockChainInstance(object):
                 {
                     "account_creation_fee": "3.000 BLURT",
                     "maximum_block_size": 65536,
-                    "sbd_interest_rate": 0,
+                    "tbd_interest_rate": 0,
                 }
 
         """
@@ -2093,7 +2093,7 @@ class BlockChainInstance(object):
     def _build_comment_options_op(self, author, permlink, options,
                                   beneficiaries):
         options = remove_from_dict(options or {}, [
-            'max_accepted_payout', 'percent_blurt_dollars', 'percent_hbd',
+            'max_accepted_payout', 'percent_blurt_dollars', 'percent_tbd',
             'allow_votes', 'allow_curation_rewards', 'extensions'
         ], keep_keys=True)
         # override beneficiaries extension
@@ -2138,8 +2138,8 @@ class BlockChainInstance(object):
                     permlink,
                     "max_accepted_payout":
                     options.get("max_accepted_payout", default_max_payout),
-                    "percent_hbd":
-                    int(options.get("percent_hbd", BLURT_100_PERCENT)),
+                    "percent_tbd":
+                    int(options.get("percent_tbd", BLURT_100_PERCENT)),
                     "allow_votes":
                     options.get("allow_votes", True),
                     "allow_curation_rewards":

@@ -596,9 +596,9 @@ class Account(BlockchainObject):
             raise AssertionError('Should input %s, not any other asset!' % self.blockchain.backed_token_symbol)
         from blurtpy import Blurt
         if isinstance(self.blockchain, Blurt):
-            vote_pct = self.blockchain.rshares_to_vote_pct(self.blockchain.sbd_to_rshares(token_units, not_broadcasted_vote=not_broadcasted_vote), post_rshares=post_rshares, voting_power=voting_power * 100, blurt_power=token_power)
+            vote_pct = self.blockchain.rshares_to_vote_pct(self.blockchain.tbd_to_rshares(token_units, not_broadcasted_vote=not_broadcasted_vote), post_rshares=post_rshares, voting_power=voting_power * 100, blurt_power=token_power)
         else:
-            vote_pct = self.blockchain.rshares_to_vote_pct(self.blockchain.sbd_to_rshares(token_units, not_broadcasted_vote=not_broadcasted_vote), post_rshares=post_rshares, voting_power=voting_power * 100, blurt_power=token_power)
+            vote_pct = self.blockchain.rshares_to_vote_pct(self.blockchain.tbd_to_rshares(token_units, not_broadcasted_vote=not_broadcasted_vote), post_rshares=post_rshares, voting_power=voting_power * 100, blurt_power=token_power)
         return vote_pct
 
     def get_creator(self):

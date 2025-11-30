@@ -40,7 +40,7 @@ class AccountSnapshot(list):
         """
         self.own_vests = [Amount(0, self.blockchain.vest_token_symbol, blockchain_instance=self.blockchain)]
         self.own_blurt = [Amount(0, self.blockchain.token_symbol, blockchain_instance=self.blockchain)]
-        self.own_sbd = [Amount(0, self.blockchain.backed_token_symbol, blockchain_instance=self.blockchain)]
+        self.own_tbd = [Amount(0, self.blockchain.backed_token_symbol, blockchain_instance=self.blockchain)]
         self.delegated_vests_in = [{}]
         self.delegated_vests_out = [{}]
         self.timestamps = [addTzInfo(datetime(1970, 1, 1, 0, 0, 0, 0))]
@@ -143,7 +143,7 @@ class AccountSnapshot(list):
         din = self.delegated_vests_in[index]
         dout = self.delegated_vests_out[index]
         blurt = self.own_blurt[index]
-        tbd = self.own_sbd[index]
+        tbd = self.own_tbd[index]
         sum_in = sum([din[key].amount for key in din])
         sum_out = sum([dout[key].amount for key in dout])
         from blurtpy import Blurt
@@ -179,10 +179,10 @@ class AccountSnapshot(list):
             ]
         )
 
-    def update_rewards(self, timestamp, curation_reward, author_vests, author_blurt, author_sbd):
+    def update_rewards(self, timestamp, curation_reward, author_vests, author_blurt, author_tbd):
         self.reward_timestamps.append(timestamp)
         self.curation_rewards.append(curation_reward)
-        self.author_rewards.append({"vests": author_vests, "blurt": author_blurt, "tbd": author_sbd})
+        self.author_rewards.append({"vests": author_vests, "blurt": author_blurt, "tbd": author_tbd})
 
     def update_out_vote(self, timestamp, weight):
         self.out_vote_timestamp.append(timestamp)
@@ -217,14 +217,14 @@ class AccountSnapshot(list):
         self.timestamps.append(timestamp - timedelta(seconds=1))
         self.own_vests.append(self.own_vests[-1])
         self.own_blurt.append(self.own_blurt[-1])
-        self.own_sbd.append(self.own_sbd[-1])
+        self.own_tbd.append(self.own_tbd[-1])
         self.delegated_vests_in.append(self.delegated_vests_in[-1])
         self.delegated_vests_out.append(self.delegated_vests_out[-1])
 
         self.timestamps.append(timestamp)
         self.own_vests.append(self.own_vests[-1] + own)
         self.own_blurt.append(self.own_blurt[-1] + blurt)
-        self.own_sbd.append(self.own_sbd[-1] + tbd)
+        self.own_tbd.append(self.own_tbd[-1] + tbd)
 
         new_deleg = dict(self.delegated_vests_in[-1])
         if delegated_in is not None and delegated_in:
@@ -381,7 +381,7 @@ class AccountSnapshot(list):
         elif op['type'] == "claim_reward_balance":
             vests = Amount(op['reward_vests'], blockchain_instance=self.blockchain)
             blurt = Amount(op['reward_blurt'], blockchain_instance=self.blockchain)
-            sbd = Amount(op['reward_sbd'], blockchain_instance=self.blockchain)
+            tbd = Amount(op['reward_tbd'], blockchain_instance=self.blockchain)
             self.update(ts, vests, 0, 0, blurt, tbd)
             return
 
@@ -398,7 +398,7 @@ class AccountSnapshot(list):
             if "author_reward" in only_ops or enable_rewards:
                 vests = Amount(op['vesting_payout'], blockchain_instance=self.blockchain)
                 blurt = Amount(op['blurt_payout'], blockchain_instance=self.blockchain)
-                sbd = Amount(op['sbd_payout'], blockchain_instance=self.blockchain)
+                tbd = Amount(op['tbd_payout'], blockchain_instance=self.blockchain)
             if "author_reward" in only_ops:
                 self.update(ts, vests, 0, 0, blurt, tbd)
             if enable_rewards:
@@ -418,7 +418,7 @@ class AccountSnapshot(list):
                 else:
                     vests = Amount(op['vesting_payout'], blockchain_instance=self.blockchain)
                     blurt = Amount(op['blurt_payout'], blockchain_instance=self.blockchain)
-                    sbd = Amount(op['sbd_payout'], blockchain_instance=self.blockchain)
+                    tbd = Amount(op['tbd_payout'], blockchain_instance=self.blockchain)
                     self.update(ts, vests, 0, 0, blurt, tbd)
                 return
             else:
@@ -449,7 +449,7 @@ class AccountSnapshot(list):
         elif op['type'] == 'hardfork_blurt':
             vests = Amount(op['vests_converted'])
             tbd = Amount(op['blurt_transferred'])
-            blurt = Amount(op['sbd_transferred'])
+            blurt = Amount(op['tbd_transferred'])
             self.update(ts, vests * (-1), 0, 0, blurt * (-1), tbd * (-1))
 
         elif op['type'] in ['comment', 'feed_publish', 'shutdown_witness',

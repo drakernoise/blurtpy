@@ -10,7 +10,7 @@ Hemos creado con éxito una nueva librería nativa para Blurt, llamada **`blurtp
     -   Subpaquetes renombrados: `blurtapi`, `blurtbase`, `blurtgraphenebase`, etc.
 
 2.  **Limpieza de Código (The Purge):**
-    -   Eliminados archivos específicos de Hive: `hive.py`, `rc.py` (Resource Credits), `community.py`.
+    -   Eliminados archivos específicos de Hive: `blurt.py`, `rc.py` (Resource Credits), `community.py`.
     -   Eliminados tests irrelevantes de la suite de pruebas.
     -   Eliminadas referencias a `RC` en `account.py`.
 

@@ -89,7 +89,7 @@ class Comment(BlockchainObject):
             if p in comment and isinstance(comment.get(p), string_types):
                 comment[p] = formatTimeString(comment.get(p, "1970-01-01T00:00:00"))
         # Parse Amounts
-        sbd_amounts = [
+        tbd_amounts = [
             "total_payout_value",
             "max_accepted_payout",
             "pending_payout_value",
@@ -97,7 +97,7 @@ class Comment(BlockchainObject):
             "total_pending_payout_value",
             "promoted",
         ]
-        for p in sbd_amounts:
+        for p in tbd_amounts:
             if p in comment and isinstance(comment.get(p), (string_types, list, dict)):
                 value = comment.get(p, "0.000 %s" % (self.blockchain.backed_token_symbol))
                 if isinstance(value, str) and value.split(" ")[1] !=self.blockchain.backed_token_symbol:
@@ -207,7 +207,7 @@ class Comment(BlockchainObject):
                     output[p] = formatTimeString(p_date)
                 else:
                     output[p] = p_date
-        sbd_amounts = [
+        tbd_amounts = [
             "total_payout_value",
             "max_accepted_payout",
             "pending_payout_value",
@@ -215,7 +215,7 @@ class Comment(BlockchainObject):
             "total_pending_payout_value",
             "promoted",
         ]
-        for p in sbd_amounts:
+        for p in tbd_amounts:
             if p in output and isinstance(output[p], Amount):
                 output[p] = output[p].json()
         parse_int = [
@@ -508,13 +508,13 @@ class Comment(BlockchainObject):
         author_tokens -= benefactor_tokens
 
         if median_hist is not None and "percent_blurt_dollars" in self:
-            sbd_blurt = author_tokens * self["percent_blurt_dollars"] / 20000.
-            vesting_blurt = median_price.as_base(self.blockchain.token_symbol) * (author_tokens - sbd_blurt)
-            return {'pending_rewards': True, "payout_SP": vesting_blurt, "payout_SBD": sbd_blurt, "total_payout_SBD": author_tokens}
-        elif median_hist is not None and "percent_hbd" in self:
-            sbd_blurt = author_tokens * self["percent_hbd"] / 20000.
-            vesting_blurt = median_price.as_base(self.blockchain.token_symbol) * (author_tokens - sbd_blurt)
-            return {'pending_rewards': True, "payout_SP": vesting_blurt, "payout_SBD": sbd_blurt, "total_payout_SBD": author_tokens}        
+            tbd_blurt = author_tokens * self["percent_blurt_dollars"] / 20000.
+            vesting_blurt = median_price.as_base(self.blockchain.token_symbol) * (author_tokens - tbd_blurt)
+            return {'pending_rewards': True, "payout_SP": vesting_blurt, "payout_SBD": tbd_blurt, "total_payout_SBD": author_tokens}
+        elif median_hist is not None and "percent_tbd" in self:
+            tbd_blurt = author_tokens * self["percent_tbd"] / 20000.
+            vesting_blurt = median_price.as_base(self.blockchain.token_symbol) * (author_tokens - tbd_blurt)
+            return {'pending_rewards': True, "payout_SP": vesting_blurt, "payout_SBD": tbd_blurt, "total_payout_SBD": author_tokens}        
         else:
             return {'pending_rewards': True, "total_payout": author_tokens, "payout_SBD": None, "total_payout_SBD": None}
 

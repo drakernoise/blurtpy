@@ -20,19 +20,6 @@ from blurtpy.amount import Amount
 from blurtpy.price import Price
 from blurtpy.account import Account
 from blurtpy.blurt import Blurt
-from blurtpy.blurt import Blurt
-from blurtpy.blurt import Blurt
-from blurtpy.comment import Comment
-from blurtpy.message import Message
-from blurtpy.market import Market
-from blurtpy.block import Block
-from blurtpy.profile import Profile
-from blurtpy.wallet import Wallet
-from blurtpy.blurtsigner import BlurtSigner
-from blurtpy.memo import Memo
-from blurtpy.asset import Asset
-from blurtpy.witness import Witness, WitnessesRankedByVote, WitnessesVotedByAccount
-from blurtpy.blockchain import Blockchain
 from blurtpy.utils import formatTimeString, construct_authorperm, derive_beneficiaries, derive_tags, seperate_yaml_dict_from_body, derive_permlink, make_patch, create_new_password, import_coldcard_wif, generate_password, import_pubkeys, import_custom_json
 from blurtpy.vote import AccountVotes, ActiveVotes, Vote
 from blurtpy import exceptions
@@ -75,8 +62,8 @@ def prompt_callback(ctx, param, value):
 
 
 def asset_callback(ctx, param, value):
-    if value not in ["BLURT", "TBD", "TESTS"]:
-        print("Please use BLURT or TBD as asset!")
+    if value not in ["BLURT", "TESTS"]:
+        print("Please use BLURT as asset!")
         ctx.abort()
     else:
         return value
@@ -2257,8 +2244,8 @@ def beneficiaries(authorperm, beneficiaries, export):
                "allow_curation_rewards": c["allow_curation_rewards"]}
     if "percent_blurt_dollars" in c:
         options["percent_blurt_dollars"] = c["percent_blurt_dollars"]
-    elif "percent_hbd" in c:
-        options["percent_hbd"] = c["percent_hbd"]
+    elif "percent_tbd" in c:
+        options["percent_tbd"] = c["percent_tbd"]
 
     if isinstance(beneficiaries, tuple) and len(beneficiaries) == 1:
         beneficiaries = beneficiaries[0].split(",")
@@ -2533,8 +2520,8 @@ def download(permlink, account, save, export):
         yaml_prefix += 'max_accepted_payout: %s\n' % str(comment["max_accepted_payout"])
         if "percent_blurt_dollars" in comment:
             yaml_prefix += 'percent_blurt_dollars: %s\n' %  str(comment["percent_blurt_dollars"])
-        elif "percent_hbd" in comment:
-            yaml_prefix += 'percent_hbd: %s\n' %  str(comment["percent_hbd"])
+        elif "percent_tbd" in comment:
+            yaml_prefix += 'percent_tbd: %s\n' %  str(comment["percent_tbd"])
         if "tags" in comment.json_metadata:
             if len(comment.json_metadata["tags"]) > 0 and comment["category"] != comment.json_metadata["tags"][0] and len(comment["category"]) > 0:
                 yaml_prefix += 'community: %s\n' % comment["category"]
@@ -2571,7 +2558,7 @@ def download(permlink, account, save, export):
 @click.option('--percent-tbd', '-h', help='50% TBD /50% HP is 10000 (default), 100% HP is 0')
 @click.option('--max-accepted-payout', '-m', help='Default is 1000000.000 [TBD]')
 @click.option('--no-parse-body', '-n', help='Disable parsing of links, tags and images', is_flag=True, default=False)
-def createpost(markdown_file, account, title, tags, community, beneficiaries, percent_blurt_dollars, percent_hbd, max_accepted_payout, no_parse_body):
+def createpost(markdown_file, account, title, tags, community, beneficiaries, percent_blurt_dollars, percent_tbd, max_accepted_payout, no_parse_body):
     """Creates a new markdown file with YAML header"""
     stm = shared_blockchain_instance()
     if stm.rpc is not None:
@@ -2607,7 +2594,7 @@ def createpost(markdown_file, account, title, tags, community, beneficiaries, pe
 
     if beneficiaries is None:
         beneficiaries = input("beneficiaries (komma separated, e.g. a:10%,b:20%) [return to skip]: ")
-    if percent_blurt_dollars is None and percent_hbd is None:
+    if percent_blurt_dollars is None and percent_tbd is None:
         ret = None
         while ret is None:
             ret = input("50% or 100% Blurt/Blurt Power as post reward [50 or 100]? ")
@@ -2615,16 +2602,16 @@ def createpost(markdown_file, account, title, tags, community, beneficiaries, pe
                 ret = None
         if ret == "50":
             percent_blurt_dollars = 10000
-            percent_hbd = 10000
+            percent_tbd = 10000
         else:
             percent_blurt_dollars = 0
-            percent_hbd = 0
-    elif percent_blurt_dollars is not None and percent_hbd is not None:
-        raise ValueError("percent_hbd and percent_blurt_dollars cannot be both set.")
+            percent_tbd = 0
+    elif percent_blurt_dollars is not None and percent_tbd is not None:
+        raise ValueError("percent_tbd and percent_blurt_dollars cannot be both set.")
     elif percent_blurt_dollars is None:
-        percent_blurt_dollars = percent_hbd
-    elif percent_hbd is None:
-        percent_hbd = percent_blurt_dollars
+        percent_blurt_dollars = percent_tbd
+    elif percent_tbd is None:
+        percent_tbd = percent_blurt_dollars
 
     if max_accepted_payout is None:
         max_accepted_payout = input("max accepted payout [return to skip]: ")
@@ -2633,7 +2620,7 @@ def createpost(markdown_file, account, title, tags, community, beneficiaries, pe
     yaml_prefix += 'author: %s\n' % account
     yaml_prefix += 'tags: %s\n' % tags
     if stm.is_blurt:
-        yaml_prefix += 'percent_hbd: %d\n' % percent_hbd
+        yaml_prefix += 'percent_tbd: %d\n' % percent_tbd
     else:
         yaml_prefix += 'percent_blurt_dollars: %d\n' % percent_blurt_dollars
     if community is not None and community != "":
@@ -2663,7 +2650,7 @@ def createpost(markdown_file, account, title, tags, community, beneficiaries, pe
 @click.option('--no-parse-body', '-n', help='Disable parsing of links, tags and images', is_flag=True, default=False)
 @click.option('--no-patch-on-edit', '-e', help='Disable patch posting on edits (when the permlink already exists)', is_flag=True, default=False)
 @click.option('--export', help='When set, transaction is stored in a file')
-def post(markdown_file, account, title, permlink, tags, reply_identifier, community, canonical_url, beneficiaries, percent_blurt_dollars, percent_hbd, max_accepted_payout, no_parse_body, no_patch_on_edit, export):
+def post(markdown_file, account, title, permlink, tags, reply_identifier, community, canonical_url, beneficiaries, percent_blurt_dollars, percent_tbd, max_accepted_payout, no_parse_body, no_patch_on_edit, export):
     """broadcasts a post/comment. All image links which links to a file will be uploaded.
     The yaml header can contain:
 
@@ -2700,10 +2687,10 @@ def post(markdown_file, account, title, permlink, tags, reply_identifier, commun
         parameter["percent_blurt_dollars"] = percent_blurt_dollars
     elif "percent-blurt-dollars" in parameter:
         parameter["percent_blurt_dollars"] = parameter["percent-blurt-dollars"]
-    if percent_hbd is not None:
-        parameter["percent_hbd"] = percent_hbd
+    if percent_tbd is not None:
+        parameter["percent_tbd"] = percent_tbd
     elif "percent-tbd" in parameter:
-        parameter["percent_hbd"] = parameter["percent-hbd"]
+        parameter["percent_tbd"] = parameter["percent-tbd"]
     if max_accepted_payout is not None:
         parameter["max_accepted_payout"] = max_accepted_payout
     elif "max-accepted-payout" in parameter:
@@ -2742,27 +2729,27 @@ def post(markdown_file, account, title, permlink, tags, reply_identifier, commun
     percent_blurt_dollars = None
     if "percent_blurt_dollars" in parameter:
         percent_blurt_dollars = parameter["percent_blurt_dollars"]
-    percent_hbd = None
-    if "percent_hbd" in parameter:
-        percent_hbd = parameter["percent_hbd"]
+    percent_tbd = None
+    if "percent_tbd" in parameter:
+        percent_tbd = parameter["percent_tbd"]
     max_accepted_payout = None
     if "max_accepted_payout" in parameter:
         max_accepted_payout = parameter["max_accepted_payout"]
     comment_options = None
-    if max_accepted_payout is not None or percent_blurt_dollars is not None or percent_hbd is not None:
+    if max_accepted_payout is not None or percent_blurt_dollars is not None or percent_tbd is not None:
         comment_options = {}
     if max_accepted_payout is not None:
         if stm.backed_token_symbol not in max_accepted_payout:
             max_accepted_payout = str(Amount(float(max_accepted_payout), stm.backed_token_symbol, blockchain_instance=stm))
         comment_options["max_accepted_payout"] = max_accepted_payout
-    if percent_hbd is not None and stm.is_blurt:
-        comment_options["percent_hbd"] = percent_hbd
+    if percent_tbd is not None and stm.is_blurt:
+        comment_options["percent_tbd"] = percent_tbd
     elif percent_blurt_dollars is not None and stm.is_blurt:
-        comment_options["percent_hbd"] = percent_blurt_dollars
+        comment_options["percent_tbd"] = percent_blurt_dollars
     elif percent_blurt_dollars is not None:
         comment_options["percent_blurt_dollars"] = percent_blurt_dollars
-    elif percent_hbd is not None:
-        comment_options["percent_blurt_dollars"] = percent_hbd
+    elif percent_tbd is not None:
+        comment_options["percent_blurt_dollars"] = percent_tbd
     beneficiaries = None
     if "beneficiaries" in parameter:
         beneficiaries = derive_beneficiaries(parameter["beneficiaries"])
@@ -3092,29 +3079,6 @@ def stream(lines, head, table, follow):
             if op_count >= lines and not follow:
                 return
 
-@cli.command()
-@click.option('--tbd-to-blurt', help='Show ticker in TBD/BLURT', is_flag=True, default=False)
-@click.option('--tbd-to-blurt', '-i', help='Show ticker in TBD/BLURT', is_flag=True, default=False)
-def ticker(sbd_to_blurt, hbd_to_blurt):
-    """ Show ticker
-    """
-    stm = shared_blockchain_instance()
-    if stm.rpc is not None:
-        stm.rpc.rpcconnect()
-    t = PrettyTable(["Key", "Value"])
-    t.align = "l"
-    market = Market(blockchain_instance=stm)
-    ticker = market.ticker()
-    for key in ticker:
-        if key in ["highest_bid", "latest", "lowest_ask"] and (sbd_to_blurt or hbd_to_blurt):
-            t.add_row([key, str(ticker[key].as_base(stm.backed_token_symbol))])
-        elif key in "percent_change" and (sbd_to_blurt or hbd_to_blurt):
-            t.add_row([key, "%.2f %%" % -ticker[key]])
-        elif key in "percent_change":
-            t.add_row([key, "%.2f %%" % ticker[key]])
-        else:
-            t.add_row([key, str(ticker[key])])
-    print(t)
 
 
 @cli.command()
@@ -3152,295 +3116,7 @@ def pricehistory(width, height, ascii):
     print(str(chart))
 
 
-@cli.command()
-@click.option('--days', '-d', help='Limit the days of shown trade history (default 7)', default=7.)
-@click.option('--hours', help='Limit the intervall history intervall (default 2 hours)', default=2.0)
-@click.option('--tbd-to-blurt', help='Show ticker in TBD/BLURT', is_flag=True, default=False)
-@click.option('--tbd-to-blurt', '-i', help='Show ticker in TBD/BLURT', is_flag=True, default=False)
-@click.option('--limit', '-l', help='Limit number of trades which is fetched at each intervall point (default 100)', default=100)
-@click.option('--width', '-w', help='Plot width (default 75)', default=75)
-@click.option('--height', '-h', help='Plot height (default 15)', default=15)
-@click.option('--ascii', help='Use only ascii symbols', is_flag=True, default=False)
-def tradehistory(days, hours, sbd_to_blurt, hbd_to_blurt, limit, width, height, ascii):
-    """ Show price history
-    """
-    stm = shared_blockchain_instance()
-    if stm.rpc is not None:
-        stm.rpc.rpcconnect()
-    m = Market(blockchain_instance=stm)
-    utc = pytz.timezone('UTC')
-    stop = utc.localize(datetime.now(timezone.utc))
-    start = stop - timedelta(days=days)
-    intervall = timedelta(hours=hours)
-    trades = m.trade_history(start=start, stop=stop, limit=limit, intervall=intervall)
-    price = []
-    if sbd_to_blurt or hbd_to_blurt:
-        base_str = stm.token_symbol
-    else:
-        base_str = stm.backed_token_symbol
-    for trade in trades:
-        base = 0
-        quote = 0
-        for order in trade:
-            base += float(order.as_base(base_str)["base"])
-            quote += float(order.as_base(base_str)["quote"])
-        price.append(base / quote)
-    if ascii:
-        charset = u'ascii'
-    else:
-        charset = u'utf8'
-    chart = AsciiChart(height=height, width=width, offset=3, placeholder='{:6.2f} ', charset=charset)
-    if sbd_to_blurt or hbd_to_blurt:
-        print("\n     Trade history %s - %s \n\n%s/%s" % (formatTimeString(start), formatTimeString(stop),
-                                                          stm.backed_token_symbol, stm.token_symbol))
-    else:
-        print("\n     Trade history %s - %s \n\n%s/%s" % (formatTimeString(start), formatTimeString(stop),
-                                                          stm.token_symbol, stm.backed_token_symbol))
-    chart.adapt_on_series(price)
-    chart.new_chart()
-    chart.add_axis()
-    chart.add_curve(price)
-    print(str(chart))
 
-
-@cli.command()
-@click.option('--chart', help='Enable charting', is_flag=True)
-@click.option('--limit', '-l', help='Limit number of returned open orders (default 25)', default=25)
-@click.option('--show-date', help='Show dates', is_flag=True, default=False)
-@click.option('--width', '-w', help='Plot width (default 75)', default=75)
-@click.option('--height', '-h', help='Plot height (default 15)', default=15)
-@click.option('--ascii', help='Use only ascii symbols', is_flag=True, default=False)
-def orderbook(chart, limit, show_date, width, height, ascii):
-    """Obtain orderbook of the internal market"""
-    stm = shared_blockchain_instance()
-    if stm.rpc is not None:
-        stm.rpc.rpcconnect()
-    market = Market(blockchain_instance=stm)
-    orderbook = market.orderbook(limit=limit, raw_data=False)
-    if not show_date:
-        header = ["Asks Sum " + stm.backed_token_symbol, "Sell Orders", "Bids Sum " + stm.backed_token_symbol, "Buy Orders"]
-    else:
-        header = ["Asks date", "Sell Orders", "Bids date", "Buy Orders"]
-    t = PrettyTable(header, hrules=0)
-    t.align = "r"
-    asks = []
-    bids = []
-    asks_date = []
-    bids_date = []
-    sumsum_asks = []
-    sum_asks = 0
-    sumsum_bids = []
-    sum_bids = 0
-    n = 0
-    for order in orderbook["asks"]:
-        asks.append(order)
-        sum_asks += float(order.as_base(stm.backed_token_symbol)["base"])
-        sumsum_asks.append(sum_asks)
-    if n < len(asks):
-        n = len(asks)
-    for order in orderbook["bids"]:
-        bids.append(order)
-        sum_bids += float(order.as_base(stm.backed_token_symbol)["base"])
-        sumsum_bids.append(sum_bids)
-    if n < len(bids):
-        n = len(bids)
-    if show_date:
-        for order in orderbook["asks_date"]:
-            asks_date.append(order)
-        if n < len(asks_date):
-            n = len(asks_date)
-        for order in orderbook["bids_date"]:
-            bids_date.append(order)
-        if n < len(bids_date):
-            n = len(bids_date)
-    if chart:
-        if ascii:
-            charset = u'ascii'
-        else:
-            charset = u'utf8'
-        chart = AsciiChart(height=height, width=width, offset=4, placeholder=' {:10.2f} $', charset=charset)
-        print("\n            Orderbook \n")
-        chart.adapt_on_series(sumsum_asks[::-1] + sumsum_bids)
-        chart.new_chart()
-        chart.add_axis()
-        y0 = chart._map_y(chart.minimum)
-        y1 = chart._map_y(chart.maximum)
-        chart._draw_v_line(y0 + 1, y1, int(chart.n / chart.skip / 2), line=chart.char_set["curve_vl_dot"])
-        chart.add_curve(sumsum_asks[::-1] + sumsum_bids)
-        print(str(chart))
-        return
-    for i in range(n):
-        row = []
-        if len(asks_date) > i:
-            row.append(formatTimeString(asks_date[i]))
-        elif show_date:
-            row.append([""])
-        if len(sumsum_asks) > i and not show_date:
-            row.append("%.2f" % sumsum_asks[i])
-        elif not show_date:
-            row.append([""])
-        if len(asks) > i:
-            row.append(str(asks[i]))
-        else:
-            row.append([""])
-        if len(bids_date) > i:
-            row.append(formatTimeString(bids_date[i]))
-        elif show_date:
-            row.append([""])
-        if len(sumsum_bids) > i and not show_date:
-            row.append("%.2f" % sumsum_bids[i])
-        elif not show_date:
-            row.append([""])
-        if len(bids) > i:
-            row.append(str(bids[i]))
-        else:
-            row.append([""])
-        t.add_row(row)
-    print(t)
-
-
-@cli.command()
-@click.argument('amount', nargs=1)
-@click.argument('asset', nargs=1)
-@click.argument('price', nargs=1, required=False)
-@click.option('--account', '-a', help='Buy with this account (defaults to "default_account")')
-@click.option('--orderid', help='Set an orderid')
-@click.option('--export', '-e', help='When set, transaction is stored in a file')
-def buy(amount, asset, price, account, orderid, export):
-    """Buy BLURT from the internal market
-
-        Limit buy price denoted in (TBD per BLURT)
-    """
-    stm = shared_blockchain_instance()
-    if stm.rpc is not None:
-        stm.rpc.rpcconnect()
-    if account is None:
-        account = stm.config["default_account"]
-    if asset == stm.backed_token_symbol:
-        market = Market(base=Asset(stm.token_symbol), quote=Asset(stm.backed_token_symbol), blockchain_instance=stm)
-    else:
-        market = Market(base=Asset(stm.backed_token_symbol), quote=Asset(stm.token_symbol), blockchain_instance=stm)
-    if price is None:
-        orderbook = market.orderbook(limit=1, raw_data=False)
-        if asset == stm.token_symbol and len(orderbook["bids"]) > 0:
-            p = Price(orderbook["bids"][0]["base"], orderbook["bids"][0]["quote"], blockchain_instance=stm).invert()
-            p_show = p
-        elif len(orderbook["asks"]) > 0:
-            p = Price(orderbook["asks"][0]["base"], orderbook["asks"][0]["quote"], blockchain_instance=stm).invert()
-            p_show = p
-        price_ok = click.prompt("Is the following Price ok: %s [y/n]" % (str(p_show)))
-        if price_ok not in ["y", "ye", "yes"]:
-            return
-    else:
-        p = Price(float(price), u"%s:%s" % (stm.backed_token_symbol, stm.token_symbol), blockchain_instance=stm)
-    if not unlock_wallet(stm):
-        return
-
-    a = Amount(float(amount), asset, blockchain_instance=stm)
-    acc = Account(account, blockchain_instance=stm)
-    tx = market.buy(p, a, account=acc, orderid=orderid)
-    if stm.unsigned and stm.nobroadcast and stm.blurtconnect is not None:
-        tx = stm.blurtconnect.url_from_tx(tx)
-    elif stm.unsigned and stm.nobroadcast and stm.blurtsigner is not None:
-        tx = stm.blurtsigner.url_from_tx(tx)
-    export_trx(tx, export)
-    tx = json.dumps(tx, indent=4)
-    print(tx)
-
-
-@cli.command()
-@click.argument('amount', nargs=1)
-@click.argument('asset', nargs=1)
-@click.argument('price', nargs=1, required=False)
-@click.option('--account', '-a', help='Sell with this account (defaults to "default_account")')
-@click.option('--orderid', help='Set an orderid')
-@click.option('--export', '-e', help='When set, transaction is stored in a file')
-def sell(amount, asset, price, account, orderid, export):
-    """Sell BLURT from the internal market
-
-        Limit sell price denoted in (TBD per BLURT)
-    """
-    stm = shared_blockchain_instance()
-    if stm.rpc is not None:
-        stm.rpc.rpcconnect()
-    if asset == stm.backed_token_symbol:
-        market = Market(base=Asset(stm.token_symbol), quote=Asset(stm.backed_token_symbol), blockchain_instance=stm)
-    else:
-        market = Market(base=Asset(stm.backed_token_symbol), quote=Asset(stm.token_symbol), blockchain_instance=stm)
-    if not account:
-        account = stm.config["default_account"]
-    if not price:
-        orderbook = market.orderbook(limit=1, raw_data=False)
-        if asset == stm.backed_token_symbol and len(orderbook["bids"]) > 0:
-            p = Price(orderbook["bids"][0]["base"], orderbook["bids"][0]["quote"], blockchain_instance=stm).invert()
-            p_show = p
-        else:
-            p = Price(orderbook["asks"][0]["base"], orderbook["asks"][0]["quote"], blockchain_instance=stm).invert()
-            p_show = p
-        price_ok = click.prompt("Is the following Price ok: %s [y/n]" % (str(p_show)))
-        if price_ok not in ["y", "ye", "yes"]:
-            return
-    else:
-        p = Price(float(price), u"%s:%s" % (stm.backed_token_symbol, stm.token_symbol), blockchain_instance=stm)
-    if not unlock_wallet(stm):
-        return
-    a = Amount(float(amount), asset, blockchain_instance=stm)
-    acc = Account(account, blockchain_instance=stm)
-    tx = market.sell(p, a, account=acc, orderid=orderid)
-    if stm.unsigned and stm.nobroadcast and stm.blurtconnect is not None:
-        tx = stm.blurtconnect.url_from_tx(tx)
-    elif stm.unsigned and stm.nobroadcast and stm.blurtsigner is not None:
-        tx = stm.blurtsigner.url_from_tx(tx)
-    export_trx(tx, export)
-    tx = json.dumps(tx, indent=4)
-    print(tx)
-
-
-@cli.command()
-@click.argument('orderid', nargs=1)
-@click.option('--account', '-a', help='Sell with this account (defaults to "default_account")')
-@click.option('--export', '-e', help='When set, transaction is stored in a file')
-def cancel(orderid, account, export):
-    """Cancel order in the internal market"""
-    stm = shared_blockchain_instance()
-    if stm.rpc is not None:
-        stm.rpc.rpcconnect()
-    market = Market(blockchain_instance=stm)
-    if not account:
-        account = stm.config["default_account"]
-    if not unlock_wallet(stm):
-        return
-    acc = Account(account, blockchain_instance=stm)
-    tx = market.cancel(orderid, account=acc)
-    if stm.unsigned and stm.nobroadcast and stm.blurtconnect is not None:
-        tx = stm.blurtconnect.url_from_tx(tx)
-    elif stm.unsigned and stm.nobroadcast and stm.blurtsigner is not None:
-        tx = stm.blurtsigner.url_from_tx(tx)
-    export_trx(tx, export)
-    tx = json.dumps(tx, indent=4)
-    print(tx)
-
-
-@cli.command()
-@click.argument('account', nargs=1, required=False)
-def openorders(account):
-    """Show open orders"""
-    stm = shared_blockchain_instance()
-    if stm.rpc is not None:
-        stm.rpc.rpcconnect()
-    market = Market(blockchain_instance=stm)
-    if not account:
-        account = stm.config["default_account"]
-    acc = Account(account, blockchain_instance=stm)
-    openorders = market.accountopenorders(account=acc)
-    t = PrettyTable(["Orderid", "Created", "Order", "Account"], hrules=0)
-    t.align = "r"
-    for order in openorders:
-        t.add_row([order["orderid"],
-                   formatTimeString(order["created"]),
-                   str(order["order"]),
-                   account])
-    print(t)
 
 
 @cli.command()
@@ -3551,12 +3227,11 @@ def unfollow(unfollow, account, export):
 @click.option('--witness', help='Witness name')
 @click.option('--maximum_block_size', help='Max block size')
 @click.option('--account_creation_fee', help='Account creation fee')
-@click.option('--sbd_interest_rate', help='SBD interest rate in percent')
-@click.option('--hbd_interest_rate', help='HBD interest rate in percent')
+@click.option('--tbd_interest_rate', help='TBD interest rate in percent')
 @click.option('--url', help='Witness URL')
 @click.option('--signing_key', help='Signing Key')
 @click.option('--export', '-e', help='When set, transaction is stored in a file')
-def witnessupdate(witness, maximum_block_size, account_creation_fee, sbd_interest_rate, hbd_interest_rate, url, signing_key, export):
+def witnessupdate(witness, maximum_block_size, account_creation_fee, tbd_interest_rate, url, signing_key, export):
     """Change witness properties"""
     stm = shared_blockchain_instance()
     if stm.rpc is not None:
@@ -3572,10 +3247,10 @@ def witnessupdate(witness, maximum_block_size, account_creation_fee, sbd_interes
             Amount("%.3f %s" % (float(account_creation_fee), stm.token_symbol), blockchain_instance=stm))
     if maximum_block_size is not None:
         props["maximum_block_size"] = int(maximum_block_size)
-    if sbd_interest_rate is not None:
-        props["sbd_interest_rate"] = int(float(sbd_interest_rate) * 100)
-    if hbd_interest_rate is not None:
-        props["hbd_interest_rate"] = int(float(hbd_interest_rate) * 100)
+    if tbd_interest_rate is not None:
+        props["tbd_interest_rate"] = int(float(tbd_interest_rate) * 100)
+    if tbd_interest_rate is not None:
+        props["tbd_interest_rate"] = int(float(tbd_interest_rate) * 100)
     tx = witness.update(signing_key or witness["signing_key"], url or witness["url"], props)
     if stm.unsigned and stm.nobroadcast and stm.blurtconnect is not None:
         tx = stm.blurtconnect.url_from_tx(tx)
@@ -3643,11 +3318,10 @@ def witnessenable(witness, signing_key, export):
 @click.argument('pub_signing_key', nargs=1)
 @click.option('--maximum_block_size', help='Max block size', default=65536)
 @click.option('--account_creation_fee', help='Account creation fee', default=0.1)
-@click.option('--sbd_interest_rate', help='SBD interest rate in percent', default=0.0)
-@click.option('--hbd_interest_rate', help='HBD interest rate in percent', default=0.0)
+@click.option('--tbd_interest_rate', help='TBD interest rate in percent', default=0.0)
 @click.option('--url', help='Witness URL', default="")
 @click.option('--export', '-e', help='When set, transaction is stored in a file')
-def witnesscreate(witness, pub_signing_key, maximum_block_size, account_creation_fee, sbd_interest_rate, hbd_interest_rate, url, export):
+def witnesscreate(witness, pub_signing_key, maximum_block_size, account_creation_fee, tbd_interest_rate, url, export):
     """Create a witness"""
     stm = shared_blockchain_instance()
     if stm.rpc is not None:
@@ -3661,8 +3335,8 @@ def witnesscreate(witness, pub_signing_key, maximum_block_size, account_creation
                 Amount("%.3f %s" % (float(account_creation_fee), stm.token_symbol), blockchain_instance=stm),
             "maximum_block_size":
                 int(maximum_block_size),
-            "hbd_interest_rate":
-                int(hbd_interest_rate * 100)
+            "tbd_interest_rate":
+                int(tbd_interest_rate * 100)
         }
     else:
         props = {
@@ -3670,8 +3344,8 @@ def witnesscreate(witness, pub_signing_key, maximum_block_size, account_creation
                 Amount("%.3f %s" % (float(account_creation_fee), stm.token_symbol), blockchain_instance=stm),
             "maximum_block_size":
                 int(maximum_block_size),
-            "sbd_interest_rate":
-                int(sbd_interest_rate * 100)
+            "tbd_interest_rate":
+                int(tbd_interest_rate * 100)
         }
 
     tx = stm.witness_update(pub_signing_key, url, props, account=witness)
@@ -3691,11 +3365,11 @@ def witnesscreate(witness, pub_signing_key, maximum_block_size, account_creation
 @click.option('--account_subsidy_budget', help='Account subisidy per block')
 @click.option('--account_subsidy_decay', help='Per block decay of the account subsidy pool')
 @click.option('--maximum_block_size', help='Max block size')
-@click.option('--sbd_interest_rate', help='SBD interest rate in percent')
-@click.option('--hbd_interest_rate', help='HBD interest rate in percent')
+@click.option('--tbd_interest_rate', help='TBD interest rate in percent')
+@click.option('--tbd_interest_rate', help='TBD interest rate in percent')
 @click.option('--new_signing_key', help='Set new signing key (pubkey)')
 @click.option('--url', help='Witness URL')
-def witnessproperties(witness, wif, account_creation_fee, account_subsidy_budget, account_subsidy_decay, maximum_block_size, sbd_interest_rate, hbd_interest_rate, new_signing_key, url):
+def witnessproperties(witness, wif, account_creation_fee, account_subsidy_budget, account_subsidy_decay, maximum_block_size, tbd_interest_rate, new_signing_key, url):
     """Update witness properties of witness WITNESS with the witness signing key WIF"""
     stm = shared_blockchain_instance()
     if stm.rpc is not None:
@@ -3711,10 +3385,10 @@ def witnessproperties(witness, wif, account_creation_fee, account_subsidy_budget
         props["account_subsidy_decay"] = int(account_subsidy_decay)
     if maximum_block_size is not None:
         props["maximum_block_size"] = int(maximum_block_size)
-    if sbd_interest_rate is not None:
-        props["sbd_interest_rate"] = int(float(sbd_interest_rate) * 100)
-    if hbd_interest_rate is not None:
-        props["hbd_interest_rate"] = int(float(hbd_interest_rate) * 100)
+    if tbd_interest_rate is not None:
+        props["tbd_interest_rate"] = int(float(tbd_interest_rate) * 100)
+    if tbd_interest_rate is not None:
+        props["tbd_interest_rate"] = int(float(tbd_interest_rate) * 100)
     if new_signing_key is not None:
         props["new_signing_key"] = new_signing_key
     if url is not None:
@@ -3744,63 +3418,46 @@ def witnessfeed(witness, wif, base, quote, support_peg):
         if not unlock_wallet(stm):
             return
     witness = Witness(witness, blockchain_instance=stm)
-    market = Market(blockchain_instance=stm)
-    use_hbd = False
-    if "hbd_exchange_rate" in witness:
-        use_hbd = True
-        old_base = witness["hbd_exchange_rate"]["base"]
-        old_quote = witness["hbd_exchange_rate"]["quote"]
-        last_published_price = Price(witness["hbd_exchange_rate"], blockchain_instance=stm)
+    
+    # Check for exchange rate key (support both legacy and new)
+    key = "tbd_exchange_rate"
+    if key not in witness and "sbd_exchange_rate" in witness:
+        key = "sbd_exchange_rate"
+        
+    if key in witness:
+        old_base = witness[key]["base"]
+        old_quote = witness[key]["quote"]
+        last_published_price = Price(witness[key], blockchain_instance=stm)
     else:
-        old_base = witness["sbd_exchange_rate"]["base"]
-        old_quote = witness["sbd_exchange_rate"]["quote"]
-        last_published_price = Price(witness["sbd_exchange_rate"], blockchain_instance=stm)
+        # Fallback or error
+        print("No exchange rate found in witness")
+        return
 
-    blurt_usd = None
-    blurt_usd = None
     print("Old price %.3f (base: %s, quote %s)" % (float(last_published_price), old_base, old_quote))
-    if quote is None and not support_peg:
-        quote = Amount("1.000 %s" % stm.token_symbol, blockchain_instance=stm)
-    elif quote is None and not stm.is_blurt:
-        latest_price = market.ticker()['latest']
-        if blurt_usd is None:
-            blurt_usd = market.blurt_usd_implied()
-        sbd_usd = float(latest_price.as_base(stm.backed_token_symbol)) * blurt_usd
-        quote = Amount(1. / sbd_usd, stm.token_symbol, blockchain_instance=stm)
-    elif quote is None and stm.is_blurt:
-        latest_price = market.ticker()['latest']
-        if blurt_usd is None:
-            blurt_usd = market.blurt_usd_implied()
-        hbd_usd = float(latest_price.as_base(stm.backed_token_symbol)) * blurt_usd
-        quote = Amount(1. / hbd_usd, stm.token_symbol, blockchain_instance=stm)
+    
+    if quote is None or base is None:
+        print("Error: --base and --quote are required as automatic fetching is disabled.")
+        return
+
+    if str(quote[-5:]).upper() == stm.token_symbol:
+        quote = Amount(quote, blockchain_instance=stm)
     else:
-        if str(quote[-5:]).upper() == stm.token_symbol:
-            quote = Amount(quote, blockchain_instance=stm)
-        else:
-            quote = Amount(quote, stm.token_symbol, blockchain_instance=stm)
-    if base is None and not stm.is_blurt:
-        if blurt_usd is None:
-            blurt_usd = market.blurt_usd_implied()
-        base = Amount(blurt_usd, stm.backed_token_symbol, blockchain_instance=stm)
-    elif base is None and stm.is_blurt:
-        if blurt_usd is None:
-            blurt_usd = market.blurt_usd_implied()
-        base = Amount(blurt_usd, stm.backed_token_symbol, blockchain_instance=stm)
+        quote = Amount(quote, stm.token_symbol, blockchain_instance=stm)
+
+    if str(quote[-3:]).upper() == stm.backed_token_symbol:
+        base = Amount(base, blockchain_instance=stm)
     else:
-        if str(quote[-3:]).upper() == stm.backed_token_symbol:
-            base = Amount(base, blockchain_instance=stm)
-        else:
-            base = Amount(base, stm.backed_token_symbol, blockchain_instance=stm)
+        base = Amount(base, stm.backed_token_symbol, blockchain_instance=stm)
+        
     new_price = Price(base=base, quote=quote, blockchain_instance=stm)
     print("New price %.3f (base: %s, quote %s)" % (float(new_price), base, quote))
-    if wif is not None and use_hbd:
-        props = {"hbd_exchange_rate": new_price}
-        tx = stm.witness_set_properties(wif, witness["owner"], props)
-    elif wif is not None:
-        props = {"sbd_exchange_rate": new_price}
+    
+    if wif is not None:
+        props = {key: new_price}
         tx = stm.witness_set_properties(wif, witness["owner"], props)
     else:
         tx = witness.feed_publish(base, quote=quote)
+        
     if stm.unsigned and stm.nobroadcast and stm.blurtconnect is not None:
         tx = stm.blurtconnect.url_from_tx(tx)
     elif stm.unsigned and stm.nobroadcast and stm.blurtsigner is not None:
@@ -3842,7 +3499,7 @@ def witness(witness):
     t.align = "l"
     for key in sorted(witness_json):
         value = witness_json[key]
-        if key in ["props", "sbd_exchange_rate"]:
+        if key in ["props", "tbd_exchange_rate"]:
             value = json.dumps(value, indent=4)
         t.add_row([key, value])
     if found:
@@ -4176,8 +3833,7 @@ def rewards(accounts, only_sum, post, comment, curation, length, author, permlin
         sum_reward = [0, 0, 0, 0, 0]
         account = Account(account, blockchain_instance=stm)
         median_price = Price(stm.get_current_median_history(), blockchain_instance=stm)
-        m = Market(blockchain_instance=stm)
-        latest = m.ticker()["latest"]
+        latest = median_price
         if author and permlink:
             t = PrettyTable(["Author", "Permlink", "Payout", stm.backed_token_symbol, "%sP + %s" % (stm.token_symbol[0], stm.token_symbol), "Liquid USD", "Invested USD"])
         elif author and title:
@@ -4213,11 +3869,11 @@ def rewards(accounts, only_sum, post, comment, curation, length, author, permlin
                         continue
                     if not comment and c.is_comment():
                         continue
-                    if "sbd_payout" in v:
-                        payout_SBD = Amount(v["sbd_payout"], blockchain_instance=stm)
+                    if "tbd_payout" in v:
+                        payout_SBD = Amount(v["tbd_payout"], blockchain_instance=stm)
                         payout_STEEM = Amount(v["blurt_payout"], blockchain_instance=stm)
                     else:
-                        payout_SBD = Amount(v["hbd_payout"], blockchain_instance=stm)
+                        payout_SBD = Amount(v["tbd_payout"], blockchain_instance=stm)
                         payout_STEEM = Amount(v["blurt_payout"], blockchain_instance=stm)
                     sum_reward[0] += float(payout_SBD)
                     sum_reward[1] += float(payout_STEEM)
@@ -4389,8 +4045,7 @@ def pending(accounts, only_sum, post, comment, curation, length, author, permlin
         sum_reward = [0, 0, 0, 0]
         account = Account(account, blockchain_instance=stm)
         median_price = Price(stm.get_current_median_history(), blockchain_instance=stm)
-        m = Market(blockchain_instance=stm)
-        latest = m.ticker()["latest"]
+        latest = median_price
         if author and permlink:
             t = PrettyTable(["Author", "Permlink", "Cashout", stm.backed_token_symbol, sp_symbol, "Liquid USD", "Invested USD"])
         elif author and title:
@@ -4568,13 +4223,13 @@ def pending(accounts, only_sum, post, comment, curation, length, author, permlin
 @cli.command()
 @click.argument('account', nargs=1, required=False)
 @click.option('--reward_blurt', help='Amount of BLURT you would like to claim', default=0)
-@click.option('--reward_sbd', help='Amount of SBD/HBD you would like to claim', default=0)
+@click.option('--reward_tbd', help='Amount of TBD/TBD you would like to claim', default=0)
 @click.option('--reward_vests', help='Amount of VESTS you would like to claim', default=0)
 @click.option('--claim_all_blurt', help='Claim all BLURT, overwrites reward_blurt', is_flag=True)
-@click.option('--claim_all_sbd', help='Claim all SBD/HBD, overwrites reward_sbd', is_flag=True)
+@click.option('--claim_all_tbd', help='Claim all TBD/TBD, overwrites reward_tbd', is_flag=True)
 @click.option('--claim_all_vests', help='Claim all VESTS, overwrites reward_vests', is_flag=True)
 @click.option('--export', '-e', help='When set, transaction is stored in a file')
-def claimreward(account, reward_blurt, reward_sbd, reward_vests, claim_all_blurt, claim_all_sbd, claim_all_vests, export):
+def claimreward(account, reward_blurt, reward_tbd, reward_vests, claim_all_blurt, claim_all_tbd, claim_all_vests, export):
     """Claim reward balances
 
         By default, this will claim ``all`` outstanding balances.
@@ -4596,12 +4251,12 @@ def claimreward(account, reward_blurt, reward_sbd, reward_vests, claim_all_blurt
         return
     if claim_all_blurt:
         reward_blurt = r[0]
-    if claim_all_sbd:
-        reward_sbd = r[1]
+    if claim_all_tbd:
+        reward_tbd = r[1]
     if claim_all_vests:
         reward_vests = r[2]
 
-    tx = acc.claim_reward_balance(reward_blurt, reward_sbd, reward_vests)
+    tx = acc.claim_reward_balance(reward_blurt, reward_tbd, reward_vests)
     if stm.unsigned and stm.nobroadcast and stm.blurtconnect is not None:
         tx = stm.blurtconnect.url_from_tx(tx)
     elif stm.unsigned and stm.nobroadcast and stm.blurtsigner is not None:
@@ -4839,7 +4494,7 @@ def info(objects):
                 t.align = "l"
                 for key in sorted(witness_json):
                     value = witness_json[key]
-                    if key in ["props", "sbd_exchange_rate"]:
+                    if key in ["props", "tbd_exchange_rate"]:
                         value = json.dumps(value, indent=4)
                     t.add_row([key, value])
                 print(t)

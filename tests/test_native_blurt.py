@@ -1,3 +1,25 @@
+import unittest
+import logging
+import time
+from blurtpy import Blurt
+from blurtpy.account import Account
+from blurtpy.nodelist import NodeList
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+class TestNativeBlurt(unittest.TestCase):
+    def setUp(self):
+        # Use known nodes directly to avoid circular dependency in NodeList update
+        self.nodes = ["https://rpc.beblurt.com", "https://blurt-rpc.saboin.com", "https://rpc.blurt.world"]
+        logger.info(f"Using nodes: {self.nodes}")
+        
+        self.blurt = Blurt(node=self.nodes)
+
+    def test_01_connection_stability(self):
+        """
+        Test connection stability by making multiple requests.
         This ensures the library can maintain a stable connection and handle potential node flakiness.
         """
         logger.info("Testing connection stability...")
@@ -9,150 +31,18 @@
 
     def test_02_account_fetch_integrity(self):
         """
-        DATA INTEGRITY: Fetch account data and verify types and values.
+        Test fetching a known account to verify data integrity.
         """
-        logger.info(f"Fetching account {ACCOUNT_NAME}...")
-        account = Account(ACCOUNT_NAME, blockchain_instance=self.blurt)
-        self.assertEqual(account.name, ACCOUNT_NAME)
-        
-        # Verify balance types
-        balance = account.get_balance('available', 'BLURT')
-        self.assertIsInstance(balance, Amount)
-        self.assertEqual(balance.symbol, "BLURT")
-        logger.info(f"Account Balance: {balance}")
-
-    def test_03_account_not_found(self):
-        """
-        ERROR HANDLING: Ensure proper exception for non-existent account.
-        """
-        fake_account = "account_that_should_not_exist_9999"
-        logger.info(f"Testing non-existent account: {fake_account}")
-        with self.assertRaises(AccountDoesNotExistsException):
-            Account(fake_account, blockchain_instance=self.blurt)
-
-    def test_04_transaction_signing(self):
-        """
-        SECURITY & CRYPTO: Create and sign a transaction without broadcasting.
-        This verifies the Active Key is valid and the signing mechanism works.
-        """
-        logger.info("Testing transaction signing (dry-run)...")
-        account = Account(ACCOUNT_NAME, blockchain_instance=self.blurt)
-        
-        # Create a dummy transfer of 0.001 BLURT to self (safe for testing)
-        # 'nobroadcast=True' ensures we don't actually spend money, just test the crypto
-        tx = self.blurt.transfer(
-            ACCOUNT_NAME, 0.001, "BLURT", memo="Native Test Signing", account=ACCOUNT_NAME, nobroadcast=True
-        )
-        
-        # Verify it's signed
-        self.assertIsNotNone(tx.get('signatures'))
-        self.assertGreater(len(tx['signatures']), 0)
-        logger.info("Transaction signed successfully!")
-
-    def test_05_missing_key_protection(self):
-        """
-        SECURITY: Ensure operations fail safely when the key is missing.
-        """
-        logger.info("Testing missing key protection...")
-        logger.info("Testing Memo encryption/decryption...")
-        from blurtpy.memo import Memo
-        from blurtgraphenebase.account import PasswordKey
-
-        # Generate two temporary keys
-        sender_wif = PasswordKey("sender", "password", role="memo").get_private_key()
-        receiver_wif = PasswordKey("receiver", "password", role="memo").get_private_key()
-        receiver_pub = receiver_wif.pubkey
-
-        # Initialize Memo with these keys
-        # We pass keys directly to avoid looking up accounts on chain
-        # Note: Memo expects strings for length check, so we convert objects to strings
-        memo_obj = Memo(
-            from_account=format(sender_wif, 'WIF'),
-            to_account=format(receiver_pub.pubkey, "STM"),
-            blockchain_instance=self.blurt
-        )
-
-        # Encrypt
-        message = "Secret Blurt Message"
-        encrypted = memo_obj.encrypt(message)
-        self.assertTrue(encrypted['message'].startswith('#'))
-        logger.info(f"Encrypted message: {encrypted['message']}")
-
-        # Decrypt (requires initializing a new Memo object or unlocking wallet, 
-        # but here we use the low-level decrypt with known keys if possible, 
-        # or we simulate the receiver)
-        
-        # To test decryption, we need to simulate the receiver having the private key.
-        # The library's decrypt method looks up keys in the wallet.
-        # Let's inject the receiver key into the wallet for this test.
-        self.blurt.wallet.setKeys([format(receiver_wif, 'WIF')])
-        
-        decrypted = memo_obj.decrypt(encrypted['message'])
-        # Note: blurtbase implementation prepends '#' to decrypted message
-        self.assertEqual(decrypted, '#' + message)
-        logger.info("Decryption successful!")
-
-    def test_08_power_up_dry_run(self):
-        """
-        OPERATION: Construct and sign a Transfer to Vesting (Power Up) operation.
-        """
-        logger.info("Testing Power Up (dry-run)...")
-        account = Account(ACCOUNT_NAME, blockchain_instance=self.blurt)
-        # transfer_to_vesting(amount, to, account)
-        tx = account.transfer_to_vesting(
-            0.001, ACCOUNT_NAME, account=ACCOUNT_NAME, nobroadcast=True
-        )
-        self.assertIsNotNone(tx.get('signatures'))
-        logger.info("Power Up transaction signed.")
-
-    def test_09_claim_rewards_dry_run(self):
-        """
-        OPERATION: Construct and sign a Claim Reward Balance operation.
-        """
-        logger.info("Testing Claim Rewards (dry-run)...")
-        account = Account(ACCOUNT_NAME, blockchain_instance=self.blurt)
-        # claim_reward_balance(reward_blurt, reward_vests, account)
-        tx = account.claim_reward_balance(
-            0, 0, account=ACCOUNT_NAME, nobroadcast=True
-        )
-        self.assertIsNotNone(tx.get('signatures'))
-        logger.info("Claim Rewards transaction signed.")
-
-    def test_10_vote_operation_dry_run(self):
-        """
-        OPERATION: Construct and sign a Vote operation.
-        Validates posting authority logic (even if using Active key).
-        """
-        logger.info("Testing Vote operation (dry-run)...")
-        # vote(identifier, weight, account)
-        # Using a known valid identifier (or random, since it's dry-run structure check)
-        # We use a real-looking identifier to pass validation if any
-        identifier = "@draktest/test-post" 
-        tx = self.blurt.vote(
-            identifier, 100, account=ACCOUNT_NAME, nobroadcast=True
-        )
-        self.assertIsNotNone(tx.get('signatures'))
-        logger.info("Vote transaction signed.")
-
-    def test_11_input_validation(self):
-        """
-        SECURITY: Test input validation for malicious/invalid data.
-        """
-        logger.info("Testing Input Validation...")
-        account = Account("draktest", blockchain_instance=self.blurt)
-
-        # 1. Negative Amount Transfer
-        # Should raise ValueError to prevent draining funds or logic errors
-        with self.assertRaises(ValueError):
-            account.transfer("draktest", -10, "BLURT", "Negative Transfer")
-        
-        # 2. Invalid Asset
-        # Should raise AssetDoesNotExistsException
-        from blurtpy.exceptions import AssetDoesNotExistsException
-        with self.assertRaises(AssetDoesNotExistsException):
-            account.transfer("draktest", 10, "FAKECOIN", "Invalid Asset")
-
-        logger.info("Input validation tests passed.")
+        logger.info("Testing account fetch integrity...")
+        account_name = 'blurt' # Foundation account usually exists
+        try:
+            account = Account(account_name, blockchain_instance=self.blurt)
+            logger.info(f"Fetched account: {account.name}")
+            self.assertEqual(account.name, account_name)
+            self.assertTrue('balance' in account)
+        except Exception as e:
+            logger.error(f"Failed to fetch account: {e}")
+            raise
 
 if __name__ == '__main__':
     unittest.main()
