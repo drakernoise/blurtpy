@@ -39,7 +39,7 @@ pip install cryptography
 ```python
 from blurtpy import Blurt
 
-# Connect to a public node (see docs/nodes.md for a list)
+# Connect to a public node (see [docs/nodes.md](docs/nodes.md) for a list)
 b = Blurt(node=["<RPC_NODE_URL>"])
 
 print(b.info())
@@ -60,6 +60,7 @@ print(f"Voting Power: {acc.vp:.2f}%")
 from blurtpy import Blurt
 
 # Use the secure local wallet (recommended)
+# (see [docs/nodes.md](docs/nodes.md) for a list of RPC nodes)
 b = Blurt(node=["<RPC_NODE_URL>"])
 b.wallet.unlock("your-wallet-password")
 
@@ -71,6 +72,7 @@ b.transfer("<RECIPIENT>", 10, "BLURT", "test memo", account="<YOUR_USERNAME>")
 from blurtpy import Blurt
 
 # Use the secure local wallet (recommended)
+# (see [docs/nodes.md](docs/nodes.md) for a list of RPC nodes)
 b = Blurt(node=["<RPC_NODE_URL>"])
 b.wallet.unlock("your-wallet-password")
 
