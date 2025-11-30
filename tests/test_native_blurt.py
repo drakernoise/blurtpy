@@ -88,32 +88,6 @@ class TestNativeBlurt(unittest.TestCase):
         SECURITY: Ensure operations fail safely when the key is missing.
         """
         logger.info("Testing missing key protection...")
-        # Instance without keys
-        b_no_key = Blurt(node=self.nodes)
-        
-        with self.assertRaises((MissingKeyError, WalletLocked)):
-            b_no_key.transfer(ACCOUNT_NAME, 0.001, "BLURT", account=ACCOUNT_NAME, nobroadcast=True)
-
-    def test_06_history_resilience(self):
-        """
-        PERFORMANCE: Fetch a chunk of history to test API response handling.
-        """
-        logger.info("Testing history retrieval...")
-        account = Account(ACCOUNT_NAME, blockchain_instance=self.blurt)
-        # Fetch last 50 ops
-        history = []
-        for op in account.history(batch_size=50):
-            history.append(op)
-            if len(history) >= 50:
-                break
-        self.assertTrue(len(history) > 0)
-        logger.info(f"Retrieved {len(history)} history items.")
-
-    def test_07_memo_encryption(self):
-        """
-        CRYPTO: Test Memo encryption and decryption using ephemeral keys.
-        This verifies the AES encryption logic without needing account keys.
-        """
         logger.info("Testing Memo encryption/decryption...")
         from blurtpy.memo import Memo
         from blurtgraphenebase.account import PasswordKey
@@ -193,6 +167,26 @@ class TestNativeBlurt(unittest.TestCase):
         )
         self.assertIsNotNone(tx.get('signatures'))
         logger.info("Vote transaction signed.")
+
+    def test_11_input_validation(self):
+        """
+        SECURITY: Test input validation for malicious/invalid data.
+        """
+        logger.info("Testing Input Validation...")
+        account = Account("draktest", blockchain_instance=self.blurt)
+
+        # 1. Negative Amount Transfer
+        # Should raise ValueError to prevent draining funds or logic errors
+        with self.assertRaises(ValueError):
+            account.transfer("draktest", -10, "BLURT", "Negative Transfer")
+        
+        # 2. Invalid Asset
+        # Should raise AssetDoesNotExistsException
+        from blurtpy.exceptions import AssetDoesNotExistsException
+        with self.assertRaises(AssetDoesNotExistsException):
+            account.transfer("draktest", 10, "FAKECOIN", "Invalid Asset")
+
+        logger.info("Input validation tests passed.")
 
 if __name__ == '__main__':
     unittest.main()

@@ -2881,6 +2881,10 @@ class Account(BlockchainObject):
         elif not skip_account_check:
             account = Account(account, blockchain_instance=self.blockchain)
         amount = Amount(amount, asset, blockchain_instance=self.blockchain)
+
+        if amount.amount <= 0:
+            raise ValueError("Transfer amount must be positive")
+
         if not skip_account_check:
             to = Account(to, blockchain_instance=self.blockchain)
 
