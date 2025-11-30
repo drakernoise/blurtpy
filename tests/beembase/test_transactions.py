@@ -31,7 +31,7 @@ from blurtpy.blurt import Blurt
 
 TEST_AGAINST_CLI_WALLET = False
 
-prefix = u"STEEM"
+prefix = u"BLURT"
 default_prefix = u"STM"
 wif = "5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3"
 ref_block_num = 34294
@@ -82,7 +82,7 @@ class Testcases(unittest.TestCase):
         self.op = operations.Transfer(**{
             "from": "foo",
             "to": "baar",
-            "amount": Amount("111.110 STEEM", blurt_instance=self.stm),
+            "amount": Amount("111.110 BLURT", blurt_instance=self.stm),
             "memo": "Fooo",
             "prefix": default_prefix
         })
@@ -99,7 +99,7 @@ class Testcases(unittest.TestCase):
                 'creator':
                 'xeroc',
                 'fee':
-                '10.000 STEEM',
+                '10.000 BLURT',
                 'json_metadata':
                 '',
                 'memo_key':
@@ -169,7 +169,7 @@ class Testcases(unittest.TestCase):
         self.op = operations.Transfer_to_vesting(**{
             "from": "foo",
             "to": "baar",
-            "amount": "111.110 STEEM",
+            "amount": "111.110 BLURT",
             "prefix": default_prefix
         })
 
@@ -235,7 +235,7 @@ class Testcases(unittest.TestCase):
             **{
                 "from": "testuser",
                 "to": "testuser",
-                "amount": "1.000 STEEM",
+                "amount": "1.000 BLURT",
                 "memo": "testmemo",
                 "prefix": default_prefix
             })
@@ -281,8 +281,8 @@ class Testcases(unittest.TestCase):
             **{
                 "owner": "",
                 "orderid": 0,
-                "amount_to_sell": "0.000 STEEM",
-                "min_to_receive": "0.000 STEEM",
+                "amount_to_sell": "0.000 BLURT",
+                "min_to_receive": "0.000 BLURT",
                 "fill_or_kill": False,
                 "expiration": "2016-12-31T23:59:59",
                 "prefix": default_prefix
@@ -598,7 +598,7 @@ class Testcases(unittest.TestCase):
                 "publisher": "xeroc",
                 "exchange_rate": {
                     "base": "1.000 SBD",
-                    "quote": "4.123 STEEM"
+                    "quote": "4.123 BLURT"
                 },
                 "prefix": default_prefix
             })
@@ -634,12 +634,12 @@ class Testcases(unittest.TestCase):
                 "block_signing_key":
                 "STM6zLNtyFVToBsBZDsgMhgjpwysYVbsQD6YhP3kRkQhANUB4w7Qp",
                 "props": {
-                    "account_creation_fee": "10.000 STEEM",
+                    "account_creation_fee": "10.000 BLURT",
                     "maximum_block_size": 1111111,
                     "sbd_interest_rate": 1000
                 },
                 "fee":
-                "10.000 STEEM",
+                "10.000 BLURT",
                 "prefix": default_prefix
             })
 

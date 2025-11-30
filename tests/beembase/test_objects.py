@@ -20,7 +20,7 @@ from blurtgraphenebase.types import (
 
 class Testcases(unittest.TestCase):
     def test_Amount(self):
-        a = "1.000 STEEM"
+        a = "1.000 BLURT"
         t = Amount(a)
         self.assertEqual(a, t.__str__())
         self.assertEqual(a, str(t))
@@ -36,38 +36,90 @@ class Testcases(unittest.TestCase):
 
 
     def test_Amount_overflow(self):
-        a = "0.9999 STEEM"
+        a = "0.9999 BLURT"
         t = Amount(a)
-        self.assertEqual("0.999 STEEM", t.__str__())
-        self.assertEqual("0.999 STEEM", str(t))
-        a = "0.9991 STEEM"
+        self.assertEqual("0.999 BLURT", t.__str__())
+        self.assertEqual("0.999 BLURT", str(t))
+        a = "0.9991 BLURT"
         t = Amount(a)
-        self.assertEqual("0.999 STEEM", t.__str__())
-        self.assertEqual("0.999 STEEM", str(t))
+        self.assertEqual("0.999 BLURT", t.__str__())
+        self.assertEqual("0.999 BLURT", str(t))
 
-        a = "8.9999 STEEM"
+        a = "8.9999 BLURT"
         t = Amount(a)
-        self.assertEqual("8.999 STEEM", t.__str__())
-        self.assertEqual("8.999 STEEM", str(t))
-        a = "8.9991 STEEM"
-        t = Amount(a)
-        self.assertEqual("8.999 STEEM", t.__str__())
-        self.assertEqual("8.999 STEEM", str(t))
+        self.assertEqual("8.999 BLURT", t.__str__())
+        self.assertEqual("8.999 BLURT", str(t))
+        a = "8.9991 BLURT"
+from builtins import chr
+from builtins import range
+from builtins import str
+import unittest
+import hashlib
+from binascii import hexlify, unhexlify
+import os
+import json
+from pprint import pprint
+from blurtbase.objects import Amount
+from blurtbase.objects import Operation
+from blurtgraphenebase.types import (
+    Uint8, Int16, Uint16, Uint32, Uint64,
+    Varint32, Int64, String, Bytes, Void,
+    Array, PointInTime, Signature, Bool,
+    Set, Fixed_array, Optional, Static_variant,
+    Map, Id
+)
 
-        a = "8.19 STEEM"
-        t = Amount(a)
-        self.assertEqual("8.190 STEEM", t.__str__())
-        self.assertEqual("8.190 STEEM", str(t))        
 
-        a = "0.0009 STEEM"
+class Testcases(unittest.TestCase):
+    def test_Amount(self):
+        a = "1.000 BLURT"
         t = Amount(a)
-        self.assertEqual("0.000 STEEM", t.__str__())
-        self.assertEqual("0.000 STEEM", str(t))
+        self.assertEqual(a, t.__str__())
+        self.assertEqual(a, str(t))
 
-        a = "100.0009 STEEM"
+        t = Amount(a, json_str=True, prefix="STM")
+        self.assertEqual({"amount": "1000", "precision": 3, "nai": "@@000000021"}, json.loads(str(t)))        
+
+        a = {"amount": "3000", "precision": 3, "nai": "@@000000037"}
+        t = Amount(a, prefix="STM")
+        # self.assertEqual(str(a), t.__str__())
+        self.assertEqual(a, json.loads(str(t)))
+
+
+
+    def test_Amount_overflow(self):
+        a = "0.9999 BLURT"
         t = Amount(a)
-        self.assertEqual("100.000 STEEM", t.__str__())
-        self.assertEqual("100.000 STEEM", str(t))      
+        self.assertEqual("0.999 BLURT", t.__str__())
+        self.assertEqual("0.999 BLURT", str(t))
+        a = "0.9991 BLURT"
+        t = Amount(a)
+        self.assertEqual("0.999 BLURT", t.__str__())
+        self.assertEqual("0.999 BLURT", str(t))
+
+        a = "8.9999 BLURT"
+        t = Amount(a)
+        self.assertEqual("8.999 BLURT", t.__str__())
+        self.assertEqual("8.999 BLURT", str(t))
+        a = "8.9991 BLURT"
+        t = Amount(a)
+        self.assertEqual("8.999 BLURT", t.__str__())
+        self.assertEqual("8.999 BLURT", str(t))
+
+        a = "8.19 BLURT"
+        t = Amount(a)
+        self.assertEqual("8.190 BLURT", t.__str__())
+        self.assertEqual("8.190 BLURT", str(t))        
+
+        a = "0.0009 BLURT"
+        t = Amount(a)
+        self.assertEqual("0.000 BLURT", t.__str__())
+        self.assertEqual("0.000 BLURT", str(t))
+
+        a = "100.0009 BLURT"
+        t = Amount(a)
+        self.assertEqual("100.000 BLURT", t.__str__())
+        self.assertEqual("100.000 BLURT", str(t))      
 
     def test_Operation(self):
         a = {"amount": '1000', "precision": 3, "nai": '@@000000013'}

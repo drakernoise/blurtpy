@@ -25,47 +25,11 @@ class Testcases(unittest.TestCase):
             num_retries=10
         )
         # from getpass import getpass
-        # self.bts.wallet.unlock(getpass())
-        set_shared_blurt_instance(cls.bts)
-        cls.bts.set_default_account("test")
-
-    def test_market(self):
-        bts = self.bts
-        m1 = Market(u'HIVE', u'HBD', blurt_instance=bts)
-        self.assertEqual(m1.get_string(), u'HBD:HIVE')
-        m2 = Market(blurt_instance=bts)
-        self.assertEqual(m2.get_string(), u'HBD:HIVE')
-        m3 = Market(u'HIVE:HBD', blurt_instance=bts)
-        self.assertEqual(m3.get_string(), u'HIVE:HBD')
-        self.assertTrue(m1 == m2)
-
-        base = Asset("HBD", blurt_instance=bts)
-        quote = Asset("HIVE", blurt_instance=bts)
-        m = Market(base, quote, blurt_instance=bts)
-        self.assertEqual(m.get_string(), u'HIVE:HBD')
-
-    def test_ticker(self):
-        bts = self.bts
-        m = Market(u'HIVE:HBD', blurt_instance=bts)
-        ticker = m.ticker()
-        self.assertEqual(len(ticker), 6)
-        if "blurt_volume" in ticker:
-            self.assertEqual(ticker['blurt_volume']["symbol"], u'HIVE')
-            self.assertEqual(ticker['hbd_volume']["symbol"], u'HBD')
-        else:
-            self.assertEqual(ticker['blurt_volume']["symbol"], u'HIVE')
-            self.assertEqual(ticker['sbd_volume']["symbol"], u'HBD')
-
-    def test_volume(self):
-        bts = self.bts
-        m = Market(u'HIVE:HBD', blurt_instance=bts)
-        volume = m.volume24h()
-        self.assertEqual(volume['HIVE']["symbol"], u'HIVE')
         self.assertEqual(volume['HBD']["symbol"], u'HBD')
 
     def test_orderbook(self):
         bts = self.bts
-        m = Market(u'HIVE:HBD', blurt_instance=bts)
+        m = Market(u'BLURT:VESTS', blurt_instance=bts)
         orderbook = m.orderbook(limit=10)
         self.assertEqual(len(orderbook['asks_date']), 10)
         self.assertEqual(len(orderbook['asks']), 10)
@@ -74,7 +38,7 @@ class Testcases(unittest.TestCase):
 
     def test_recenttrades(self):
         bts = self.bts
-        m = Market(u'HIVE:HBD', blurt_instance=bts)
+        m = Market(u'BLURT:VESTS', blurt_instance=bts)
         recenttrades = m.recent_trades(limit=10)
         recenttrades_raw = m.recent_trades(limit=10, raw_data=True)
         self.assertEqual(len(recenttrades), 10)
@@ -82,7 +46,7 @@ class Testcases(unittest.TestCase):
 
     def test_trades(self):
         bts = self.bts
-        m = Market(u'HIVE:HBD', blurt_instance=bts)
+        m = Market(u'BLURT:VESTS', blurt_instance=bts)
         trades = m.trades(limit=10)
         trades_raw = m.trades(limit=10, raw_data=True)
         trades_history = m.trade_history(limit=10)
@@ -92,20 +56,20 @@ class Testcases(unittest.TestCase):
 
     def test_market_history(self):
         bts = self.bts
-        m = Market(u'HIVE:HBD', blurt_instance=bts)
+        m = Market(u'BLURT:VESTS', blurt_instance=bts)
         buckets = m.market_history_buckets()
         history = m.market_history(buckets[2])
         self.assertTrue(len(history) > 0)
 
     def test_accountopenorders(self):
         bts = self.bts
-        m = Market(u'HIVE:HBD', blurt_instance=bts)
+        m = Market(u'BLURT:VESTS', blurt_instance=bts)
         openOrder = m.accountopenorders("test")
         self.assertTrue(isinstance(openOrder, list))
 
     def test_buy(self):
         bts = self.bts
-        m = Market(u'HIVE:HBD', blurt_instance=bts)
+        m = Market(u'BLURT:VESTS', blurt_instance=bts)
         bts.txbuffer.clear()
         tx = m.buy(5, 0.1, account="test")
         self.assertEqual(

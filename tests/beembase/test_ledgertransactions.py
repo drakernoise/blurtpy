@@ -31,7 +31,7 @@ from blurtpy.blurt import Blurt
 
 TEST_AGAINST_CLI_WALLET = False
 
-prefix = u"STEEM"
+prefix = u"BLURT"
 default_prefix = u"STM"
 ref_block_num = 34843
 ref_block_prefix = 1663841413
@@ -71,7 +71,7 @@ class Testcases(unittest.TestCase):
         self.op = operations.Transfer(**{
             "from": "nettybot",
             "to": "netuoso",
-            "amount": Amount("0.001 STEEM", blurt_instance=self.stm),
+            "amount": Amount("0.001 BLURT", blurt_instance=self.stm),
             "memo": "",
             "prefix": default_prefix
         })
