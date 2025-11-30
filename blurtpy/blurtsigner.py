@@ -49,11 +49,11 @@ class BlurtSigner(object):
             blurt = Blurt(nobroadcast=True, unsigned=True)
             hs = BlurtSigner(blockchain_instance=blurt)
             acc = Account("test", blockchain_instance=blurt)
-            pprint(hs.url_from_tx(acc.transfer("test1", 1, "HIVE", "test")))
+            pprint(hs.url_from_tx(acc.transfer("test1", 1, "BLURT", "test")))
 
         .. testcode::
 
-            'https://blurtsigner.com/sign/transfer?from=test&to=test1&amount=1.000+HIVE&memo=test'
+            'https://blurtsigner.com/sign/transfer?from=test&to=test1&amount=1.000+BLURT&memo=test'
 
         .. testoutput::
 
@@ -67,14 +67,14 @@ class BlurtSigner(object):
             tx = TransactionBuilder(blockchain_instance=stm)
             op = operations.Transfer(**{"from": 'test',
                                         "to": 'test1',
-                                        "amount": '1.000 HIVE',
+                                        "amount": '1.000 BLURT',
                                         "memo": 'test'})
             tx.appendOps(op)
             pprint(hs.url_from_tx(tx.json()))
 
         .. testcode::
 
-            'https://blurtsigner.com/sign/transfer?from=test&to=test1&amount=1.000+HIVE&memo=test'
+            'https://blurtsigner.com/sign/transfer?from=test&to=test1&amount=1.000+BLURT&memo=test'
 
     """
 

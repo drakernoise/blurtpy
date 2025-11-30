@@ -122,7 +122,7 @@ class Witness(BlockchainObject):
                      account=None):
         """ Publish a feed price as a witness.
 
-            :param float base: USD Price of STEEM in SBD (implied price)
+            :param float base: USD Price of BLURT in TBD (implied price)
             :param float quote: (optional) Quote Price. Should be 1.000 (default), unless
                 we are adjusting the feed to support the peg.
             :param str account: (optional) the source account for the transfer

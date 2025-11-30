@@ -1044,11 +1044,11 @@ class BlockChainInstance(object):
     def claim_account(self, creator, fee=None, **kwargs):
         """ Claim account for claimed account creation.
 
-            When fee is 0 STEEM/HIVE a subsidized account is claimed and can be created
+            When fee is 0 BLURT a subsidized account is claimed and can be created
             later with create_claimed_account.
             The number of subsidized account is limited.
 
-            :param str creator: which account should pay the registration fee (RC or STEEM/HIVE)
+            :param str creator: which account should pay the registration fee (RC or BLURT)
                     (defaults to ``default_account``)
             :param str fee: when set to 0 STEEM (default), claim account is paid by RC
         """

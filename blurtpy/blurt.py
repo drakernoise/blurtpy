@@ -360,7 +360,7 @@ class Blurt(BlockChainInstance):
         reward_balance = Amount(reward_fund["reward_balance"], blockchain_instance=self)
         
         if median_price is None:
-             # Should not happen in Steem/Hive if connected, but fallback to 1
+             # Should not happen in Blurt if connected, but fallback to 1
              median_price = 1.0
 
         reward_pool_sbd = median_price * float(reward_balance)

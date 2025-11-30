@@ -45,7 +45,7 @@ class Market(dict):
         * ``base-quote`` separated with ``-``
 
         .. note:: Throughout this library, the ``quote`` symbol will be
-                  presented first (e.g. ``STEEM:SBD`` with ``STEEM`` being the
+                  presented first (e.g. ``BLURT:TBD`` with ``BLURT`` being the
                   quote), while the ``base`` only refers to a secondary asset
                   for a trade. This means, if you call
                   :func:`blurtpy.market.Market.sell` or
@@ -95,7 +95,7 @@ class Market(dict):
             raise ValueError("Unknown Market config")
 
     def get_string(self, separator=":"):
-        """ Return a formated string that identifies the market, e.g. ``STEEM:SBD``
+        """ Return a formated string that identifies the market, e.g. ``BLURT:TBD``
 
             :param str separator: The separator of the assets (defaults to ``:``)
         """
@@ -125,14 +125,14 @@ class Market(dict):
             * ``latest``: Price of the order last filled
             * ``lowest_ask``: Price of the lowest ask
             * ``highest_bid``: Price of the highest bid
-            * ``sbd_volume``: Volume of SBD
-            * ``blurt_volume``: Volume of STEEM
-            * ``hbd_volume``: Volume of HBD
-            * ``blurt_volume``: Volume of HIVE
+            * ``sbd_volume``: Volume of TBD
+            * ``blurt_volume``: Volume of BLURT
+            * ``hbd_volume``: Volume of TBD
+            * ``blurt_volume``: Volume of BLURT
             * ``percent_change``: 24h change percentage (in %)
 
             .. note::
-                Market is HIVE:HBD and prices are HBD per HIVE!
+                Market is BLURT:TBD and prices are TBD per BLURT!
 
             Sample Output:
 
@@ -194,8 +194,8 @@ class Market(dict):
             .. code-block:: js
 
                 {
-                    "STEEM": 361666.63617,
-                    "SBD": 1087.0
+                    "BLURT": 361666.63617,
+                    "TBD": 1087.0
                 }
 
         """
@@ -215,7 +215,7 @@ class Market(dict):
             }
 
     def orderbook(self, limit=25, raw_data=False):
-        """ Returns the order book for SBD/STEEM market.
+        """ Returns the order book for TBD/BLURT market.
 
             :param int limit: Limit the amount of orders (default: 25)
 
@@ -225,12 +225,12 @@ class Market(dict):
 
                     {
                         'asks': [
-                            380.510 STEEM 460.291 SBD @ 1.209669 SBD/STEEM,
-                            53.785 STEEM 65.063 SBD @ 1.209687 SBD/STEEM
+                            380.510 BLURT 460.291 TBD @ 1.209669 TBD/BLURT,
+                            53.785 BLURT 65.063 TBD @ 1.209687 TBD/BLURT
                         ],
                         'bids': [
-                            0.292 STEEM 0.353 SBD @ 1.208904 SBD/STEEM,
-                            8.498 STEEM 10.262 SBD @ 1.207578 SBD/STEEM
+                            0.292 BLURT 0.353 TBD @ 1.208904 TBD/BLURT,
+                            8.498 BLURT 10.262 TBD @ 1.207578 TBD/BLURT
                         ],
                         'asks_date': [
                             datetime.datetime(2018, 4, 30, 21, 7, 24, tzinfo=<UTC>),
@@ -249,7 +249,7 @@ class Market(dict):
                     {
                         'asks': [
                             {
-                                'order_price': {'base': '8.000 STEEM', 'quote': '9.618 SBD'},
+                                'order_price': {'base': '8.000 BLURT', 'quote': '9.618 TBD'},
                                 'real_price': '1.20225000000000004',
                                 'blurt': 4565,
                                 'sbd': 5488,
@@ -258,7 +258,7 @@ class Market(dict):
                         ],
                         'bids': [
                             {
-                                'order_price': {'base': '10.000 SBD', 'quote': '8.333 STEEM'},
+                                'order_price': {'base': '10.000 TBD', 'quote': '8.333 BLURT'},
                                 'real_price': '1.20004800192007677',
                                 'blurt': 8333,
                                 'sbd': 10000,
@@ -306,11 +306,11 @@ class Market(dict):
                 .. code-block:: none
 
                     [
-                        (2018-04-30 21:00:54+00:00) 0.267 STEEM 0.323 SBD @ 1.209738 SBD/STEEM,
-                        (2018-04-30 20:59:30+00:00) 0.131 STEEM 0.159 SBD @ 1.213740 SBD/STEEM,
-                        (2018-04-30 20:55:45+00:00) 0.093 STEEM 0.113 SBD @ 1.215054 SBD/STEEM,
-                        (2018-04-30 20:55:30+00:00) 26.501 STEEM 32.058 SBD @ 1.209690 SBD/STEEM,
-                        (2018-04-30 20:55:18+00:00) 2.108 STEEM 2.550 SBD @ 1.209677 SBD/STEEM,
+                        (2018-04-30 21:00:54+00:00) 0.267 BLURT 0.323 TBD @ 1.209738 TBD/BLURT,
+                        (2018-04-30 20:59:30+00:00) 0.131 BLURT 0.159 TBD @ 1.213740 TBD/BLURT,
+                        (2018-04-30 20:55:45+00:00) 0.093 BLURT 0.113 TBD @ 1.215054 TBD/BLURT,
+                        (2018-04-30 20:55:30+00:00) 26.501 BLURT 32.058 TBD @ 1.209690 TBD/BLURT,
+                        (2018-04-30 20:55:18+00:00) 2.108 BLURT 2.550 TBD @ 1.209677 TBD/BLURT,
                     ]
 
             Sample output (raw_data=True):
@@ -318,11 +318,11 @@ class Market(dict):
                 .. code-block:: js
 
                     [
-                        {'date': '2018-04-30T21:02:45', 'current_pays': '0.235 SBD', 'open_pays': '0.194 STEEM'},
-                        {'date': '2018-04-30T21:02:03', 'current_pays': '24.494 SBD', 'open_pays': '20.248 STEEM'},
-                        {'date': '2018-04-30T20:48:30', 'current_pays': '175.464 STEEM', 'open_pays': '211.955 SBD'},
-                        {'date': '2018-04-30T20:48:30', 'current_pays': '0.999 STEEM', 'open_pays': '1.207 SBD'},
-                        {'date': '2018-04-30T20:47:54', 'current_pays': '0.273 SBD', 'open_pays': '0.225 STEEM'},
+                        {'date': '2018-04-30T21:02:45', 'current_pays': '0.235 TBD', 'open_pays': '0.194 BLURT'},
+                        {'date': '2018-04-30T21:02:03', 'current_pays': '24.494 TBD', 'open_pays': '20.248 BLURT'},
+                        {'date': '2018-04-30T20:48:30', 'current_pays': '175.464 BLURT', 'open_pays': '211.955 TBD'},
+                        {'date': '2018-04-30T20:48:30', 'current_pays': '0.999 BLURT', 'open_pays': '1.207 TBD'},
+                        {'date': '2018-04-30T20:47:54', 'current_pays': '0.273 TBD', 'open_pays': '0.225 BLURT'},
                     ]
 
             .. note:: Each bid is an instance of
@@ -543,15 +543,15 @@ class Market(dict):
                 the head/irreversible block and add the key "orderid" to the tx output
 
             Prices/Rates are denoted in 'base', i.e. the SBD_STEEM market
-            is priced in STEEM per SBD.
+            is priced in BLURT per TBD.
 
             **Example:** in the SBD_STEEM market, a price of 300 means
-            a SBD is worth 300 STEEM
+            a TBD is worth 300 BLURT
 
             .. note::
 
                 All prices returned are in the **reversed** orientation as the
-                market. I.e. in the STEEM/SBD market, prices are SBD per STEEM.
+                market. I.e. in the BLURT/TBD market, prices are TBD per BLURT.
                 That way you can multiply prices with `1.05` to get a +5%.
 
             .. warning::
@@ -562,9 +562,9 @@ class Market(dict):
                 buy asset than you placed the order
                 for. Example:
 
-                    * You place and order to buy 10 SBD for 100 STEEM/SBD
-                    * This means that you actually place a sell order for 1000 STEEM in order to obtain **at least** 10 SBD
-                    * If an order on the market exists that sells SBD for cheaper, you will end up with more than 10 SBD
+                    * You place and order to buy 10 TBD for 100 BLURT/TBD
+                    * This means that you actually place a sell order for 1000 BLURT in order to obtain **at least** 10 TBD
+                    * If an order on the market exists that sells TBD for cheaper, you will end up with more than 10 TBD
         """
         if not expiration:
             expiration = self.blockchain.config["order-expiration"]
@@ -640,15 +640,15 @@ class Market(dict):
                 the head/irreversible block and add the key "orderid" to the tx output
 
             Prices/Rates are denoted in 'base', i.e. the SBD_STEEM market
-            is priced in STEEM per SBD.
+            is priced in BLURT per TBD.
 
             **Example:** in the SBD_STEEM market, a price of 300 means
-            a SBD is worth 300 STEEM
+            a TBD is worth 300 BLURT
 
             .. note::
 
                 All prices returned are in the **reversed** orientation as the
-                market. I.e. in the STEEM/SBD market, prices are SBD per STEEM.
+                market. I.e. in the BLURT/TBD market, prices are TBD per BLURT.
                 That way you can multiply prices with `1.05` to get a +5%.
         """
         if not expiration:
@@ -812,17 +812,17 @@ class Market(dict):
 
     @staticmethod
     def blurt_btc_ticker():
-        """ Returns the STEEM/BTC price from bittrex, binance, huobi and upbit. The mean price is
+        """ Returns the BLURT/BTC price from bittrex, binance, huobi and upbit. The mean price is
             weighted by the exchange volume.
         """
         prices = {}
         responses = []
         urls = [
             # "https://poloniex.com/public?command=returnTicker",
-            # "https://bittrex.com/api/v1.1/public/getmarketsummary?market=BTC-STEEM",
+            # "https://bittrex.com/api/v1.1/public/getmarketsummary?market=BTC-BLURT",
             # "https://api.binance.com/api/v1/ticker/24hr",
             # "https://api.huobi.pro/market/history/kline?period=1day&size=1&symbol=blurtbtc",
-            # "https://crix-api.upbit.com/v1/crix/trades/ticks?code=CRIX.UPBIT.BTC-STEEM&count=1",
+            # "https://crix-api.upbit.com/v1/crix/trades/ticks?code=CRIX.UPBIT.BTC-BLURT&count=1",
             "https://api.coingecko.com/api/v3/simple/price?ids=blurt&vs_currencies=btc&include_24hr_vol=true",
         ]
         headers = {'Content-type': 'application/x-www-form-urlencoded',
@@ -875,27 +875,27 @@ class Market(dict):
                     log.info(str(e))
 
         if len(prices) == 0:
-            raise RuntimeError("Obtaining STEEM/BTC prices has failed from all sources.")
+            raise RuntimeError("Obtaining BLURT/BTC prices has failed from all sources.")
 
         return Market._weighted_average(
             [x['price'] for x in prices.values()],
             [x['volume'] for x in prices.values()])
 
     def blurt_usd_implied(self):
-        """Returns the current STEEM/USD market price"""
+        """Returns the current BLURT/USD market price"""
         return self.blurt_btc_ticker() * self.btc_usd_ticker()
 
     @staticmethod
     def blurt_btc_ticker():
-        """ Returns the HIVE/BTC price from bittrex and upbit. The mean price is
+        """ Returns the BLURT/BTC price from bittrex and upbit. The mean price is
             weighted by the exchange volume.
         """
         prices = {}
         responses = []
         urls = [
-            # "https://bittrex.com/api/v1.1/public/getmarketsummary?market=BTC-HIVE",
+            # "https://bittrex.com/api/v1.1/public/getmarketsummary?market=BTC-BLURT",
             # "https://api.binance.com/api/v1/ticker/24hr",
-            # "https://api.probit.com/api/exchange/v1/ticker?market_ids=HIVE-USDT",
+            # "https://api.probit.com/api/exchange/v1/ticker?market_ids=BLURT-USDT",
             "https://api.coingecko.com/api/v3/simple/price?ids=blurt&vs_currencies=btc&include_24hr_vol=true",
         ]
         headers = {'Content-type': 'application/x-www-form-urlencoded',
@@ -953,12 +953,12 @@ class Market(dict):
                     log.info(str(e))
 
         if len(prices) == 0:
-            raise RuntimeError("Obtaining HIVE/BTC prices has failed from all sources.")
+            raise RuntimeError("Obtaining BLURT/BTC prices has failed from all sources.")
 
         return Market._weighted_average(
             [x['price'] for x in prices.values()],
             [x['volume'] for x in prices.values()])
 
     def blurt_usd_implied(self):
-        """Returns the current HIVE/USD market price"""
+        """Returns the current BLURT/USD market price"""
         return self.blurt_btc_ticker() * self.btc_usd_ticker()

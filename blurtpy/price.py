@@ -54,14 +54,14 @@ class Price(dict):
 
         This allows instanciations like:
 
-        * ``Price("0.315 SBD/STEEM")``
-        * ``Price(0.315, base="SBD", quote="STEEM")``
-        * ``Price(0.315, base=Asset("SBD"), quote=Asset("STEEM"))``
-        * ``Price({"base": {"amount": 1, "asset_id": "SBD"}, "quote": {"amount": 10, "asset_id": "SBD"}})``
-        * ``Price(quote="10 STEEM", base="1 SBD")``
-        * ``Price("10 STEEM", "1 SBD")``
-        * ``Price(Amount("10 STEEM"), Amount("1 SBD"))``
-        * ``Price(1.0, "SBD/STEEM")``
+        * ``Price("0.315 TBD/BLURT")``
+        * ``Price(0.315, base="TBD", quote="BLURT")``
+        * ``Price(0.315, base=Asset("TBD"), quote=Asset("BLURT"))``
+        * ``Price({"base": {"amount": 1, "asset_id": "TBD"}, "quote": {"amount": 10, "asset_id": "TBD"}})``
+        * ``Price(quote="10 BLURT", base="1 TBD")``
+        * ``Price("10 BLURT", "1 TBD")``
+        * ``Price(Amount("10 BLURT"), Amount("1 TBD"))``
+        * ``Price(1.0, "TBD/BLURT")``
 
         Instances of this class can be used in regular mathematical expressions
         (``+-*/%``) such as:
@@ -71,10 +71,10 @@ class Price(dict):
             >>> from blurtpy.price import Price
             >>> from blurtpy import Blurt
             >>> stm = Blurt("https://api.blurtit.com")
-            >>> Price("0.3314 SBD/STEEM", blockchain_instance=stm) * 2
-            0.662804 SBD/STEEM
-            >>> Price(0.3314, "SBD", "STEEM", blockchain_instance=stm)
-            0.331402 SBD/STEEM
+            >>> Price("0.3314 TBD/BLURT", blockchain_instance=stm) * 2
+            0.662804 TBD/BLURT
+            >>> Price(0.3314, "TBD", "BLURT", blockchain_instance=stm)
+            0.331402 TBD/BLURT
 
     """
     def __init__(
@@ -194,8 +194,8 @@ class Price(dict):
                 >>> from blurtpy.price import Price
                 >>> from blurtpy import Blurt
                 >>> stm = Blurt("https://api.blurtit.com")
-                >>> Price("0.3314 SBD/STEEM", blockchain_instance=stm).as_base("STEEM")
-                3.017483 STEEM/SBD
+                >>> Price("0.3314 TBD/BLURT", blockchain_instance=stm).as_base("BLURT")
+                3.017483 BLURT/TBD
 
         """
         if base == self["base"]["symbol"]:
@@ -215,8 +215,8 @@ class Price(dict):
                 >>> from blurtpy.price import Price
                 >>> from blurtpy import Blurt
                 >>> stm = Blurt("https://api.blurtit.com")
-                >>> Price("0.3314 SBD/STEEM", blockchain_instance=stm).as_quote("SBD")
-                3.017483 STEEM/SBD
+                >>> Price("0.3314 TBD/BLURT", blockchain_instance=stm).as_quote("TBD")
+                3.017483 BLURT/TBD
 
         """
         if quote == self["quote"]["symbol"]:
@@ -227,15 +227,15 @@ class Price(dict):
             raise InvalidAssetException
 
     def invert(self):
-        """ Invert the price (e.g. go from ``SBD/STEEM`` into ``STEEM/SBD``)
+        """ Invert the price (e.g. go from ``TBD/BLURT`` into ``BLURT/TBD``)
 
             .. code-block:: python
 
                 >>> from blurtpy.price import Price
                 >>> from blurtpy import Blurt
                 >>> stm = Blurt("https://api.blurtit.com")
-                >>> Price("0.3314 SBD/STEEM", blockchain_instance=stm).invert()
-                3.017483 STEEM/SBD
+                >>> Price("0.3314 TBD/BLURT", blockchain_instance=stm).invert()
+                3.017483 BLURT/TBD
 
         """
         tmp = self["quote"]

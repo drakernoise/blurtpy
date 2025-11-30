@@ -75,8 +75,8 @@ def prompt_callback(ctx, param, value):
 
 
 def asset_callback(ctx, param, value):
-    if value not in ["STEEM", "SBD", "HIVE", "HBD", "BLURT", "TBD", "TESTS"]:
-        print("Please STEEM/HIVE/BLURT or SBD/HBD as asset!")
+    if value not in ["BLURT", "TBD", "TESTS"]:
+        print("Please use BLURT or TBD as asset!")
         ctx.abort()
     else:
         return value
@@ -456,7 +456,7 @@ def nextnode(results):
         t.add_row(["Node-Url", node[0]])
     if not offline:
         t.add_row(["Version", stm.get_blockchain_version()])
-        t.add_row(["HIVE", stm.is_blurt])
+        t.add_row(["BLURT", stm.is_blurt])
     else:
         t.add_row(["Version", "blurtpypy is in offline mode..."])
     print(t)
@@ -1263,7 +1263,7 @@ def downvote(post, account, weight, export):
 @click.option('--account', '-a', help='Transfer from this account')
 @click.option('--export', '-e', help='When set, transaction is stored in a file')
 def transfer(to, amount, asset, memo, account, export):
-    """Transfer SBD/HBD or STEEM/HIVE"""
+    """Transfer BLURT"""
     stm = shared_blockchain_instance()
     if stm.rpc is not None:
         stm.rpc.rpcconnect()
@@ -1290,7 +1290,7 @@ def transfer(to, amount, asset, memo, account, export):
 @click.option('--to', '-t', help='Powerup this account', default=None)
 @click.option('--export', '-e', help='When set, transaction is stored in a file')
 def powerup(amount, account, to, export):
-    """Power up (vest STEEM/HIVE as STEEM/HIVE POWER)"""
+    """Power up (vest BLURT as BLURT POWER)"""
     stm = shared_blockchain_instance()
     if stm.rpc is not None:
         stm.rpc.rpcconnect()
@@ -1421,7 +1421,7 @@ def listdelegations(account):
 @click.option('--percentage', default=100, help='The percent of the withdraw to go to the "to" account')
 @click.option('--account', '-a', help='Powerup from this account')
 @click.option('--auto_vest', help='Set to true if the from account should receive the VESTS as'
-              'VESTS, or false if it should receive them as STEEM/HIVE.', is_flag=True)
+              'VESTS, or false if it should receive them as BLURT.', is_flag=True)
 @click.option('--export', '-e', help='When set, transaction is stored in a file')
 def powerdownroute(to, percentage, account, auto_vest, export):
     """Setup a powerdown route"""
@@ -3094,7 +3094,7 @@ def stream(lines, head, table, follow):
 
 @cli.command()
 @click.option('--sbd-to-blurt', help='Show ticker in SBD/STEEM', is_flag=True, default=False)
-@click.option('--hbd-to-blurt', '-i', help='Show ticker in HBD/HIVE', is_flag=True, default=False)
+@click.option('--hbd-to-blurt', '-i', help='Show ticker in TBD/BLURT', is_flag=True, default=False)
 def ticker(sbd_to_blurt, hbd_to_blurt):
     """ Show ticker
     """
@@ -3307,9 +3307,9 @@ def orderbook(chart, limit, show_date, width, height, ascii):
 @click.option('--orderid', help='Set an orderid')
 @click.option('--export', '-e', help='When set, transaction is stored in a file')
 def buy(amount, asset, price, account, orderid, export):
-    """Buy STEEM/HIVE or SBD/HBD from the internal market
+    """Buy BLURT from the internal market
 
-        Limit buy price denoted in (SBD per STEEM or HBD per HIVE)
+        Limit buy price denoted in (TBD per BLURT)
     """
     stm = shared_blockchain_instance()
     if stm.rpc is not None:
@@ -3356,9 +3356,9 @@ def buy(amount, asset, price, account, orderid, export):
 @click.option('--orderid', help='Set an orderid')
 @click.option('--export', '-e', help='When set, transaction is stored in a file')
 def sell(amount, asset, price, account, orderid, export):
-    """Sell STEEM/HIVE or SBD/HBD from the internal market
+    """Sell BLURT from the internal market
 
-        Limit sell price denoted in (SBD per STEEM) or (HBD per HIVE)
+        Limit sell price denoted in (TBD per BLURT)
     """
     stm = shared_blockchain_instance()
     if stm.rpc is not None:
@@ -3474,7 +3474,7 @@ def reblog(identifier, account):
 def follow(follow, account, what, export):
     """Follow another account
 
-       Can be blog ignore blacklist unblacklist follow_blacklist unfollow_blacklist follow_muted unfollow_muted on HIVE
+       Can be blog ignore blacklist unblacklist follow_blacklist unfollow_blacklist follow_muted unfollow_muted on BLURT
     """
     stm = shared_blockchain_instance()
     if stm.rpc is not None:
@@ -3823,8 +3823,8 @@ def witness(witness):
     config = stm.get_config()
     if "VIRTUAL_SCHEDULE_LAP_LENGTH2" in config:
         lap_length = int(config["VIRTUAL_SCHEDULE_LAP_LENGTH2"])
-    elif "HIVE_VIRTUAL_SCHEDULE_LAP_LENGTH2" in config:
-        lap_length = int(config["HIVE_VIRTUAL_SCHEDULE_LAP_LENGTH2"])
+    elif "BLURT_VIRTUAL_SCHEDULE_LAP_LENGTH2" in config:
+        lap_length = int(config["BLURT_VIRTUAL_SCHEDULE_LAP_LENGTH2"])
     else:
         lap_length = int(config["STEEM_VIRTUAL_SCHEDULE_LAP_LENGTH2"])
     rank = 0
@@ -4569,10 +4569,10 @@ def pending(accounts, only_sum, post, comment, curation, length, author, permlin
 
 @cli.command()
 @click.argument('account', nargs=1, required=False)
-@click.option('--reward_blurt', help='Amount of STEEM/HIVE you would like to claim', default=0)
+@click.option('--reward_blurt', help='Amount of BLURT you would like to claim', default=0)
 @click.option('--reward_sbd', help='Amount of SBD/HBD you would like to claim', default=0)
 @click.option('--reward_vests', help='Amount of VESTS you would like to claim', default=0)
-@click.option('--claim_all_blurt', help='Claim all STEEM/HIVE, overwrites reward_blurt', is_flag=True)
+@click.option('--claim_all_blurt', help='Claim all BLURT, overwrites reward_blurt', is_flag=True)
 @click.option('--claim_all_sbd', help='Claim all SBD/HBD, overwrites reward_sbd', is_flag=True)
 @click.option('--claim_all_vests', help='Claim all VESTS, overwrites reward_vests', is_flag=True)
 @click.option('--export', '-e', help='When set, transaction is stored in a file')

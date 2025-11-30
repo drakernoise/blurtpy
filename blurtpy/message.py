@@ -19,10 +19,10 @@ class MessageV1(object):
     """
 
     MESSAGE_SPLIT = (
-        "-----BEGIN HIVE SIGNED MESSAGE-----",
+        "-----BEGIN BLURT SIGNED MESSAGE-----",
         "-----BEGIN META-----",
         "-----BEGIN SIGNATURE-----",
-        "-----END HIVE SIGNED MESSAGE-----",
+        "-----END BLURT SIGNED MESSAGE-----",
     )
 
     # This is the message that is actually signed

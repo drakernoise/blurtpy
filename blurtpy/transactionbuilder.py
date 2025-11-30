@@ -41,7 +41,7 @@ class TransactionBuilder(dict):
            wif = "5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3"
            blurt = Blurt(nobroadcast=True, keys={'active': wif})
            tx = TransactionBuilder(blockchain_instance=blurt)
-           transfer = {"from": "test", "to": "test1", "amount": "1 HIVE", "memo": ""}
+           transfer = {"from": "test", "to": "test1", "amount": "1 BLURT", "memo": ""}
            tx.appendOps(Transfer(transfer))
            tx.appendSigner("test", "active") # or tx.appendWif(wif)
            signed_tx = tx.sign()

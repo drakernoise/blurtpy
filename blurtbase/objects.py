@@ -95,9 +95,9 @@ class Amount(object):
         # padding
         # Workaround to allow transfers in HIVE
         if self.symbol == "HBD":
-            self.symbol = "SBD"
+            self.symbol = "TBD"
         elif self.symbol == "HIVE":
-            self.symbol = "STEEM"
+            self.symbol = "BLURT"
         symbol = self.symbol + "\x00" * (7 - len(self.symbol))
         return (struct.pack("<q", int(self.amount)) + struct.pack("<b", self.precision) +
                 py23_bytes(symbol, "ascii"))

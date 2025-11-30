@@ -43,7 +43,7 @@ class Ledger_Transaction(GrapheneUnsigned_Transaction):
     def getKnownChains(self):
         return self.known_chains
 
-    def sign(self, path="48'/13'/0'/0'/0'", chain=u"STEEM"):
+    def sign(self, path="48'/13'/0'/0'/0'", chain=u"BLURT"):
         from ledgerblue.comm import getDongle
         dongle = getDongle(True)
         apdu_list = self.build_apdu(path, chain)

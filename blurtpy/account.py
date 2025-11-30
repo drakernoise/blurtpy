@@ -1005,7 +1005,7 @@ class Account(BlockchainObject):
             return Accounts(name_list, blockchain_instance=self.blockchain)
 
     def get_follow_list(self, follow_type, starting_account=None, limit=100, raw_name_list=True):
-        """ Returns the follow list for the specified follow_type (Only HIVE with HF >= 24)
+        """ Returns the follow list for the specified follow_type (Only BLURT with HF >= 24)
 
             :param list follow_type: follow_type can be `blacklisted`, `follow_blacklist` `muted`, or `follow_muted`
         """
@@ -2558,7 +2558,7 @@ class Account(BlockchainObject):
     def follow(self, other, what=["blog"], account=None):
         """ Follow/Unfollow/Mute/Unmute another account's blog
 
-            .. note:: what can be one of the following on HIVE:
+            .. note:: what can be one of the following on BLURT:
             blog, ignore, blacklist, unblacklist, follow_blacklist,
             unfollow_blacklist, follow_muted, unfollow_muted
             
@@ -2872,7 +2872,7 @@ class Account(BlockchainObject):
                 active_wif = "5xxxx"
                 stm = Blurt(keys=[active_wif])
                 acc = Account("test", blockchain_instance=stm)
-                acc.transfer("test1", 1, "HIVE", "test")
+                acc.transfer("test1", 1, "BLURT", "test")
 
         """
 
@@ -3126,7 +3126,7 @@ class Account(BlockchainObject):
         `reward_blurt`/``reward_blurt, `reward_blurt`/``reward_blurt or `reward_vests`.
 
         :param str reward_blurt: Amount of STEEM you would like to claim.
-        :param str reward_blurt: Amount of HIVE you would like to claim.
+        :param str reward_blurt: Amount of BLURT you would like to claim.
         :param str reward_blurt: Amount of BLURT you would like to claim.
         :param str reward_blurt: Amount of BLURT you would like to claim.
         :param str reward_blurt: Amount of blurt you would like to claim.

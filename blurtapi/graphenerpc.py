@@ -338,7 +338,7 @@ class GrapheneRPC(object):
             raise RPCError("Connecting to unknown network!")
         highest_version_chain = None
         for k, v in list(self.known_chains.items()):
-            if blockchain_name is not None and blockchain_name not in k and blockchain_name != "STEEMIT" and blockchain_name != "CHAIN":
+            if blockchain_name is not None and blockchain_name not in k and blockchain_name != "BLURT" and blockchain_name != "CHAIN":
                 continue 
             if v["chain_id"] == chain_id and self.version_string_to_int(v["min_version"]) <= self.version_string_to_int(network_version):
                 if highest_version_chain is None:

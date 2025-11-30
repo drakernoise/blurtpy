@@ -31,10 +31,10 @@ class Signed_Transaction(GrapheneSigned_Transaction):
                 if c not in self.known_chains:
                     self.known_chains[c] = custom_chain[c]
 
-    def sign(self, wifkeys, chain=u"STEEM"):
+    def sign(self, wifkeys, chain=u"BLURT"):
         return super(Signed_Transaction, self).sign(wifkeys, chain)
 
-    def verify(self, pubkeys=[], chain=u"STEEM", recover_parameter=False):
+    def verify(self, pubkeys=[], chain=u"BLURT", recover_parameter=False):
         return super(Signed_Transaction, self).verify(pubkeys, chain, recover_parameter)
 
     def getOperationKlass(self):

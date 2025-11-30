@@ -27,7 +27,7 @@ def node_answer_time(node):
 
 
 class NodeList(list):
-    """ Returns HIVE/STEEM nodes as list
+    """ Returns BLURT nodes as list
 
         .. code-block:: python
 
@@ -240,7 +240,7 @@ class NodeList(list):
     def get_nodes(self, blurt=False, exclude_limited=False, dev=False, testnet=False, testnetdev=False, wss=True, https=True, not_working=False, normal=True, appbase=True):
         """ Returns nodes as list
 
-            :param bool blurt: When True, only HIVE nodes will be returned
+            :param bool blurt: When True, only BLURT nodes will be returned
             :param bool exclude_limited: When True, limited nodes are excluded
             :param bool dev: when True, dev nodes with version 0.19.11 are included
             :param bool testnet: when True, testnet nodes are included
