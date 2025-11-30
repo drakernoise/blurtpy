@@ -499,7 +499,7 @@ class BlockChainInstance(object):
         try:
             return self.rpc.get_network(props=config)
         except:
-            return known_chains["HIVE"]
+            return known_chains["BLURT"]
 
     def get_median_price(self, use_stored_data=True):
         """ Returns the current median history price as Price
@@ -752,14 +752,14 @@ class BlockChainInstance(object):
     @property
     def chain_params(self):
         if self.offline or self.rpc is None:
-            return known_chains["HIVE"]
+            return known_chains["BLURT"]
         else:
             return self.get_network()
 
     @property
     def hardfork(self):
         if self.offline or self.rpc is None:
-            versions = known_chains['HIVE']['min_version']
+            versions = known_chains['BLURT']['min_version']
         else:
             hf_prop = self.get_hardfork_properties()
             if "current_hardfork_version" in hf_prop:

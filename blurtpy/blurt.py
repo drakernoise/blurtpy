@@ -147,11 +147,11 @@ class Blurt(BlockChainInstance):
             return self.data['network']
 
         if self.rpc is None:
-            return known_chains["STEEM"]
+            return known_chains["BLURT"]
         try:
             return self.rpc.get_network(props=config)
         except:
-            return known_chains["STEEM"]
+            return known_chains["BLURT"]
 
     def rshares_to_token_backed_dollar(self, rshares, not_broadcasted_vote=False, use_stored_data=True):
         return self.rshares_to_sbd(rshares, not_broadcasted_vote=not_broadcasted_vote, use_stored_data=use_stored_data)        
@@ -452,14 +452,14 @@ class Blurt(BlockChainInstance):
     @property
     def chain_params(self):
         if self.offline or self.rpc is None:
-            return known_chains["STEEM"]
+            return known_chains["BLURT"]
         else:
             return self.get_network()
 
     @property
     def hardfork(self):
         if self.offline or self.rpc is None:
-            versions = known_chains['STEEM']['min_version']
+            versions = known_chains['BLURT']['min_version']
         else:
             hf_prop = self.get_hardfork_properties()
             if "current_hardfork_version" in hf_prop:
