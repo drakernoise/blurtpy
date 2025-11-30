@@ -2,12 +2,20 @@
 
 This module defines the fundamental data structures and operations of the Blurt blockchain protocol. It maps Python objects to the binary structures required by the blockchain.
 
-## Key Components
+## File Descriptions
 
-*   **`operations.py`:** Contains class definitions for all blockchain operations (e.g., `Transfer`, `Vote`, `AccountUpdate`). These classes handle the serialization of data for signing.
-*   **`objects.py`:** Defines basic blockchain objects like `Amount`, `Asset`, `PublicKey`, etc.
-*   **`signedtransactions.py`:** Logic for creating and signing transactions.
-*   **`memo.py`:** Implements encryption and decryption of transaction memos.
+| File | Description |
+| :--- | :--- |
+| `__init__.py` | Module initialization. |
+| `ledgertransactions.py` | Support for signing transactions with Ledger hardware wallets. |
+| `memo.py` | **`Memo` class**: Implements encryption and decryption of transaction memos using shared secrets. |
+| `objects.py` | Defines basic blockchain objects like `Amount`, `Asset`, `PublicKey`, `Permission`, etc. |
+| `objecttypes.py` | Enumeration of object types used in the Graphene protocol (e.g., `account_object`, `asset_object`). |
+| `operationids.py` | Constants mapping operation names to their numeric IDs (e.g., `TRANSFER`, `VOTE`). |
+| `operations.py` | **Operation Classes**: Definitions for all blockchain operations (e.g., `Transfer`, `Vote`, `AccountUpdate`). Handles serialization. |
+| `signedtransactions.py` | **`SignedTransaction` class**: Logic for creating, signing, and verifying transactions. |
+| `transactions.py` | Base transaction definitions. |
+| `version.py` | Module version information. |
 
 ## Usage
 

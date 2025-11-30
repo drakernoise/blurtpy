@@ -2,11 +2,17 @@
 
 This module handles the persistent storage of data for `blurtpy`, specifically the secure local wallet and configuration settings.
 
-## Key Components
+## File Descriptions
 
-*   **`SQLiteStore` (`sqlite.py`):** Implements the storage backend using SQLite. It stores encrypted private keys and configuration key-value pairs.
-*   **`MasterPassword` (`masterpassword.py`):** Handles the encryption and decryption of the wallet using a user-provided password. It ensures that private keys are never stored in plain text.
-*   **`DataDir`:** Manages the directory where the wallet file (`blurtpy.sqlite`) is stored (usually in the user's application data folder).
+| File | Description |
+| :--- | :--- |
+| `__init__.py` | Module initialization. |
+| `base.py` | Base class for storage implementations. |
+| `exceptions.py` | Storage-specific exceptions (e.g., `WrongMasterPasswordException`). |
+| `interfaces.py` | Defines the abstract interfaces for Store, ConfigStore, and KeyStore. |
+| `masterpassword.py` | **`MasterPassword` class**: Handles the encryption and decryption of the wallet using a user-provided password. |
+| `ram.py` | **`RamStore` class**: An in-memory storage implementation (non-persistent), useful for testing. |
+| `sqlite.py` | **`SQLiteStore` class**: The default persistent storage backend using SQLite. Stores encrypted keys and config. |
 
 ## Security Note
 

@@ -2,11 +2,17 @@
 
 Este módulo es responsable de la comunicación RPC (Remote Procedure Call) de bajo nivel con los nodos de la blockchain de Blurt.
 
-## Componentes Clave
+## Descripción de Archivos
 
-*   **`GrapheneRPC` (`graphenerpc.py`):** Maneja el protocolo JSON-RPC para enviar solicitudes y recibir respuestas de la blockchain.
-*   **`NodeRPC` (`noderpc.py`):** Un envoltorio para interacciones específicas con nodos.
-*   **`Node` (`node.py`):** Representa una conexión a un nodo específico de la blockchain.
+| Archivo | Descripción |
+| :--- | :--- |
+| `__init__.py` | Inicialización del módulo. |
+| `exceptions.py` | Clases de excepción específicas de RPC (ej. `RPCError`, `NumRetriesReached`). |
+| `graphenerpc.py` | **Clase `GrapheneRPC`**: Maneja el protocolo JSON-RPC para enviar solicitudes y recibir respuestas. Gestiona el ciclo de vida de la conexión y el manejo de errores. |
+| `node.py` | **Clase `Node`**: Representa una conexión a una URL de nodo específica. |
+| `noderpc.py` | **Clase `NodeRPC`**: Un envoltorio para interacciones específicas con nodos, a menudo usado para agrupar llamadas API relacionadas. |
+| `rpcutils.py` | Funciones de utilidad para comunicación RPC (ej. esperar entre reintentos). |
+| `version.py` | Información de versión del módulo. |
 
 ## Uso
 

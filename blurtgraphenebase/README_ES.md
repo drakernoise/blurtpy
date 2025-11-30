@@ -2,13 +2,29 @@
 
 Este módulo contiene las primitivas criptográficas de bajo nivel, utilidades de codificación y tipos de datos que forman la base del protocolo Blurt. Maneja los "tuercas y tornillos" de la interacción con la blockchain.
 
-## Componentes Clave
+## Descripción de Archivos
 
-*   **`ecdsasig.py`:** Implementa el Algoritmo de Firma Digital de Curva Elíptica (ECDSA) para firmar transacciones.
-*   **`base58.py`:** Utilidades para codificación y decodificación Base58 (usado para direcciones y claves).
-*   **`types.py`:** Define tipos de serialización de bajo nivel (ej. `Int64`, `String`, `Array`) para asegurar que los datos coincidan con el formato binario esperado por la blockchain.
-*   **`chains.py`:** Contiene la configuración para cadenas conocidas (Chain IDs, prefijos de dirección).
-*   **`bip32.py` / `bip38.py`:** Implementa Propuestas de Mejora de Bitcoin (BIPs) para claves deterministas jerárquicas y claves protegidas por contraseña.
+| Archivo | Descripción |
+| :--- | :--- |
+| `__init__.py` | Inicialización del módulo. |
+| `account.py` | **`PasswordKey` / `BrainKey`**: Utilidades para generar claves desde contraseñas o brain keys (mnemónicos). |
+| `aes.py` | Utilidades de cifrado/descifrado AES. |
+| `base58.py` | Implementación de codificación/decodificación Base58 (estándar para direcciones y WIFs). |
+| `bip32.py` | Implementación de BIP32 (Wallets Deterministas Jerárquicos). |
+| `bip38.py` | Implementación de BIP38 (Claves privadas protegidas por contraseña). |
+| `chains.py` | Configuración para redes blockchain conocidas (Chain IDs, prefijos de dirección). |
+| `dictionary.py` | Listas de palabras para generación de Brain Keys. |
+| `ecdsasig.py` | **Firmas ECDSA**: Lógica central para firmar datos con la curva SECP256k1. |
+| `objects.py` | Objetos Graphene de bajo nivel. |
+| `objecttypes.py` | Definiciones de tipos de objetos Graphene. |
+| `operationids.py` | Constantes de IDs de operación. |
+| `operations.py` | Definiciones base de operaciones. |
+| `prefix.py` | Manejo de prefijos de dirección. |
+| `py23.py` | Utilidades de compatibilidad Python 2/3 (legacy). |
+| `signedtransactions.py` | Estructura de transacción firmada de bajo nivel. |
+| `types.py` | **Tipos de Serialización**: Define `Int64`, `String`, `Array`, `PointInTime`, etc., para serialización binaria. |
+| `unsignedtransactions.py` | Estructura de transacción no firmada. |
+| `version.py` | Información de versión del módulo. |
 
 ## Uso
 
