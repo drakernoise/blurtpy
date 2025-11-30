@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import unittest
-import mock
+from unittest import mock
 from blurtpy import Blurt
 from blurtpy.message import Message
 from blurtpy.account import Account
