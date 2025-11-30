@@ -9,6 +9,7 @@ Es un fork directo de la popular librería `beem`, optimizada y limpiada especí
 *   **Segura:** Auditoría de seguridad realizada. Manejo de claves privadas endurecido para prevenir fugas accidentales.
 *   **Completa:** Soporta operaciones de cuenta, transferencias, votación, testigos, y más.
 *   **Alto Rendimiento:** Soporte para nodos WebSocket y HTTP. Firma de transacciones rápida (soporte opcional para `secp256k1`).
+*   **Multiplataforma:** Probada exhaustivamente en Windows, Linux y macOS. Detección automática de rutas de wallet para cada sistema operativo.
 
 ## Instalación
 

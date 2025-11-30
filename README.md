@@ -9,6 +9,7 @@ It is a direct fork of the popular `beem` library, optimized and cleaned specifi
 *   **Secure:** Security audit performed. Hardened private key handling to prevent accidental leaks.
 *   **Complete:** Supports account operations, transfers, voting, witnesses, and more.
 *   **High Performance:** Support for WebSocket and HTTP nodes. Fast transaction signing (optional support for `secp256k1`).
+*   **Cross-Platform:** Fully tested on Windows, Linux, and macOS. Automatic wallet path detection for each OS.
 
 ## Installation
 
