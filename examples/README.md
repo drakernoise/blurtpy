@@ -1,56 +1,56 @@
-# Ejemplos de Uso de `blurtpy`
+# `blurtpy` Usage Examples
 
-Esta carpeta contiene scripts de ejemplo para realizar tareas comunes con la librería `blurtpy`.
+This folder contains example scripts for performing common tasks with the `blurtpy` library.
 
-## Requisitos
-Asegúrate de tener instalada la librería y configurada tu clave privada (WIF) en las variables de entorno o en el propio script (¡con cuidado!).
+## Requirements
+Make sure you have the library installed and your private keys (WIF) configured in environment variables or within the script itself (be careful!).
 
 ```bash
 pip install blurtpy
 ```
 
-## Configuración Inicial (¡IMPORTANTE!)
+## Initial Setup (IMPORTANT!)
 
-Antes de ejecutar los ejemplos, debes configurar tu **Wallet Seguro**. Esto creará una base de datos local cifrada (`blurtpy.sqlite`) para almacenar tus claves privadas, evitando tener que escribirlas en el código.
+Before running the examples, you must configure your **Secure Wallet**. This will create an encrypted local database (`blurtpy.sqlite`) to store your private keys, avoiding the need to write them in the code.
 
-1.  Ejecuta el script de configuración:
+1.  Run the setup script:
     ```bash
     python examples/wallet_manager.py
     ```
-2.  Sigue las instrucciones para crear una contraseña maestra y añadir tus claves (WIF).
+2.  Follow the instructions to create a master password and add your keys (WIF).
 
-## Índice de Ejemplos
+## Examples Index
 
-### 1. Interacción Social (`social_actions.py`)
--   Comentar en un post.
--   Contar comentarios y listar autores.
--   Votar comentarios.
--   Encontrar el último post de un usuario.
--   Buscar posts recientes por criterios (tags).
+### 1. Social Interaction (`social_actions.py`)
+-   Comment on a post.
+-   Count comments and list authors.
+-   Vote on comments.
+-   Find a user's latest post.
+-   Search recent posts by criteria (tags).
 
-### 2. Gestión de Fondos (`wallet_actions.py`)
+### 2. Fund Management (`wallet_actions.py`)
 -   Power Up (Transfer to Vesting).
--   Delegar Blurt Power (BP).
--   Transferencia múltiple (batch).
--   Transferencia recurrente (ejemplo de lógica).
--   Transferir a Ahorros (Savings).
+-   Delegate Blurt Power (BP).
+-   Multiple transfer (batch).
+-   Recurrent transfer (logic example).
+-   Transfer to Savings.
 
-### 3. Gestión de Cuenta (`account_management.py`)
--   Establecer cuenta de recuperación.
--   Cambiar claves de la cuenta.
+### 3. Account Management (`account_management.py`)
+-   Set recovery account.
+-   Change account keys.
 
-## Ejecución
-Para ejecutar cualquiera de los scripts (te pedirá la contraseña del wallet):
+## Execution
+To run any of the scripts (you will be asked for the wallet password):
 
 ```bash
 python examples/social_actions.py
 ```
 
-## Optimización de Nodos
-La librería incluye una función para encontrar automáticamente el nodo más rápido. Puedes usarla en tus propios scripts así:
+## Node Optimization
+The library includes a function to automatically find the fastest node. You can use it in your own scripts like this:
 
 ```python
 from blurtpy import Blurt
-# Se conectará automáticamente al nodo con menor latencia
+# Automatically connects to the node with the lowest latency
 b = Blurt(node="best")
 ```
