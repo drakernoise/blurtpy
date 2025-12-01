@@ -30,3 +30,7 @@ blurtpy-1.0.0/
 # IDE
 .vscode/
 .idea/
+
+# Test output and logs
+test_migration_output*.txt
+*.log
