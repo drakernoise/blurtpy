@@ -48,8 +48,6 @@ timestamp={meta[timestamp]}
         if blockchain_instance is None:
             if kwargs.get("blurt_instance"):
                 blockchain_instance = kwargs["blurt_instance"]
-            elif kwargs.get("blurt_instance"):
-                blockchain_instance = kwargs["blurt_instance"]
         self.blockchain = blockchain_instance or shared_blockchain_instance()
         self.message = message.replace("\r\n", "\n")
         self.signed_by_account = None
@@ -189,8 +187,6 @@ class MessageV2(object):
     def __init__(self, message, blockchain_instance=None, *args, **kwargs):
         if blockchain_instance is None:
             if kwargs.get("blurt_instance"):
-                blockchain_instance = kwargs["blurt_instance"]
-            elif kwargs.get("blurt_instance"):
                 blockchain_instance = kwargs["blurt_instance"]
         self.blockchain = blockchain_instance or shared_blockchain_instance()
 

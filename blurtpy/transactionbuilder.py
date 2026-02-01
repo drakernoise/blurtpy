@@ -56,8 +56,6 @@ class TransactionBuilder(dict):
     ):
         if blockchain_instance is None:
             if kwargs.get("blurt_instance"):
-                blockchain_instance = kwargs["blurt_instance"]
-            elif kwargs.get("blurt_instance"):
                 blockchain_instance = kwargs["blurt_instance"]  
         self.blockchain = blockchain_instance or shared_blockchain_instance()
         self.clear()

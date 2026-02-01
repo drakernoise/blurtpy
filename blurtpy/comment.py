@@ -59,8 +59,6 @@ class Comment(BlockchainObject):
         self.observer = observer
         if blockchain_instance is None:
             if kwargs.get("blurt_instance"):
-                blockchain_instance = kwargs["blurt_instance"]
-            elif kwargs.get("blurt_instance"):
                 blockchain_instance = kwargs["blurt_instance"]        
         self.blockchain = blockchain_instance or shared_blockchain_instance()
         if isinstance(authorperm, string_types) and authorperm != "":
@@ -853,8 +851,6 @@ class RecentReplies(list):
     def __init__(self, author, skip_own=True, start_permlink="", limit=100, lazy=False, full=True, blockchain_instance=None, **kwargs):
         if blockchain_instance is None:
             if kwargs.get("blurt_instance"):
-                blockchain_instance = kwargs["blurt_instance"]
-            elif kwargs.get("blurt_instance"):
                 blockchain_instance = kwargs["blurt_instance"]        
         self.blockchain = blockchain_instance or shared_blockchain_instance()
         if not self.blockchain.is_connected():
@@ -897,8 +893,6 @@ class RankedPosts(list):
     def __init__(self, sort, tag="", observer="", limit=21, start_author="", start_permlink="", lazy=False, full=True, raw_data=False, blockchain_instance=None, **kwargs):
         if blockchain_instance is None:
             if kwargs.get("blurt_instance"):
-                blockchain_instance = kwargs["blurt_instance"]
-            elif kwargs.get("blurt_instance"):
                 blockchain_instance = kwargs["blurt_instance"]        
         self.blockchain = blockchain_instance or shared_blockchain_instance()
         if not self.blockchain.is_connected():
@@ -947,8 +941,6 @@ class AccountPosts(list):
     def __init__(self, sort, account, observer="", limit=20, start_author="", start_permlink="", lazy=False, full=True, raw_data=False, blockchain_instance=None, **kwargs):
         if blockchain_instance is None:
             if kwargs.get("blurt_instance"):
-                blockchain_instance = kwargs["blurt_instance"]
-            elif kwargs.get("blurt_instance"):
                 blockchain_instance = kwargs["blurt_instance"]        
         self.blockchain = blockchain_instance or shared_blockchain_instance()
         if not self.blockchain.is_connected():
