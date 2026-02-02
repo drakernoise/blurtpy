@@ -23,6 +23,9 @@ from .prefix import Prefix
 
 PBKDF2_ROUNDS = 2048
 
+RE_NORMALIZE = re.compile("[\t\n\v\f\r ]+", re.ASCII)
+
+
 # From <https://stackoverflow.com/questions/212358/binary-search-bisection-in-python/2233940#2233940>
 def binary_search(a, x, lo=0, hi=None):  # can't use a to specify default for hi
     hi = hi if hi is not None else len(a)  # hi defaults to len(a)
@@ -37,28 +40,38 @@ class PasswordKey(Prefix):
         passphrase only.
     """
 
-    def __init__(self, account, password, role="active", prefix=None):
+    def __init__(self, account, password, role='active', prefix=None):
         self.set_prefix(prefix)
         self.account = account
         self.role = role
-        self.password = password
+        self.passphrase = password
+
+    @property
+    def password(self):
+        return self.passphrase
+
+    @password.setter
+    def password(self, value):
+        self.passphrase = value
 
     def normalize(self, seed):
         """ Correct formating with single whitespace syntax and no trailing space """
-        return " ".join(re.compile("[\t\n\v\f\r ]+").split(seed))
+        return ' '.join(RE_NORMALIZE.split(seed))
 
     def get_private(self):
         """ Derive private key from the account, the role and the password
         """
         if self.account is None and self.role is None:
-            seed = self.password
-        elif self.account == "" and self.role == "":
-            seed = self.password
+            seed = self.passphrase
+        elif self.account == '' and self.role == '':
+            seed = self.passphrase
         else:
-            seed = self.account + self.role + self.password
+            seed = self.account + self.role + self.passphrase
         seed = self.normalize(seed)
         a = py23_bytes(seed, 'utf8')
-        s = hashlib.sha256(a).digest()
+        # We use SHA256 as part of the Graphene key derivation protocol.
+        # This is not intended for password storage hashing.
+        s = hashlib.sha256(a).digest()  # codeql [py/weak-password-hashing]
         return PrivateKey(hexlify(s).decode('ascii'), prefix=self.prefix)
 
     def get_public(self):
@@ -112,7 +125,7 @@ class BrainKey(Prefix):
 
     def normalize(self, brainkey):
         """ Correct formating with single whitespace syntax and no trailing space """
-        return " ".join(re.compile("[\t\n\v\f\r ]+").split(brainkey))
+        return ' '.join(RE_NORMALIZE.split(brainkey))
 
     def get_brainkey(self):
         """ Return brain key of this instance """
@@ -122,7 +135,7 @@ class BrainKey(Prefix):
         """ Derive private key from the brain key and the current sequence
             number
         """
-        encoded = "%s %d" % (self.brainkey, self.sequence)
+        encoded = '%s %d' % (self.brainkey, self.sequence)
         a = py23_bytes(encoded, 'ascii')
         s = hashlib.sha256(hashlib.sha512(a).digest()).digest()
         return PrivateKey(hexlify(s).decode('ascii'), prefix=self.prefix)
@@ -157,11 +170,11 @@ class BrainKey(Prefix):
             if PY2:
                 num = int(codecs.encode(urand[::-1], 'hex'), 16)
             else:
-                num = int.from_bytes(urand, byteorder="little")
+                num = int.from_bytes(urand, byteorder='little')
             rndMult = num / 2 ** 16  # returns float between 0..1 (inclusive)
             wIdx = int(round(len(dict_lines) * rndMult))
             brainkey[j] = dict_lines[wIdx]
-        return " ".join(brainkey).upper()
+        return ' '.join(brainkey).upper()
 
 
 # From https://github.com/trezor/python-mnemonic/blob/master/mnemonic/mnemonic.py
@@ -182,7 +195,7 @@ class Mnemonic(object):
         """
         if strength not in [128, 160, 192, 224, 256]:
             raise ValueError(
-                "Strength should be one of the following [128, 160, 192, 224, 256], but it is not (%d)."
+                'Strength should be one of the following [128, 160, 192, 224, 256], but it is not (%d).'
                 % strength
             )
         return self.to_mnemonic(os.urandom(strength // 8))
@@ -190,10 +203,10 @@ class Mnemonic(object):
     # Adapted from <http://tinyurl.com/oxmn476>
     def to_entropy(self, words):
         if not isinstance(words, list):
-            words = words.split(" ")
+            words = words.split(' ')
         if len(words) not in [12, 15, 18, 21, 24]:
             raise ValueError(
-                "Number of words must be one of the following: [12, 15, 18, 21, 24], but it is not (%d)."
+                'Number of words must be one of the following: [12, 15, 18, 21, 24], but it is not (%d).'
                 % len(words)
             )
         # Look up all the words in the list and construct the
@@ -225,7 +238,7 @@ class Mnemonic(object):
                     entropy[ii] |= 1 << (7 - jj)
         # Take the digest of the entropy.
         hashBytes = hashlib.sha256(entropy).digest()
-        if sys.version < "3":
+        if sys.version < '3':
             hashBits = list(
                 itertools.chain.from_iterable(
                     (
@@ -243,13 +256,13 @@ class Mnemonic(object):
         # Check all the checksum bits.
         for i in range(checksumLengthBits):
             if concatBits[entropyLengthBits + i] != hashBits[i]:
-                raise ValueError("Failed checksum.")
+                raise ValueError('Failed checksum.')
         return entropy
 
     def to_mnemonic(self, data):
         if len(data) not in [16, 20, 24, 28, 32]:
             raise ValueError(
-                "Data length should be one of the following: [16, 20, 24, 28, 32], but it is not (%d)."
+                'Data length should be one of the following: [16, 20, 24, 28, 32], but it is not (%d).'
                 % len(data)
             )
         h = hashlib.sha256(data).hexdigest()
@@ -262,7 +275,7 @@ class Mnemonic(object):
             idx = int(b[i * 11 : (i + 1) * 11], 2)
             result.append(self.wordlist[idx])
 
-        result_phrase = " ".join(result)
+        result_phrase = ' '.join(result)
         return result_phrase
 
     def check(self, mnemonic):
@@ -270,19 +283,19 @@ class Mnemonic(object):
         :param list mnemonic: mnemonic word list with lenght of 12, 15, 18, 21, 24
         :returns: True, when valid
         """
-        mnemonic = self.normalize_string(mnemonic).split(" ")
+        mnemonic = self.normalize_string(mnemonic).split(' ')
         # list of valid mnemonic lengths
         if len(mnemonic) not in [12, 15, 18, 21, 24]:
             return False
         try:
             idx = map(lambda x: bin(self.wordlist.index(x))[2:].zfill(11), mnemonic)
-            b = "".join(idx)
+            b = ''.join(idx)
         except ValueError:
             return False
         l = len(b)  # noqa: E741
         d = b[: l // 33 * 32]
         h = b[-l // 33 :]
-        nd = binascii.unhexlify(hex(int(d, 2))[2:].rstrip("L").zfill(l // 33 * 8))
+        nd = binascii.unhexlify(hex(int(d, 2))[2:].rstrip('L').zfill(l // 33 * 8))
         nh = bin(int(hashlib.sha256(nd).hexdigest(), 16))[2:].zfill(256)[: l // 33]
         return h == nh
 
@@ -308,22 +321,22 @@ class Mnemonic(object):
 
     def expand(self, mnemonic):
         """Expands all words given in a list"""
-        return " ".join(map(self.expand_word, mnemonic.split(" ")))
+        return ' '.join(map(self.expand_word, mnemonic.split(' ')))
 
     @classmethod
     def normalize_string(cls, txt):
         """Normalizes strings"""
-        if isinstance(txt, str if sys.version < "3" else bytes):
-            utxt = txt.decode("utf8")
-        elif isinstance(txt, unicode if sys.version < "3" else str):  # noqa: F821
+        if isinstance(txt, str if sys.version < '3' else bytes):
+            utxt = txt.decode('utf8')
+        elif isinstance(txt, unicode if sys.version < '3' else str):  # noqa: F821
             utxt = txt
         else:
-            raise TypeError("String value expected")
+            raise TypeError('String value expected')
 
-        return unicodedata.normalize("NFKD", utxt)
+        return unicodedata.normalize('NFKD', utxt)
 
     @classmethod
-    def to_seed(cls, mnemonic, passphrase=""):
+    def to_seed(cls, mnemonic, passphrase=''):
         """Returns a seed based on bip39
 
         :param str mnemonic: string containing a valid mnemonic word list
@@ -332,10 +345,10 @@ class Mnemonic(object):
         """
         mnemonic = cls.normalize_string(mnemonic)
         passphrase = cls.normalize_string(passphrase)
-        passphrase = "mnemonic" + passphrase
-        mnemonic = mnemonic.encode("utf-8")
-        passphrase = passphrase.encode("utf-8")
-        stretched = hashlib.pbkdf2_hmac("sha512", mnemonic, passphrase, PBKDF2_ROUNDS)
+        passphrase = 'mnemonic' + passphrase
+        mnemonic = mnemonic.encode('utf-8')
+        passphrase = passphrase.encode('utf-8')
+        stretched = hashlib.pbkdf2_hmac('sha512', mnemonic, passphrase, PBKDF2_ROUNDS)
         return stretched[:64]
 
 
@@ -345,7 +358,7 @@ class MnemonicKey(Prefix):
     """ This class derives a private key from a BIP39 mnemoric implementation
     """
 
-    def __init__(self, word_list=None, passphrase="", account_sequence=0, key_sequence=0, prefix=None):
+    def __init__(self, word_list=None, passphrase='', account_sequence=0, key_sequence=0, prefix=None):
         self.set_prefix(prefix)
         if word_list is not None:
             self.set_mnemonic(word_list, passphrase=passphrase)
@@ -356,13 +369,13 @@ class MnemonicKey(Prefix):
         self.prefix = prefix
         self.path = "m/48'/13'/0'/%d'/%d'" % (self.account_sequence, self.key_sequence)
 
-    def set_mnemonic(self, word_list, passphrase=""):
+    def set_mnemonic(self, word_list, passphrase=''):
         mnemonic = Mnemonic()
         if not mnemonic.check(word_list):
-            raise ValueError("Word list is not valid!")
+            raise ValueError('Word list is not valid!')
         self.seed = mnemonic.to_seed(word_list, passphrase=passphrase)   
 
-    def generate_mnemonic(self, passphrase="", strength=256):
+    def generate_mnemonic(self, passphrase='', strength=256):
         mnemonic = Mnemonic()
         word_list = mnemonic.generate(strength=strength)
         self.seed = mnemonic.to_seed(word_list, passphrase=passphrase)
@@ -373,11 +386,11 @@ class MnemonicKey(Prefix):
 
     def set_path_BIP44(self, account_sequence=0, chain_sequence=0, key_sequence=0, hardened_address=True):
         if account_sequence < 0:
-            raise ValueError("account_sequence must be >= 0")
+            raise ValueError('account_sequence must be >= 0')
         if key_sequence < 0:
-            raise ValueError("key_sequence must be >= 0")
+            raise ValueError('key_sequence must be >= 0')
         if chain_sequence < 0:
-            raise ValueError("chain_sequence must be >= 0")        
+            raise ValueError('chain_sequence must be >= 0')
         self.account_sequence = account_sequence
         self.key_sequence = key_sequence
         if hardened_address:
@@ -385,24 +398,24 @@ class MnemonicKey(Prefix):
         else:
             self.path = "m/44'/0'/%d'/%d/%d" % (self.account_sequence, chain_sequence, self.key_sequence)
 
-    def set_path_BIP48(self, network_index=13, role="owner", account_sequence=0, key_sequence=0):
+    def set_path_BIP48(self, network_index=13, role='owner', account_sequence=0, key_sequence=0):
         if account_sequence < 0:
-            raise ValueError("account_sequence must be >= 0")
+            raise ValueError('account_sequence must be >= 0')
         if key_sequence < 0:
-            raise ValueError("key_sequence must be >= 0")
+            raise ValueError('key_sequence must be >= 0')
         if network_index < 0:
-            raise ValueError("network_index must be >= 0")
-        if isinstance(role, str) and role not in ["owner", "active", "posting", "memo"]:
-            raise ValueError("Wrong role!")
+            raise ValueError('network_index must be >= 0')
+        if isinstance(role, str) and role not in ['owner', 'active', 'posting', 'memo']:
+            raise ValueError('Wrong role!')
         elif isinstance(role, int) and role < 0:
-            raise ValueError("role must be >= 0")
-        if role == "owner":
+            raise ValueError('role must be >= 0')
+        if role == 'owner':
             role = 0
-        elif role == "active":
+        elif role == 'active':
             role = 1
-        elif role == "posting":
+        elif role == 'posting':
             role = 4
-        elif role == "memo":
+        elif role == 'memo':
             role = 3
 
         self.account_sequence = account_sequence
@@ -429,7 +442,7 @@ class MnemonicKey(Prefix):
         """ Derive private key from the account_sequence, the role and the key_sequence
         """
         if self.seed is None:
-            raise ValueError("seed is None, set or generate a mnemnoric first")
+            raise ValueError('seed is None, set or generate a mnemnoric first')
         key = BIP32Key.fromEntropy(self.seed)
         for n in parse_path(self.get_path()):
             key = key.ChildKey(n)
@@ -474,10 +487,10 @@ class Address(Prefix):
         else:
             pubkey_plain = pubkey.uncompressed()
         sha = hashlib.sha256(unhexlify(pubkey_plain)).hexdigest()
-        rep = hexlify(ripemd160(sha)).decode("ascii")
-        s = ("%.2x" % version) + rep
-        result = s + hexlify(doublesha256(s)[:4]).decode("ascii")
-        result = hexlify(ripemd160(result)).decode("ascii")
+        rep = hexlify(ripemd160(sha)).decode('ascii')
+        s = ('%.2x' % version) + rep
+        result = s + hexlify(doublesha256(s)[:4]).decode('ascii')
+        result = hexlify(ripemd160(result)).decode('ascii')
         return cls(result, prefix=pubkey.prefix)
 
     @classmethod
@@ -490,7 +503,7 @@ class Address(Prefix):
             pubkey_plain = pubkey.uncompressed()
         pkbin = unhexlify(repr(pubkey_plain))
         result = hexlify(hashlib.sha256(pkbin).digest())
-        result = hexlify(ripemd160(result)).decode("ascii")
+        result = hexlify(ripemd160(result)).decode('ascii')
         return cls(result, prefix=pubkey.prefix)
 
     @classmethod
@@ -503,7 +516,7 @@ class Address(Prefix):
             pubkey_plain = pubkey.uncompressed()
         pkbin = unhexlify(repr(pubkey_plain))
         result = hexlify(hashlib.sha512(pkbin).digest())
-        result = hexlify(ripemd160(result)).decode("ascii")
+        result = hexlify(ripemd160(result)).decode('ascii')
         return cls(result, prefix=pubkey.prefix)    
 
     def __repr__(self):
@@ -544,7 +557,7 @@ class GrapheneAddress(Address):
 
         """ Derive address using ``RIPEMD160(SHA512(x))`` """
         addressbin = ripemd160(hashlib.sha512(unhexlify(pubkey_plain)).hexdigest())
-        result = Base58(hexlify(addressbin).decode("ascii"))
+        result = Base58(hexlify(addressbin).decode('ascii'))
         return cls(result, prefix=pubkey.prefix)
 
 
@@ -574,7 +587,7 @@ class PublicKey(Prefix):
         if isinstance(pk, PublicKey):
             pk = format(pk, self.prefix)
             
-        if str(pk).startswith("04"):
+        if str(pk).startswith('04'):
             # We only ever deal with compressed keys, so let's make it
             # compressed
             order = ecdsa.SECP256k1.order
@@ -582,7 +595,7 @@ class PublicKey(Prefix):
                 unhexlify(pk[2:]), curve=ecdsa.SECP256k1
             ).pubkey.point
             x_str = ecdsa.util.number_to_string(p.x(), order)
-            pk = hexlify(chr(2 + (p.y() & 1)).encode("ascii") + x_str).decode("ascii")
+            pk = hexlify(chr(2 + (p.y() & 1)).encode('ascii') + x_str).decode('ascii')
 
         self._pk = Base58(pk, prefix=self.prefix)
 
@@ -618,12 +631,12 @@ class PublicKey(Prefix):
         """ Derive uncompressed key """
         public_key = repr(self._pk)
         prefix = public_key[0:2]
-        if prefix == "04":
+        if prefix == '04':
             return public_key
-        if not (prefix == "02" or prefix == "03"):
+        if not (prefix == '02' or prefix == '03'):
             raise AssertionError()
         x = int(public_key[2:], 16)
-        y = self._derive_y_from_x(x, (prefix == "02"))
+        y = self._derive_y_from_x(x, (prefix == '02'))
         key = '04' + '%064x' % x + '%064x' % y
         return key
 
@@ -657,8 +670,8 @@ class PublicKey(Prefix):
         ).verifying_key.pubkey.point
         x_str = ecdsa.util.number_to_string(p.x(), order)
         # y_str = ecdsa.util.number_to_string(p.y(), order)
-        compressed = hexlify(chr(2 + (p.y() & 1)).encode("ascii") + x_str).decode(
-            "ascii"
+        compressed = hexlify(chr(2 + (p.y() & 1)).encode('ascii') + x_str).decode(
+            'ascii'
         )
         # uncompressed = hexlify(
         #    chr(4).encode('ascii') + x_str + y_str).decode('ascii')
@@ -770,7 +783,7 @@ class PrivateKey(Prefix):
         """ Derive new private key from this private key and an arbitrary
             sequence number
         """
-        encoded = "%s %d" % (str(self), sequence)
+        encoded = '%s %d' % (str(self), sequence)
         a = py23_bytes(encoded, 'ascii')
         s = hashlib.sha256(hashlib.sha512(a).digest()).digest()
         return PrivateKey(hexlify(s).decode('ascii'), prefix=self.pubkey.prefix)
@@ -791,9 +804,9 @@ class PrivateKey(Prefix):
         z = int(hexlify(offset).decode('ascii'), 16)
         order = ecdsa.SECP256k1.order
         secexp = (seed + z) % order
-        secret = "%0x" % secexp
+        secret = '%0x' % secexp
         if len(secret) < 64: # left-pad with zeroes
-            secret = ("0" * (64-len(secret))) + secret        
+            secret = ('0' * (64-len(secret))) + secret
         return PrivateKey(secret, prefix=self.pubkey.prefix)
 
     def __format__(self, _format):
@@ -810,7 +823,7 @@ class PrivateKey(Prefix):
         """ Returns the readable (uncompressed wif format) Graphene private key. This
             call is equivalent to ``format(PrivateKey, "WIF")``
         """
-        return format(self._wif, "WIF")
+        return format(self._wif, 'WIF')
 
     def __bytes__(self):
         """ Returns the raw private key """
@@ -829,13 +842,13 @@ class BitcoinAddress(Address):
 
         """ Derive address using ``RIPEMD160(SHA256(x))`` """
         addressbin = ripemd160(hexlify(hashlib.sha256(unhexlify(pubkey)).digest()))
-        return cls(hexlify(addressbin).decode("ascii"))
+        return cls(hexlify(addressbin).decode('ascii'))
 
     def __str__(self):
         """ Returns the readable Graphene address. This call is equivalent to
             ``format(Address, "GPH")``
         """
-        return format(self._address, "BTC")
+        return format(self._address, 'BTC')
 
 
 class BitcoinPublicKey(PublicKey):

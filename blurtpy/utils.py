@@ -20,6 +20,23 @@ RE_HUNK_HEADER = re.compile(
     r"^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))?\ @@[ ]?(.*)$", flags=re.MULTILINE
 )
 
+RE_ASSETS_SPLIT = re.compile(r"[\-:\/]", re.ASCII)
+RE_PERMLINK_SEP = re.compile(r"[_\s.]", re.ASCII)
+RE_PERMLINK_CLEAN = re.compile(r"[^a-z0-9-]", re.ASCII)
+RE_AUTHORPERM_SIMPLE = re.compile(r"@?([\w\-\.]*)/([\w\-]*)", re.ASCII)
+RE_AUTHORPERM_DTUBE = re.compile(
+    r"([\w\-\.]+[^#?\s]+)/#!/v/?([\w\-\.]*)/([\w\-]*)", re.ASCII
+)
+RE_AUTHORPERM_URL = re.compile(
+    r"([\w\-\.]+[^#?\s]+)/@?([\w\-\.]*)/([\w\-]*)", re.ASCII
+)
+RE_ROOT_IDENTIFIER = re.compile(r"/([^/]*)/@([^/]*)/([^#]*).*", re.ASCII)
+RE_DIRTY_JSON_REPLACE = [
+    (re.compile(r"([ \{,:\[])(u)?'([^']+)'", re.ASCII), r'\1"\3"'),
+    (re.compile(r" False([, \}\]])", re.ASCII), r' false\1'),
+    (re.compile(r" True([, \}\]])", re.ASCII), r' true\1')
+]
+
 
 def formatTime(t):
     """ Properly Format Time for permlinks
@@ -98,15 +115,13 @@ def assets_from_string(text):
     Splits the string into two assets with the separator being on of the
     following: ``:``, ``/``, or ``-``.
     """
-    return re.split(r"[\-:\/]", text)
+    return RE_ASSETS_SPLIT.split(text)
 
 
 def sanitize_permlink(permlink):
-    permlink = permlink.strip()
-    permlink = re.sub(r"_|\s|\.", "-", permlink)
-    permlink = re.sub(r"[^\w-]", "", permlink)
-    permlink = re.sub(r"[^a-zA-Z0-9-]", "", permlink)
-    permlink = permlink.lower()
+    permlink = permlink.strip().lower()
+    permlink = RE_PERMLINK_SEP.sub("-", permlink)
+    permlink = RE_PERMLINK_CLEAN.sub("", permlink)
     return permlink
 
 
@@ -142,7 +157,7 @@ def derive_permlink(title, parent_permlink=None, parent_author=None,
             return prefix + body
     else:
         if with_suffix:
-            rem_chars = max_permlink_length - len(suffix)
+            rem_chars = max_permlink_length - len(suffix) - len(prefix)
         else:
             rem_chars = max_permlink_length
         body = sanitize_permlink(title)[:rem_chars]
@@ -172,16 +187,16 @@ def resolve_authorperm(identifier):
 
     """
     # without any http(s)
-    match = re.match(r"@?([\w\-\.]*)/([\w\-]*)", identifier)
-    if hasattr(match, "group"):
+    match = RE_AUTHORPERM_SIMPLE.match(identifier)
+    if match:
         return match.group(1), match.group(2)
     # dtube url
-    match = re.match(r"([\w\-\.]+[^#?\s]+)/#!/v/?([\w\-\.]*)/([\w\-]*)", identifier)
-    if hasattr(match, "group"):
+    match = RE_AUTHORPERM_DTUBE.match(identifier)
+    if match:
         return match.group(2), match.group(3)
     # url
-    match = re.match(r"([\w\-\.]+[^#?\s]+)/@?([\w\-\.]*)/([\w\-]*)", identifier)
-    if not hasattr(match, "group"):
+    match = RE_AUTHORPERM_URL.match(identifier)
+    if not match:
         raise ValueError("Invalid identifier")
     return match.group(2), match.group(3)
 
@@ -213,7 +228,7 @@ def construct_authorperm(*args):
 
 
 def resolve_root_identifier(url):
-    m = re.match(r"/([^/]*)/@([^/]*)/([^#]*).*", url)
+    m = RE_ROOT_IDENTIFIER.match(url)
     if not m:
         return "", ""
     else:
@@ -302,7 +317,7 @@ def make_patch(a, b):
     import diff_match_patch as dmp_module
     dmp = dmp_module.diff_match_patch()
     patch = dmp.patch_make(a, b)
-    patch_text = dmp.patch_toText(patch)   
+    patch_text = dmp.patch_toText(patch)
     return patch_text
 
 
@@ -420,13 +435,12 @@ def create_yaml_header(comment, json_metadata={}, reply_identifier=None):
     yaml_prefix += '---\n'
     return yaml_prefix
 
-    
+
 def load_dirty_json(dirty_json):
-    regex_replace = [(r"([ \{,:\[])(u)?'([^']+)'", r'\1"\3"'), (r" False([, \}\]])", r' false\1'), (r" True([, \}\]])", r' true\1')]
-    for r, s in regex_replace:
-        dirty_json = re.sub(r, s, dirty_json)
+    for r, s in RE_DIRTY_JSON_REPLACE:
+        dirty_json = r.sub(s, dirty_json)
     clean_json = json.loads(dirty_json)
-    return clean_json    
+    return clean_json
 
 
 def create_new_password(length=32):
@@ -444,7 +458,7 @@ def import_coldcard_wif(filename):
     next_var = ""
     import_password = ""
     path = ""
-    with open(filename) as fp: 
+    with open(filename) as fp:
         for line in fp:
             if line.strip() == "":
                 continue
