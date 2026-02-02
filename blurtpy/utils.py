@@ -157,7 +157,7 @@ def derive_permlink(title, parent_permlink=None, parent_author=None,
             return prefix + body
     else:
         if with_suffix:
-            rem_chars = max_permlink_length - len(suffix)
+            rem_chars = max_permlink_length - len(suffix) - len(prefix)
         else:
             rem_chars = max_permlink_length
         body = sanitize_permlink(title)[:rem_chars]
