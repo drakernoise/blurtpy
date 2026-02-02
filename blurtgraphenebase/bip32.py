@@ -73,7 +73,9 @@ class BIP32Key(object):
                              (len(entropy), MIN_ENTROPY_LEN))
         i64 = hmac.new(b"Bitcoin seed", entropy, hashlib.sha512).digest()
         il, ir = i64[:32], i64[32:]
-        # FIXME test Il for 0 or less than SECP256k1 prime field order
+        il_int = int.from_bytes(il, 'big')
+        if il_int == 0 or il_int >= CURVE_ORDER:
+            raise ValueError("Invalid Il generated from entropy")
         key = BIP32Key(secret=il, chain=ir, depth=0, index=0, fpr=b'\0\0\0\0', public=False, testnet=testnet)
         if public:
             key.SetPublic()
@@ -211,7 +213,7 @@ class BIP32Key(object):
 
         # Construct new key material from Il and current private key
         Il_int = int.from_bytes(Il, 'big')
-        if Il_int > CURVE_ORDER:
+        if Il_int >= CURVE_ORDER:
             return None
         pvt_int = int.from_bytes(self.k.to_string(), 'big')
         k_int = (Il_int + pvt_int) % CURVE_ORDER
