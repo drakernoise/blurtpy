@@ -35,16 +35,16 @@ def binary_search(a, x, lo=0, hi=None):  # can't use a to specify default for hi
 
 class PasswordKey(Prefix):
     """ This class derives a private key given the account name, the
-        role and a password. It leverages the technology of Brainkeys
+        role and a passphrase. It leverages the technology of Brainkeys
         and allows people to have a secure private key by providing a
         passphrase only.
     """
 
-    def __init__(self, account, password, role='active', prefix=None):
+    def __init__(self, account, passphrase, role='active', prefix=None):
         self.set_prefix(prefix)
         self.account = account
         self.role = role
-        self.passphrase = password
+        self.passphrase = passphrase
 
     @property
     def password(self):
@@ -59,7 +59,7 @@ class PasswordKey(Prefix):
         return ' '.join(RE_NORMALIZE.split(seed))
 
     def get_private(self):
-        """ Derive private key from the account, the role and the password
+        """ Derive private key from the account, the role and the passphrase
         """
         if self.account is None and self.role is None:
             seed = self.passphrase
@@ -69,9 +69,9 @@ class PasswordKey(Prefix):
             seed = self.account + self.role + self.passphrase
         seed = self.normalize(seed)
         a = py23_bytes(seed, 'utf8')
-        # We use SHA256 as part of the Graphene key derivation protocol.
-        # This is not intended for password storage hashing.
-        s = hashlib.sha256(a).digest()  # codeql [py/weak-password-hashing]
+        # SHA256 is used here as a key derivation function (KDF) according to the
+        # Graphene protocol specification, not for secure password storage hashing.
+        s = hashlib.sha256(a).digest()
         return PrivateKey(hexlify(s).decode('ascii'), prefix=self.prefix)
 
     def get_public(self):
