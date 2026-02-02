@@ -42,8 +42,6 @@ class Witness(BlockchainObject):
         self.lazy = lazy
         if blockchain_instance is None:
             if kwargs.get("blurt_instance"):
-                blockchain_instance = kwargs["blurt_instance"]
-            elif kwargs.get("blurt_instance"):
                 blockchain_instance = kwargs["blurt_instance"]        
         self.blockchain = blockchain_instance or shared_blockchain_instance()
         if isinstance(owner, dict):
@@ -300,8 +298,6 @@ class GetWitnesses(WitnessesObject):
         if blockchain_instance is None:
             if kwargs.get("blurt_instance"):
                 blockchain_instance = kwargs["blurt_instance"]
-            elif kwargs.get("blurt_instance"):
-                blockchain_instance = kwargs["blurt_instance"]
         self.blockchain = blockchain_instance or shared_blockchain_instance()
         if not self.blockchain.is_connected():
             return
@@ -340,8 +336,6 @@ class Witnesses(WitnessesObject):
     def __init__(self, lazy=False, full=True, blockchain_instance=None, **kwargs):
         if blockchain_instance is None:
             if kwargs.get("blurt_instance"):
-                blockchain_instance = kwargs["blurt_instance"]
-            elif kwargs.get("blurt_instance"):
                 blockchain_instance = kwargs["blurt_instance"]
         self.blockchain = blockchain_instance or shared_blockchain_instance()
         self.lazy = lazy
@@ -389,8 +383,6 @@ class WitnessesVotedByAccount(WitnessesObject):
         if blockchain_instance is None:
             if kwargs.get("blurt_instance"):
                 blockchain_instance = kwargs["blurt_instance"]
-            elif kwargs.get("blurt_instance"):
-                blockchain_instance = kwargs["blurt_instance"]
         self.blockchain = blockchain_instance or shared_blockchain_instance()
         self.account = Account(account, full=True, blockchain_instance=self.blockchain)
         account_name = self.account["name"]
@@ -435,8 +427,6 @@ class WitnessesRankedByVote(WitnessesObject):
     def __init__(self, from_account="", limit=100, lazy=False, full=False, blockchain_instance=None, **kwargs):
         if blockchain_instance is None:
             if kwargs.get("blurt_instance"):
-                blockchain_instance = kwargs["blurt_instance"]
-            elif kwargs.get("blurt_instance"):
                 blockchain_instance = kwargs["blurt_instance"]
         self.blockchain = blockchain_instance or shared_blockchain_instance()
         witnessList = []
@@ -504,8 +494,6 @@ class ListWitnesses(WitnessesObject):
     def __init__(self, from_account="", limit=100, lazy=False, full=False, blockchain_instance=None, **kwargs):
         if blockchain_instance is None:
             if kwargs.get("blurt_instance"):
-                blockchain_instance = kwargs["blurt_instance"]
-            elif kwargs.get("blurt_instance"):
                 blockchain_instance = kwargs["blurt_instance"]
         self.blockchain = blockchain_instance or shared_blockchain_instance()
         self.identifier = from_account

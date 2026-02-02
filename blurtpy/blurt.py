@@ -113,8 +113,9 @@ class Blurt(BlockChainInstance):
         if node == "best":
             node = self.find_best_node()
         elif node is None:
-             pass
-             
+            from blurtpy.nodelist import NodeList
+            node = NodeList().get_blurt_nodes()
+
         super(Blurt, self).__init__(node=node, **kwargs)
 
     @staticmethod

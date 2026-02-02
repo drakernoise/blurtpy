@@ -3,11 +3,10 @@ import re
 import json
 import time as timenow
 import math
-from datetime import datetime, tzinfo, timedelta, date, time
+from datetime import datetime, tzinfo, timedelta, date, time, timezone
 import pytz
 import difflib
 from ruamel.yaml import YAML
-import difflib
 import secrets
 import string
 from blurtgraphenebase.account import PasswordKey
@@ -26,7 +25,7 @@ def formatTime(t):
     """ Properly Format Time for permlinks
     """
     if isinstance(t, float):
-        return datetime.utcfromtimestamp(t).strftime("%Y%m%dt%H%M%S%Z")
+        return datetime.fromtimestamp(t, timezone.utc).strftime("%Y%m%dt%H%M%S%Z")
     if isinstance(t, (datetime, date, time)):
         return t.strftime("%Y%m%dt%H%M%S%Z")
 
@@ -70,7 +69,7 @@ def formatTimeFromNow(secs=0):
         :rtype: str
 
     """
-    return datetime.utcfromtimestamp(timenow.time() + int(secs)).strftime(timeFormat)
+    return datetime.fromtimestamp(timenow.time() + int(secs), timezone.utc).strftime(timeFormat)
 
 
 def formatTimedelta(td):
@@ -118,7 +117,7 @@ def derive_permlink(title, parent_permlink=None, parent_author=None,
     author (for replies).
 
     """
-    suffix = "-" + formatTime(datetime.utcnow()) + "z"
+    suffix = "-" + formatTime(datetime.now(timezone.utc)) + "z"
     if parent_permlink and parent_author:
         prefix = "re-" + sanitize_permlink(parent_author) + "-"
         if with_suffix:
