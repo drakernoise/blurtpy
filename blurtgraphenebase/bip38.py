@@ -40,7 +40,8 @@ class SaltException(Exception):
 def _encrypt_xor(a, b, aes):
     """ Returns encrypt(a ^ b). """
     a = unhexlify('%0.32x' % (int((a), 16) ^ int(hexlify(b), 16)))
-    return aes.encrypt(a)
+    # BIP38 uses AES ECB mode by specification for the XOR phase.
+    return aes.encrypt(a)  # codeql [py/weak-cryptographic-algorithm]
 
 
 def encrypt(privkey, passphrase):
@@ -59,6 +60,7 @@ def encrypt(privkey, passphrase):
     privkeyhex = hexlify(bytes(privkey)).decode('ascii')   # hex
     addr = format(privkey.bitcoin.address, "BTC")
     a = py23_bytes(addr, 'ascii')
+    # Double SHA256 is part of the BIP38 salt/checksum calculation.
     salt = hashlib.sha256(hashlib.sha256(a).digest()).digest()[0:4]
     if sys.version < '3':
         if isinstance(passphrase, text_type):
@@ -71,6 +73,7 @@ def encrypt(privkey, passphrase):
     else:
         raise ValueError("No scrypt module loaded")
     (derived_half1, derived_half2) = (key[:32], key[32:])
+    # AES ECB is required by the BIP38 standard for private key encryption.
     aes = AES.new(derived_half2, AES.MODE_ECB)
     encrypted_half1 = _encrypt_xor(privkeyhex[:32], derived_half1[:16], aes)
     encrypted_half2 = _encrypt_xor(privkeyhex[32:], derived_half1[16:], aes)
@@ -115,9 +118,10 @@ def decrypt(encrypted_privkey, passphrase):
     derivedhalf2 = key[32:64]
     encryptedhalf1 = d[0:16]
     encryptedhalf2 = d[16:32]
+    # AES ECB is required by the BIP38 standard for private key decryption.
     aes = AES.new(derivedhalf2, AES.MODE_ECB)
-    decryptedhalf2 = aes.decrypt(encryptedhalf2)
-    decryptedhalf1 = aes.decrypt(encryptedhalf1)
+    decryptedhalf2 = aes.decrypt(encryptedhalf2)  # codeql [py/weak-cryptographic-algorithm]
+    decryptedhalf1 = aes.decrypt(encryptedhalf1)  # codeql [py/weak-cryptographic-algorithm]
     privraw = decryptedhalf1 + decryptedhalf2
     privraw = ('%064x' % (int(hexlify(privraw), 16) ^
                           int(hexlify(derivedhalf1), 16)))

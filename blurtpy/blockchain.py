@@ -446,7 +446,7 @@ class Blockchain(object):
                     # freeze = self.blockchain.rpc.nodes.freeze_current_node
                     num_retries = self.blockchain.rpc.nodes.num_retries
                     # self.blockchain.rpc.nodes.freeze_current_node = True
-                    self.blockchain.rpc.nodes.num_retries = thread_num
+                    self.blockchain.rpc.num_retries = thread_num
                     error_cnt = self.blockchain.rpc.nodes.node.error_cnt
                     while i < thread_num and blocknum + i <= head_block:
                         block_num_list.append(blocknum + i)
@@ -816,7 +816,9 @@ class Blockchain(object):
             op = event["value"]
             event = [op_type, op]
         data = json.dumps(event, sort_keys=True)
-        return hashlib.sha1(py23_bytes(data, 'utf-8')).hexdigest()
+        # SHA1 is used here for non-cryptographic identification of operations
+        # within a stream. It is not used for security-sensitive purposes.
+        return hashlib.sha1(py23_bytes(data, 'utf-8')).hexdigest()  # codeql [py/weak-cryptographic-algorithm]
 
     def get_all_accounts(self, start='', stop='', steps=1e3, limit=-1, **kwargs):
         """ Yields account names between start and stop.

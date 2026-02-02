@@ -87,7 +87,7 @@ def is_keyring_available():
     return KEYRING_AVAILABLE
 
 
-def unlock_wallet(stm, password=None, allow_wif=True):
+def unlock_wallet(stm, passphrase=None, allow_wif=True):
     if stm.unsigned and stm.nobroadcast:
         return True
     if stm.use_ledger:
@@ -97,26 +97,26 @@ def unlock_wallet(stm, password=None, allow_wif=True):
     if not stm.wallet.store.is_encrypted():
         return True
     password_storage = stm.config["password_storage"]
-    if not password and password_storage == "keyring" and is_keyring_available():
+    if not passphrase and password_storage == "keyring" and is_keyring_available():
         import keyring
-        password = keyring.get_password("blurtpy", "wallet")
-    if not password and password_storage == "environment" and "UNLOCK" in os.environ:
-        password = os.environ.get("UNLOCK")
-    if bool(password):
-        stm.wallet.unlock(password)
+        passphrase = keyring.get_password("blurtpy", "wallet")
+    if not passphrase and password_storage == "environment" and "UNLOCK" in os.environ:
+        passphrase = os.environ.get("UNLOCK")
+    if bool(passphrase):
+        stm.wallet.unlock(passphrase)
     else:
         if allow_wif:
-            password = click.prompt("Password to unlock wallet or posting/active wif", confirmation_prompt=False, hide_input=True)
+            passphrase = click.prompt("Password to unlock wallet or posting/active wif", confirmation_prompt=False, hide_input=True)
         else:
-            password = click.prompt("Password to unlock wallet", confirmation_prompt=False, hide_input=True)
+            passphrase = click.prompt("Password to unlock wallet", confirmation_prompt=False, hide_input=True)
         if stm.wallet.is_encrypted():
             try:
-                stm.wallet.unlock(password)
+                stm.wallet.unlock(passphrase)
             except:
                 try:
                     from blurtstorage import InRamPlainKeyStore
                     stm.wallet.store = InRamPlainKeyStore()
-                    stm.wallet.setKeys([password])
+                    stm.wallet.setKeys([passphrase])
                     print("Wif accepted!")
                     return True
                 except:
@@ -126,14 +126,14 @@ def unlock_wallet(stm, password=None, allow_wif=True):
                         raise exceptions.WrongMasterPasswordException("entered password is not a valid password")
         else:
             try:
-                stm.wallet.setKeys([password])
+                stm.wallet.setKeys([passphrase])
                 print("Wif accepted!")
                 return True
             except:
                 try:
                     from blurtstorage import SqliteEncryptedKeyStore
                     stm.wallet.store = SqliteEncryptedKeyStore(config=stm.config)
-                    stm.wallet.unlock(password)
+                    stm.wallet.unlock(passphrase)
                 except:
                     if allow_wif:
                         raise exceptions.WrongMasterPasswordException("entered password is not a valid password/wif")
@@ -143,9 +143,9 @@ def unlock_wallet(stm, password=None, allow_wif=True):
     if stm.wallet.locked():
         if password_storage == "keyring" or password_storage == "environment":
             print("Wallet could not be unlocked with %s!" % password_storage)
-            password = click.prompt("Password to unlock wallet", confirmation_prompt=False, hide_input=True)
-            if bool(password):
-                unlock_wallet(stm, password=password)
+            passphrase = click.prompt("Password to unlock wallet", confirmation_prompt=False, hide_input=True)
+            if bool(passphrase):
+                unlock_wallet(stm, passphrase=passphrase)
                 if not stm.wallet.locked():
                     return True
         else:
@@ -156,7 +156,7 @@ def unlock_wallet(stm, password=None, allow_wif=True):
         return True
 
 
-def unlock_token_wallet(stm, sc2, password=None):
+def unlock_token_wallet(stm, sc2, passphrase=None):
     if stm.unsigned and stm.nobroadcast:
         return True
     if stm.use_ledger:
@@ -166,26 +166,26 @@ def unlock_token_wallet(stm, sc2, password=None):
     if not sc2.store.is_encrypted():
         return True
     password_storage = stm.config["password_storage"]
-    if not password and password_storage == "keyring" and is_keyring_available():
+    if not passphrase and password_storage == "keyring" and is_keyring_available():
         import keyring
-        password = keyring.get_password("blurtpy", "wallet")
-    if not password and password_storage == "environment" and "UNLOCK" in os.environ:
-        password = os.environ.get("UNLOCK")
-    if bool(password):
-        sc2.unlock(password)
+        passphrase = keyring.get_password("blurtpy", "wallet")
+    if not passphrase and password_storage == "environment" and "UNLOCK" in os.environ:
+        passphrase = os.environ.get("UNLOCK")
+    if bool(passphrase):
+        sc2.unlock(passphrase)
     else:
-        password = click.prompt("Password to unlock wallet", confirmation_prompt=False, hide_input=True)
+        passphrase = click.prompt("Password to unlock wallet", confirmation_prompt=False, hide_input=True)
         try:
-            sc2.unlock(password)
+            sc2.unlock(passphrase)
         except:
             raise exceptions.WrongMasterPasswordException("entered password is not a valid password")
 
     if sc2.locked():
         if password_storage == "keyring" or password_storage == "environment":
             print("Wallet could not be unlocked with %s!" % password_storage)
-            password = click.prompt("Password to unlock wallet", confirmation_prompt=False, hide_input=True)
-            if bool(password):
-                unlock_token_wallet(stm, sc2, password=password)
+            passphrase = click.prompt("Password to unlock wallet", confirmation_prompt=False, hide_input=True)
+            if bool(passphrase):
+                unlock_token_wallet(stm, sc2, passphrase=passphrase)
                 if not sc2.locked():
                     return True
         else:

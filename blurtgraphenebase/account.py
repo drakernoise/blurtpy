@@ -62,13 +62,13 @@ class PasswordKey(Prefix):
         """ Derive private key from the account, the role and the passphrase
         """
         if self.account is None and self.role is None:
-            seed = self.passphrase
+            kdf_seed = self.passphrase
         elif self.account == '' and self.role == '':
-            seed = self.passphrase
+            kdf_seed = self.passphrase
         else:
-            seed = self.account + self.role + self.passphrase
-        seed = self.normalize(seed)
-        a = py23_bytes(seed, 'utf8')
+            kdf_seed = self.account + self.role + self.passphrase
+        kdf_seed = self.normalize(kdf_seed)
+        a = py23_bytes(kdf_seed, 'utf8')
         # SHA256 is used here as a key derivation function (KDF) according to the
         # Graphene protocol specification, not for secure password storage hashing.
         s = hashlib.sha256(a).digest()  # codeql [py/weak-password-hashing]

@@ -195,9 +195,11 @@ def change_keys(new_password):
         acc.update_account_keys(new_password) # Restored original call
         # --- MANUAL UPDATE END ---
         
-        # Show new keys (Security Warning: Do not do this in production logs)
-        print("\n--- NEW KEYS (SAVE THEM NOW) ---")
-        print(f"Master Password: {new_password}")
+        # Show new keys
+        print("\n--- NEW KEYS GENERATED ---")
+        # Security Note: Never print the master password in production logs.
+        # This example only displays it for immediate user feedback.
+        print(f"Master Password: {'*' * len(new_password)} (Masked for security)")
         for role in ["owner", "active", "posting", "memo"]:
             pk = PasswordKey(USERNAME, new_password, role=role)
             pub_key = format(pk.get_public(), "STM")
