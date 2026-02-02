@@ -156,6 +156,7 @@ def derive_permlink(title, parent_permlink=None, parent_author=None,
         else:
             return prefix + body
     else:
+        prefix = ""
         if with_suffix:
             rem_chars = max_permlink_length - len(suffix) - len(prefix)
         else:

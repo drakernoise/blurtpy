@@ -445,8 +445,7 @@ class Blockchain(object):
                     block_num_list = []
                     # freeze = self.blockchain.rpc.nodes.freeze_current_node
                     num_retries = self.blockchain.rpc.nodes.num_retries
-                    # self.blockchain.rpc.nodes.freeze_current_node = True
-                    self.blockchain.rpc.num_retries = thread_num
+                    self.blockchain.rpc.nodes.num_retries = thread_num
                     error_cnt = self.blockchain.rpc.nodes.node.error_cnt
                     while i < thread_num and blocknum + i <= head_block:
                         block_num_list.append(blocknum + i)

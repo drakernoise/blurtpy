@@ -40,11 +40,11 @@ class PasswordKey(Prefix):
         passphrase only.
     """
 
-    def __init__(self, account, passphrase, role='active', prefix=None):
+    def __init__(self, account, password, role='active', prefix=None):
         self.set_prefix(prefix)
         self.account = account
         self.role = role
-        self.passphrase = passphrase
+        self.passphrase = password
 
     @property
     def password(self):
@@ -487,10 +487,10 @@ class Address(Prefix):
         else:
             pubkey_plain = pubkey.uncompressed()
         sha = hashlib.sha256(unhexlify(pubkey_plain)).hexdigest()
-        rep = hexlify(ripemd160(sha)).decode('ascii')
+        rep = hexlify(ripemd160(sha)).decode("ascii")
         s = ('%.2x' % version) + rep
-        result = s + hexlify(doublesha256(s)[:4]).decode('ascii')
-        result = hexlify(ripemd160(result)).decode('ascii')
+        result = s + hexlify(doublesha256(s)[:4]).decode("ascii")
+        result = hexlify(ripemd160(result)).decode("ascii")
         return cls(result, prefix=pubkey.prefix)
 
     @classmethod
@@ -503,7 +503,7 @@ class Address(Prefix):
             pubkey_plain = pubkey.uncompressed()
         pkbin = unhexlify(repr(pubkey_plain))
         result = hexlify(hashlib.sha256(pkbin).digest())
-        result = hexlify(ripemd160(result)).decode('ascii')
+        result = hexlify(ripemd160(result)).decode("ascii")
         return cls(result, prefix=pubkey.prefix)
 
     @classmethod
@@ -516,7 +516,7 @@ class Address(Prefix):
             pubkey_plain = pubkey.uncompressed()
         pkbin = unhexlify(repr(pubkey_plain))
         result = hexlify(hashlib.sha512(pkbin).digest())
-        result = hexlify(ripemd160(result)).decode('ascii')
+        result = hexlify(ripemd160(result)).decode("ascii")
         return cls(result, prefix=pubkey.prefix)
 
     def __repr__(self):
@@ -557,7 +557,7 @@ class GrapheneAddress(Address):
 
         """ Derive address using ``RIPEMD160(SHA512(x))`` """
         addressbin = ripemd160(hashlib.sha512(unhexlify(pubkey_plain)).hexdigest())
-        result = Base58(hexlify(addressbin).decode('ascii'))
+        result = Base58(hexlify(addressbin).decode("ascii"))
         return cls(result, prefix=pubkey.prefix)
 
 
@@ -595,7 +595,7 @@ class PublicKey(Prefix):
                 unhexlify(pk[2:]), curve=ecdsa.SECP256k1
             ).pubkey.point
             x_str = ecdsa.util.number_to_string(p.x(), order)
-            pk = hexlify(chr(2 + (p.y() & 1)).encode('ascii') + x_str).decode('ascii')
+            pk = hexlify(chr(2 + (p.y() & 1)).encode("ascii") + x_str).decode('ascii')
 
         self._pk = Base58(pk, prefix=self.prefix)
 
@@ -670,7 +670,7 @@ class PublicKey(Prefix):
         ).verifying_key.pubkey.point
         x_str = ecdsa.util.number_to_string(p.x(), order)
         # y_str = ecdsa.util.number_to_string(p.y(), order)
-        compressed = hexlify(chr(2 + (p.y() & 1)).encode('ascii') + x_str).decode(
+        compressed = hexlify(chr(2 + (p.y() & 1)).encode("ascii") + x_str).decode(
             'ascii'
         )
         # uncompressed = hexlify(
