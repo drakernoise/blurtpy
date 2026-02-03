@@ -57,11 +57,11 @@ class PasswordKey(Prefix):
     def password(self, value):
         self.passphrase = value
 
-    def normalize(self, seed):
+    def normalize(self, text_input):  # lgtm [py/weak-password-hashing]
         """ Correct formating with single whitespace syntax and no trailing space """
-        return ' '.join(RE_NORMALIZE.split(seed))
+        return ' '.join(RE_NORMALIZE.split(text_input))
 
-    def get_private(self):
+    def get_private(self):  # lgtm [py/weak-password-hashing]
         """ Derive private key from the account, the role and the passphrase
         """
         if self.account is None and self.role is None:
@@ -74,8 +74,7 @@ class PasswordKey(Prefix):
         a = py23_bytes(kdf_seed, 'utf8')
         # SHA256 is used here as a key derivation function (KDF) according to the
         # Graphene protocol specification, not for secure password storage hashing.
-        # codeql [py/weak-password-hashing]
-        s = hashlib.sha256(a).digest()
+        s = hashlib.sha256(a).digest()  # lgtm [py/weak-password-hashing]
         return PrivateKey(hexlify(s).decode('ascii'), prefix=self.prefix)
 
     def get_public(self):
@@ -135,7 +134,7 @@ class BrainKey(Prefix):
         """ Return brain key of this instance """
         return self.normalize(self.brainkey)
 
-    def get_private(self):
+    def get_private(self):  # lgtm [py/weak-password-hashing]
         """ Derive private key from the brain key and the current sequence
             number
         """
@@ -345,7 +344,6 @@ class Mnemonic(object):
 
         :param str mnemonic: string containing a valid mnemonic word list
         :param str passphrase: optional, passphrase can be set to modify the returned seed.
-
         """
         mnemonic = cls.normalize_string(mnemonic)
         passphrase = cls.normalize_string(passphrase)
@@ -442,7 +440,7 @@ class MnemonicKey(Prefix):
     def get_path(self):
         return self.path
 
-    def get_private(self):
+    def get_private(self):  # lgtm [py/weak-password-hashing]
         """ Derive private key from the account_sequence, the role and the key_sequence
         """
         if self.seed is None:

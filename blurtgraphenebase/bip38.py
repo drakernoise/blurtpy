@@ -37,15 +37,14 @@ class SaltException(Exception):
     pass
 
 
-def _encrypt_xor(a, b, aes):
+def _encrypt_xor(a, b, aes):  # lgtm [py/weak-cryptographic-algorithm]
     """ Returns encrypt(a ^ b). """
     a = unhexlify('%0.32x' % (int((a), 16) ^ int(hexlify(b), 16)))
     # BIP38 uses AES ECB mode by specification for the XOR phase.
-    # codeql [py/weak-cryptographic-algorithm]
-    return aes.encrypt(a)
+    return aes.encrypt(a)  # lgtm [py/weak-cryptographic-algorithm]
 
 
-def encrypt(privkey, passphrase):
+def encrypt(privkey, passphrase):  # lgtm [py/weak-cryptographic-algorithm]
     """ BIP0038 non-ec-multiply encryption. Returns BIP0038 encrypted privkey.
 
     :param privkey: Private key
@@ -87,7 +86,7 @@ def encrypt(privkey, passphrase):
     return Base58(privatkey)
 
 
-def decrypt(encrypted_privkey, passphrase):
+def decrypt(encrypted_privkey, passphrase):  # lgtm [py/weak-cryptographic-algorithm]
     """BIP0038 non-ec-multiply decryption. Returns WIF privkey.
 
     :param Base58 encrypted_privkey: Private key
@@ -121,10 +120,8 @@ def decrypt(encrypted_privkey, passphrase):
     encryptedhalf2 = d[16:32]
     # AES ECB is required by the BIP38 standard for private key decryption.
     aes = AES.new(derivedhalf2, AES.MODE_ECB)
-    # codeql [py/weak-cryptographic-algorithm]
-    decryptedhalf2 = aes.decrypt(encryptedhalf2)
-    # codeql [py/weak-cryptographic-algorithm]
-    decryptedhalf1 = aes.decrypt(encryptedhalf1)
+    decryptedhalf2 = aes.decrypt(encryptedhalf2)  # lgtm [py/weak-cryptographic-algorithm]
+    decryptedhalf1 = aes.decrypt(encryptedhalf1)  # lgtm [py/weak-cryptographic-algorithm]
     privraw = decryptedhalf1 + decryptedhalf2
     privraw = ('%064x' % (int(hexlify(privraw), 16) ^
                           int(hexlify(derivedhalf1), 16)))

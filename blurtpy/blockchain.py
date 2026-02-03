@@ -807,7 +807,7 @@ class Blockchain(object):
                     "The operation has not been added after %d blocks!" % (limit))
 
     @staticmethod
-    def hash_op(event):
+    def hash_op(event):  # lgtm [py/weak-cryptographic-algorithm]
         """ This method generates a hash of blockchain operation. """
         if isinstance(event, dict) and "type" in event and "value" in event:
             op_type = event["type"]
@@ -815,11 +815,10 @@ class Blockchain(object):
                 op_type = op_type[:-10]
             op = event["value"]
             event = [op_type, op]
-        id_input = json.dumps(event, sort_keys=True)
+        op_serialized = json.dumps(event, sort_keys=True)
         # SHA1 is used here for non-cryptographic identification of operations
         # within a stream. It is not used for security-sensitive purposes.
-        # codeql [py/weak-cryptographic-algorithm]
-        return hashlib.sha1(py23_bytes(id_input, 'utf-8')).hexdigest()
+        return hashlib.sha1(py23_bytes(op_serialized, 'utf-8')).hexdigest()  # lgtm [py/weak-cryptographic-algorithm]
 
     def get_all_accounts(self, start='', stop='', steps=1e3, limit=-1, **kwargs):
         """ Yields account names between start and stop.

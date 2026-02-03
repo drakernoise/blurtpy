@@ -17,11 +17,10 @@ class AESCipher(object):
     A classical AES Cipher. Can use any size of data and any size of password thanks to padding.
     Also ensure the coherence and the type of the data with a unicode to byte converter.
     """
-    def __init__(self, key):
+    def __init__(self, key):  # lgtm [py/weak-password-hashing]
         self.bs = 32
         # SHA256 is used here as a simple key derivation from a passphrase string.
-        # codeql [py/weak-password-hashing]
-        self.key = hashlib.sha256(AESCipher.str_to_bytes(key)).digest()
+        self.key = hashlib.sha256(AESCipher.str_to_bytes(key)).digest()  # lgtm [py/weak-password-hashing]
 
     @staticmethod
     def str_to_bytes(data):
