@@ -815,10 +815,11 @@ class Blockchain(object):
                 op_type = op_type[:-10]
             op = event["value"]
             event = [op_type, op]
-        data = json.dumps(event, sort_keys=True)
+        id_input = json.dumps(event, sort_keys=True)
         # SHA1 is used here for non-cryptographic identification of operations
         # within a stream. It is not used for security-sensitive purposes.
-        return hashlib.sha1(py23_bytes(data, 'utf-8')).hexdigest()  # codeql [py/weak-cryptographic-algorithm]
+        # codeql [py/weak-cryptographic-algorithm]
+        return hashlib.sha1(py23_bytes(id_input, 'utf-8')).hexdigest()
 
     def get_all_accounts(self, start='', stop='', steps=1e3, limit=-1, **kwargs):
         """ Yields account names between start and stop.

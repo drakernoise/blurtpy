@@ -41,7 +41,8 @@ def _encrypt_xor(a, b, aes):
     """ Returns encrypt(a ^ b). """
     a = unhexlify('%0.32x' % (int((a), 16) ^ int(hexlify(b), 16)))
     # BIP38 uses AES ECB mode by specification for the XOR phase.
-    return aes.encrypt(a)  # codeql [py/weak-cryptographic-algorithm]
+    # codeql [py/weak-cryptographic-algorithm]
+    return aes.encrypt(a)
 
 
 def encrypt(privkey, passphrase):
@@ -120,8 +121,10 @@ def decrypt(encrypted_privkey, passphrase):
     encryptedhalf2 = d[16:32]
     # AES ECB is required by the BIP38 standard for private key decryption.
     aes = AES.new(derivedhalf2, AES.MODE_ECB)
-    decryptedhalf2 = aes.decrypt(encryptedhalf2)  # codeql [py/weak-cryptographic-algorithm]
-    decryptedhalf1 = aes.decrypt(encryptedhalf1)  # codeql [py/weak-cryptographic-algorithm]
+    # codeql [py/weak-cryptographic-algorithm]
+    decryptedhalf2 = aes.decrypt(encryptedhalf2)
+    # codeql [py/weak-cryptographic-algorithm]
+    decryptedhalf1 = aes.decrypt(encryptedhalf1)
     privraw = decryptedhalf1 + decryptedhalf2
     privraw = ('%064x' % (int(hexlify(privraw), 16) ^
                           int(hexlify(derivedhalf1), 16)))

@@ -40,11 +40,14 @@ class PasswordKey(Prefix):
         passphrase only.
     """
 
-    def __init__(self, account, password, role='active', prefix=None):
+    def __init__(self, account, passphrase=None, role='active', prefix=None, **kwargs):
+        if passphrase is None:
+            # Support legacy 'password' keyword argument
+            passphrase = kwargs.get('password')
         self.set_prefix(prefix)
         self.account = account
         self.role = role
-        self.passphrase = password
+        self.passphrase = passphrase
 
     @property
     def password(self):
@@ -71,7 +74,8 @@ class PasswordKey(Prefix):
         a = py23_bytes(kdf_seed, 'utf8')
         # SHA256 is used here as a key derivation function (KDF) according to the
         # Graphene protocol specification, not for secure password storage hashing.
-        s = hashlib.sha256(a).digest()  # codeql [py/weak-password-hashing]
+        # codeql [py/weak-password-hashing]
+        s = hashlib.sha256(a).digest()
         return PrivateKey(hexlify(s).decode('ascii'), prefix=self.prefix)
 
     def get_public(self):

@@ -87,7 +87,7 @@ def is_keyring_available():
     return KEYRING_AVAILABLE
 
 
-def unlock_wallet(stm, passphrase=None, allow_wif=True):
+def unlock_wallet(stm, password=None, allow_wif=True):
     if stm.unsigned and stm.nobroadcast:
         return True
     if stm.use_ledger:
@@ -97,26 +97,26 @@ def unlock_wallet(stm, passphrase=None, allow_wif=True):
     if not stm.wallet.store.is_encrypted():
         return True
     password_storage = stm.config["password_storage"]
-    if not passphrase and password_storage == "keyring" and is_keyring_available():
+    if not password and password_storage == "keyring" and is_keyring_available():
         import keyring
-        passphrase = keyring.get_password("blurtpy", "wallet")
-    if not passphrase and password_storage == "environment" and "UNLOCK" in os.environ:
-        passphrase = os.environ.get("UNLOCK")
-    if bool(passphrase):
-        stm.wallet.unlock(passphrase)
+        password = keyring.get_password("blurtpy", "wallet")
+    if not password and password_storage == "environment" and "UNLOCK" in os.environ:
+        password = os.environ.get("UNLOCK")
+    if bool(password):
+        stm.wallet.unlock(password)
     else:
         if allow_wif:
-            passphrase = click.prompt("Password to unlock wallet or posting/active wif", confirmation_prompt=False, hide_input=True)
+            password = click.prompt("Password to unlock wallet or posting/active wif", confirmation_prompt=False, hide_input=True)
         else:
-            passphrase = click.prompt("Password to unlock wallet", confirmation_prompt=False, hide_input=True)
+            password = click.prompt("Password to unlock wallet", confirmation_prompt=False, hide_input=True)
         if stm.wallet.is_encrypted():
             try:
-                stm.wallet.unlock(passphrase)
+                stm.wallet.unlock(password)
             except:
                 try:
                     from blurtstorage import InRamPlainKeyStore
                     stm.wallet.store = InRamPlainKeyStore()
-                    stm.wallet.setKeys([passphrase])
+                    stm.wallet.setKeys([password])
                     print("Wif accepted!")
                     return True
                 except:
@@ -126,14 +126,14 @@ def unlock_wallet(stm, passphrase=None, allow_wif=True):
                         raise exceptions.WrongMasterPasswordException("entered password is not a valid password")
         else:
             try:
-                stm.wallet.setKeys([passphrase])
+                stm.wallet.setKeys([password])
                 print("Wif accepted!")
                 return True
             except:
                 try:
                     from blurtstorage import SqliteEncryptedKeyStore
                     stm.wallet.store = SqliteEncryptedKeyStore(config=stm.config)
-                    stm.wallet.unlock(passphrase)
+                    stm.wallet.unlock(password)
                 except:
                     if allow_wif:
                         raise exceptions.WrongMasterPasswordException("entered password is not a valid password/wif")
@@ -143,9 +143,9 @@ def unlock_wallet(stm, passphrase=None, allow_wif=True):
     if stm.wallet.locked():
         if password_storage == "keyring" or password_storage == "environment":
             print("Wallet could not be unlocked with %s!" % password_storage)
-            passphrase = click.prompt("Password to unlock wallet", confirmation_prompt=False, hide_input=True)
-            if bool(passphrase):
-                unlock_wallet(stm, passphrase=passphrase)
+            password = click.prompt("Password to unlock wallet", confirmation_prompt=False, hide_input=True)
+            if bool(password):
+                unlock_wallet(stm, password=password)
                 if not stm.wallet.locked():
                     return True
         else:
@@ -156,7 +156,7 @@ def unlock_wallet(stm, passphrase=None, allow_wif=True):
         return True
 
 
-def unlock_token_wallet(stm, sc2, passphrase=None):
+def unlock_token_wallet(stm, sc2, password=None):
     if stm.unsigned and stm.nobroadcast:
         return True
     if stm.use_ledger:
@@ -166,26 +166,26 @@ def unlock_token_wallet(stm, sc2, passphrase=None):
     if not sc2.store.is_encrypted():
         return True
     password_storage = stm.config["password_storage"]
-    if not passphrase and password_storage == "keyring" and is_keyring_available():
+    if not password and password_storage == "keyring" and is_keyring_available():
         import keyring
-        passphrase = keyring.get_password("blurtpy", "wallet")
-    if not passphrase and password_storage == "environment" and "UNLOCK" in os.environ:
-        passphrase = os.environ.get("UNLOCK")
-    if bool(passphrase):
-        sc2.unlock(passphrase)
+        password = keyring.get_password("blurtpy", "wallet")
+    if not password and password_storage == "environment" and "UNLOCK" in os.environ:
+        password = os.environ.get("UNLOCK")
+    if bool(password):
+        sc2.unlock(password)
     else:
-        passphrase = click.prompt("Password to unlock wallet", confirmation_prompt=False, hide_input=True)
+        password = click.prompt("Password to unlock wallet", confirmation_prompt=False, hide_input=True)
         try:
-            sc2.unlock(passphrase)
+            sc2.unlock(password)
         except:
             raise exceptions.WrongMasterPasswordException("entered password is not a valid password")
 
     if sc2.locked():
         if password_storage == "keyring" or password_storage == "environment":
             print("Wallet could not be unlocked with %s!" % password_storage)
-            passphrase = click.prompt("Password to unlock wallet", confirmation_prompt=False, hide_input=True)
-            if bool(passphrase):
-                unlock_token_wallet(stm, sc2, passphrase=passphrase)
+            password = click.prompt("Password to unlock wallet", confirmation_prompt=False, hide_input=True)
+            if bool(password):
+                unlock_token_wallet(stm, sc2, password=password)
                 if not sc2.locked():
                     return True
         else:
@@ -380,7 +380,7 @@ def set(key, value):
         if is_keyring_available() and value == "keyring":
             import keyring
             passphrase = click.prompt("Password to unlock wallet (Will be stored in keyring)", confirmation_prompt=False, hide_input=True)
-            passphrase = keyring.set_password("blurtpy", "wallet", password)
+            keyring.set_password("blurtpy", "wallet", passphrase)
         elif is_keyring_available() and value != "keyring":
             import keyring
             try:
@@ -625,7 +625,6 @@ def createwallet(wipe):
             return
     elif wipe:
         stm.wallet.wipe(True)
-    password = None
     passphrase = click.prompt("New wallet password", confirmation_prompt=True, hide_input=True)
     if not bool(passphrase):
         print("Password cannot be empty! Quitting...")
@@ -633,11 +632,11 @@ def createwallet(wipe):
     password_storage = stm.config["password_storage"]
     if password_storage == "keyring" and is_keyring_available():
         import keyring
-        passphrase = keyring.set_password("blurtpy", "wallet", password)
+        keyring.set_password("blurtpy", "wallet", passphrase)
     elif password_storage == "environment":
         print("The new wallet password can be stored in the UNLOCK environment variable to skip password prompt!")
     stm.wallet.wipe(True)
-    stm.wallet.create(password)
+    stm.wallet.create(passphrase)
     set_shared_blockchain_instance(stm)
 
 
@@ -663,7 +662,7 @@ def walletinfo(unlock, lock):
     t.add_row(["sql-file", stm.wallet.store.sqlite_file])
     password_storage = stm.config["password_storage"]
     t.add_row(["password_storage", password_storage])
-    passphrase = os.environ.get("UNLOCK")
+    password = os.environ.get("UNLOCK")
     if password is not None:
         t.add_row(["UNLOCK env set", "yes"])
     else:
@@ -931,7 +930,7 @@ def passwordgen(role, account, import_password, import_coldcard, wif, export_pub
     if not account:
         account = stm.config["default_account"]
     if import_password:
-        import_passphrase = click.prompt("Enter password", confirmation_prompt=False, hide_input=True)
+        import_password = click.prompt("Enter password", confirmation_prompt=False, hide_input=True)
     elif import_coldcard is not None:
         import_password, path = import_coldcard_wif(import_coldcard)
     else:
@@ -1507,18 +1506,17 @@ def changewalletpassphrase():
         stm.rpc.rpcconnect()
     if not unlock_wallet(stm, allow_wif=False):
         return
-    newpassword = None
     newpassphrase = click.prompt("New wallet password", confirmation_prompt=True, hide_input=True)
-    if not bool(newpassword):
+    if not bool(newpassphrase):
         print("Password cannot be empty! Quitting...")
         return
     password_storage = stm.config["password_storage"]
     if password_storage == "keyring" and is_keyring_available():
         import keyring
-        keyring.set_password("blurtpy", "wallet", newpassword)
+        keyring.set_password("blurtpy", "wallet", newpassphrase)
     elif password_storage == "environment":
         print("The new wallet password can be stored in the UNLOCK invironment variable to skip password prompt!")
-    stm.wallet.changePassphrase(newpassword)
+    stm.wallet.changePassphrase(newpassphrase)
 
 
 @cli.command()
@@ -2021,10 +2019,10 @@ def newaccount(accountname, account, owner, active, memo, posting, wif, create_c
             tx = stm.create_account(accountname, creator=acc, owner_key=owner, active_key=active, memo_key=memo, posting_key=posting)
     elif owner is None or active is None or memo is None or posting is None:
         import_passphrase = click.prompt("Keys were not given - Passphrase is used to create keys\n New Account Passphrase", confirmation_prompt=True, hide_input=True)
-        if not import_password:
+        if not import_passphrase:
             print("You cannot chose an empty password")
             return
-        password = generate_password(import_password, wif)
+        password = generate_password(import_passphrase, wif)
         if create_claimed_account:
             tx = stm.create_claimed_account(accountname, creator=acc, password=password)
         else:
@@ -2132,11 +2130,12 @@ def importaccount(account, roles, import_coldcard, wif):
     imported = False
     if import_coldcard is None:
         passphrase = click.prompt("Account Passphrase", confirmation_prompt=False, hide_input=True)
-        if not password:
+        if not passphrase:
             print("You cannot chose an empty Passphrase")
             return
+        password_input = passphrase
     else:
-        password, path = import_coldcard_wif(import_coldcard)
+        password_input, path = import_coldcard_wif(import_coldcard)
     if wif is not None:
         wif = int(wif)
     elif import_coldcard is not None:
@@ -2144,7 +2143,7 @@ def importaccount(account, roles, import_coldcard, wif):
     else:
         wif = 0
 
-    password = generate_password(password, wif)
+    password = generate_password(password_input, wif)
 
     if "owner" in roles:
         owner_key = PasswordKey(account["name"], password, role="owner")
