@@ -379,8 +379,8 @@ def set(key, value):
         stm.config["password_storage"] = value
         if is_keyring_available() and value == "keyring":
             import keyring
-            password = click.prompt("Password to unlock wallet (Will be stored in keyring)", confirmation_prompt=False, hide_input=True)
-            password = keyring.set_password("blurtpy", "wallet", password)
+            passphrase = click.prompt("Password to unlock wallet (Will be stored in keyring)", confirmation_prompt=False, hide_input=True)
+            passphrase = keyring.set_password("blurtpy", "wallet", password)
         elif is_keyring_available() and value != "keyring":
             import keyring
             try:
@@ -626,14 +626,14 @@ def createwallet(wipe):
     elif wipe:
         stm.wallet.wipe(True)
     password = None
-    password = click.prompt("New wallet password", confirmation_prompt=True, hide_input=True)
-    if not bool(password):
+    passphrase = click.prompt("New wallet password", confirmation_prompt=True, hide_input=True)
+    if not bool(passphrase):
         print("Password cannot be empty! Quitting...")
         return
     password_storage = stm.config["password_storage"]
     if password_storage == "keyring" and is_keyring_available():
         import keyring
-        password = keyring.set_password("blurtpy", "wallet", password)
+        passphrase = keyring.set_password("blurtpy", "wallet", password)
     elif password_storage == "environment":
         print("The new wallet password can be stored in the UNLOCK environment variable to skip password prompt!")
     stm.wallet.wipe(True)
@@ -663,7 +663,7 @@ def walletinfo(unlock, lock):
     t.add_row(["sql-file", stm.wallet.store.sqlite_file])
     password_storage = stm.config["password_storage"]
     t.add_row(["password_storage", password_storage])
-    password = os.environ.get("UNLOCK")
+    passphrase = os.environ.get("UNLOCK")
     if password is not None:
         t.add_row(["UNLOCK env set", "yes"])
     else:
@@ -931,7 +931,7 @@ def passwordgen(role, account, import_password, import_coldcard, wif, export_pub
     if not account:
         account = stm.config["default_account"]
     if import_password:
-        import_password = click.prompt("Enter password", confirmation_prompt=False, hide_input=True)
+        import_passphrase = click.prompt("Enter password", confirmation_prompt=False, hide_input=True)
     elif import_coldcard is not None:
         import_password, path = import_coldcard_wif(import_coldcard)
     else:
@@ -1508,7 +1508,7 @@ def changewalletpassphrase():
     if not unlock_wallet(stm, allow_wif=False):
         return
     newpassword = None
-    newpassword = click.prompt("New wallet password", confirmation_prompt=True, hide_input=True)
+    newpassphrase = click.prompt("New wallet password", confirmation_prompt=True, hide_input=True)
     if not bool(newpassword):
         print("Password cannot be empty! Quitting...")
         return
@@ -2020,7 +2020,7 @@ def newaccount(accountname, account, owner, active, memo, posting, wif, create_c
         else:
             tx = stm.create_account(accountname, creator=acc, owner_key=owner, active_key=active, memo_key=memo, posting_key=posting)
     elif owner is None or active is None or memo is None or posting is None:
-        import_password = click.prompt("Keys were not given - Passphrase is used to create keys\n New Account Passphrase", confirmation_prompt=True, hide_input=True)
+        import_passphrase = click.prompt("Keys were not given - Passphrase is used to create keys\n New Account Passphrase", confirmation_prompt=True, hide_input=True)
         if not import_password:
             print("You cannot chose an empty password")
             return
@@ -2131,7 +2131,7 @@ def importaccount(account, roles, import_coldcard, wif):
     account = Account(account, blockchain_instance=stm)
     imported = False
     if import_coldcard is None:
-        password = click.prompt("Account Passphrase", confirmation_prompt=False, hide_input=True)
+        passphrase = click.prompt("Account Passphrase", confirmation_prompt=False, hide_input=True)
         if not password:
             print("You cannot chose an empty Passphrase")
             return

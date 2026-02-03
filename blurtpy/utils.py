@@ -17,7 +17,8 @@ timeFormat = "%Y-%m-%dT%H:%M:%S"
 # https://github.com/matiasb/python-unidiff/blob/master/unidiff/constants.py#L37
 # @@ (source offset, length) (target offset, length) @@ (section header)
 RE_HUNK_HEADER = re.compile(
-    r"^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))?\ @@[ ]?(.*)$", flags=re.MULTILINE
+    r"^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))?\ @@[ ]?(.*)$",
+    flags=re.MULTILINE | re.ASCII
 )
 
 RE_ASSETS_SPLIT = re.compile(r"[\-:\/]", re.ASCII)
