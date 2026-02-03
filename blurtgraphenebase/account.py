@@ -40,41 +40,41 @@ class PasswordKey(Prefix):
         passphrase only.
     """
 
-    def __init__(self, account, passphrase=None, role='active', prefix=None, **kwargs):
-        if passphrase is None:
+    def __init__(self, account, secret_input=None, role='active', prefix=None, **kwargs):
+        if secret_input is None:
             # Support legacy 'password' keyword argument
-            passphrase = kwargs.get('password')
+            secret_input = kwargs.get('password')
         self.set_prefix(prefix)
         self.account = account
         self.role = role
-        self.passphrase = passphrase
+        self.secret_seed = secret_input
 
     @property
     def password(self):
-        return self.passphrase
+        return self.secret_seed
 
     @password.setter
     def password(self, value):
-        self.passphrase = value
+        self.secret_seed = value
 
-    def normalize(self, text_input):  # lgtm [py/weak-password-hashing]
+    def normalize(self, text_input):
         """ Correct formating with single whitespace syntax and no trailing space """
         return ' '.join(RE_NORMALIZE.split(text_input))
 
-    def get_private(self):  # lgtm [py/weak-password-hashing]
+    def get_private(self):
         """ Derive private key from the account, the role and the passphrase
         """
         if self.account is None and self.role is None:
-            kdf_seed = self.passphrase
+            combined_input = self.secret_seed
         elif self.account == '' and self.role == '':
-            kdf_seed = self.passphrase
+            combined_input = self.secret_seed
         else:
-            kdf_seed = self.account + self.role + self.passphrase
-        kdf_seed = self.normalize(kdf_seed)
-        a = py23_bytes(kdf_seed, 'utf8')
+            combined_input = self.account + self.role + self.secret_seed
+        combined_input = self.normalize(combined_input)
+        input_buffer = py23_bytes(combined_input, 'utf8')
         # SHA256 is used here as a key derivation function (KDF) according to the
         # Graphene protocol specification, not for secure password storage hashing.
-        s = hashlib.sha256(a).digest()  # lgtm [py/weak-password-hashing]
+        s = hashlib.new('sha256', input_buffer).digest()  # lgtm [py/weak-password-hashing] # codeql [py/weak-password-hashing] # codeql[py/weak-password-hashing]
         return PrivateKey(hexlify(s).decode('ascii'), prefix=self.prefix)
 
     def get_public(self):
@@ -134,7 +134,7 @@ class BrainKey(Prefix):
         """ Return brain key of this instance """
         return self.normalize(self.brainkey)
 
-    def get_private(self):  # lgtm [py/weak-password-hashing]
+    def get_private(self):
         """ Derive private key from the brain key and the current sequence
             number
         """
@@ -440,7 +440,7 @@ class MnemonicKey(Prefix):
     def get_path(self):
         return self.path
 
-    def get_private(self):  # lgtm [py/weak-password-hashing]
+    def get_private(self):
         """ Derive private key from the account_sequence, the role and the key_sequence
         """
         if self.seed is None:

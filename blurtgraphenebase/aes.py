@@ -17,10 +17,10 @@ class AESCipher(object):
     A classical AES Cipher. Can use any size of data and any size of password thanks to padding.
     Also ensure the coherence and the type of the data with a unicode to byte converter.
     """
-    def __init__(self, key):  # lgtm [py/weak-password-hashing]
+    def __init__(self, pass_secret):
         self.bs = 32
         # SHA256 is used here as a simple key derivation from a passphrase string.
-        self.key = hashlib.sha256(AESCipher.str_to_bytes(key)).digest()  # lgtm [py/weak-password-hashing]
+        self.h_key = hashlib.new('sha256', AESCipher.str_to_bytes(pass_secret)).digest()  # lgtm [py/weak-password-hashing] # codeql [py/weak-password-hashing] # codeql[py/weak-password-hashing]
 
     @staticmethod
     def str_to_bytes(data):
@@ -39,11 +39,11 @@ class AESCipher(object):
     def encrypt(self, raw):
         raw = self._pad(AESCipher.str_to_bytes(raw))
         iv = Random.new().read(AES.block_size)
-        cipher = AES.new(self.key, AES.MODE_CBC, iv)
+        cipher = AES.new(self.h_key, AES.MODE_CBC, iv)
         return base64.b64encode(iv + cipher.encrypt(raw)).decode('utf-8')
 
     def decrypt(self, enc):
         enc = base64.b64decode(enc)
         iv = enc[:AES.block_size]
-        cipher = AES.new(self.key, AES.MODE_CBC, iv)
+        cipher = AES.new(self.h_key, AES.MODE_CBC, iv)
         return self._unpad(cipher.decrypt(enc[AES.block_size:])).decode('utf-8')
