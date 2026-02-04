@@ -25,8 +25,6 @@ class ImageUploader(object):
         self.base_url = base_url
         if blockchain_instance is None:
             if kwargs.get("blurt_instance"):
-                blockchain_instance = kwargs["blurt_instance"]
-            elif kwargs.get("blurt_instance"):
                 blockchain_instance = kwargs["blurt_instance"]        
         self.blurt = blockchain_instance or shared_blockchain_instance()
         if self.blurt.is_blurt and base_url == "https://blurtitimages.com":

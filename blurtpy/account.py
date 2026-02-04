@@ -97,8 +97,6 @@ class Account(BlockchainObject):
         if blockchain_instance is None:
             if kwargs.get("blurt_instance"):
                 blockchain_instance = kwargs["blurt_instance"]
-            elif kwargs.get("blurt_instance"):
-                blockchain_instance = kwargs["blurt_instance"]
         self.blockchain = blockchain_instance or shared_blockchain_instance()
         if isinstance(account, dict):
             account = self._parse_json_data(account)
@@ -160,7 +158,6 @@ class Account(BlockchainObject):
         parse_int = [
             "blurt_seconds", "savings_blurt_seconds", "average_bandwidth", "lifetime_bandwidth",
             "lifetime_market_bandwidth", "reputation", "withdrawn", "to_withdraw",
-            "blurt_seconds", "savings_blurt_seconds",
         ]
         for p in parse_int:
             if p in account and isinstance(account.get(p), string_types):
@@ -191,14 +188,7 @@ class Account(BlockchainObject):
             "blurt_balance",
             "savings_blurt_balance",
             "reward_blurt_balance",
-            "blurt_balance",
-            "savings_blurt_balance",
-            "reward_blurt_balance",            
-            "reward_blurt_balance",
-            "reward_blurt_balance",
-            "reward_blurt_balance",
             "reward_vesting_balance",
-            "reward_vesting_blurt",
             "reward_vesting_blurt",
             "vesting_shares",
             "delegated_vesting_shares",
@@ -214,7 +204,7 @@ class Account(BlockchainObject):
     def json(self):
         output = self.copy()
         parse_int = [
-            "blurt_seconds", "savings_blurt_seconds", "blurt_seconds", "savings_blurt_seconds",
+            "blurt_seconds", "savings_blurt_seconds",
         ]
         parse_int_without_zero = [
             "withdrawn", "to_withdraw", "lifetime_bandwidth", 'average_bandwidth',
@@ -254,14 +244,7 @@ class Account(BlockchainObject):
             "blurt_balance",
             "savings_blurt_balance",
             "reward_blurt_balance",
-            "reward_blurt_balance",
-            "reward_blurt_balance",
-            "blurt_balance",
-            "savings_blurt_balance",
-            "reward_blurt_balance",
-            "reward_blurt_balance",            
             "reward_vesting_balance",
-            "reward_vesting_blurt",
             "reward_vesting_blurt",
             "vesting_shares",
             "delegated_vesting_shares",
@@ -369,15 +352,11 @@ class Account(BlockchainObject):
             t.add_row(["Name (rep)", self.name + " (%.2f)" % (self.rep)])
             t.add_row(["Voting Power", "%.2f %%, " % (self.get_voting_power())])
             t.add_row(["Downvoting Power", "%.2f %%, " % (self.get_downvoting_power())])
-            t.add_row(["Vote Value", "%.2f $" % (self.get_voting_value_BLURT())])
+            t.add_row(["Vote Value", "%.2f $" % (self.get_voting_value_blurt())])
             t.add_row(["Last vote", "%s ago" % last_vote_time_str])
             t.add_row(["Full in ", "%s" % (self.get_recharge_time_str())])
             t.add_row(["Token Power", "%.2f %s" % (self.get_token_power(), self.blockchain.token_symbol)])
             t.add_row(["Balance", "%s, %s" % (str(self.balances["available"][0]), str(self.balances["available"][1]))])
-            if False and bandwidth is not None and bandwidth["allocated"] is not None and bandwidth["allocated"] > 0:
-                t.add_row(["Remaining Bandwidth", "%.2f %%" % (remaining)])
-                t.add_row(["used/allocated Bandwidth", "(%.0f kb of %.0f mb)" % (used_kb, allocated_mb)])
-
 
             if return_str:
                 return t.get_string(**kwargs)
@@ -387,17 +366,13 @@ class Account(BlockchainObject):
             ret = self.name + " (%.2f) \n" % (self.rep)
             ret += "--- Voting Power ---\n"
             ret += "%.2f %%, " % (self.get_voting_power())
-            ret += " %.2f $\n" % (self.get_voting_value_BLURT())
+            ret += " %.2f $\n" % (self.get_voting_value_blurt())
             ret += "full in %s \n" % (self.get_recharge_time_str())
             ret += "--- Downvoting Power ---\n"
             ret += "%.2f %% \n" % (self.get_downvoting_power())
             ret += "--- Balance ---\n"
             ret += "%.2f SP, " % (self.get_token_power())
             ret += "%s, %s\n" % (str(self.balances["available"][0]), str(self.balances["available"][1]))
-            if False and bandwidth["allocated"] > 0:
-                ret += "--- Bandwidth ---\n"
-                ret += "Remaining: %.2f %%" % (remaining)
-                ret += " (%.0f kb of %.0f mb)\n" % (used_kb, allocated_mb)
 
             if return_str:
                 return ret
@@ -573,13 +548,13 @@ class Account(BlockchainObject):
         voteValue = self.blockchain.token_power_to_token_backed_dollar(tp, post_rshares=post_rshares, voting_power=voting_power * 100, vote_pct=voting_weight * 100, not_broadcasted_vote=not_broadcasted_vote)
         return voteValue
 
-    def get_voting_value_Blurt(self, post_rshares=0, voting_weight=100, voting_power=None, blurt_power=None, not_broadcasted_vote=True):
+    def get_voting_value_blurt(self, post_rshares=0, voting_weight=100, voting_power=None, blurt_power=None, not_broadcasted_vote=True):
         """ Returns the account voting value in BLURT
         """
         return self.get_voting_value(post_rshares=post_rshares, voting_weight=voting_weight, voting_power=voting_power,
                                      token_power=blurt_power, not_broadcasted_vote=not_broadcasted_vote)
 
-    def get_vote_pct_for_BLURT(self, blurt, post_rshares=0, voting_power=None, blurt_power=None, not_broadcasted_vote=True):
+    def get_vote_pct_for_blurt(self, blurt, post_rshares=0, voting_power=None, blurt_power=None, not_broadcasted_vote=True):
         """ Returns the voting percentage needed to have a vote worth a given number of BLURT.
 
             If the returned number is bigger than 10000 or smaller than -10000,
@@ -590,6 +565,15 @@ class Account(BlockchainObject):
 
         """
         return self.get_vote_pct_for_vote_value(blurt, post_rshares=post_rshares, voting_power=voting_power, token_power=blurt_power, not_broadcasted_vote=not_broadcasted_vote)
+
+    def get_voting_value_Blurt(self, *args, **kwargs):
+        return self.get_voting_value_blurt(*args, **kwargs)
+
+    def get_voting_value_BLURT(self, *args, **kwargs):
+        return self.get_voting_value_blurt(*args, **kwargs)
+
+    def get_vote_pct_for_BLURT(self, *args, **kwargs):
+        return self.get_vote_pct_for_blurt(*args, **kwargs)
 
     def get_vote_pct_for_vote_value(self, token_units, post_rshares=0, voting_power=None, token_power=None, not_broadcasted_vote=True):
         """ Returns the voting percentage needed to have a vote worth a given number of Blurt/Blurt token units
@@ -624,12 +608,21 @@ class Account(BlockchainObject):
     def get_creator(self):
         """ Returns the account creator or `None` if the account was mined
         """
-        if self['mined']:
+        if self.get('mined'):
             return None
-        ops = list(self.get_account_history(1, 1))
-        if not ops or 'creator' not in ops[-1]:
+        try:
+            ops = list(self.get_account_history(0, 1, order=1, use_block_num=False))
+        except:
+            ops = list(self.get_account_history(1, 1, order=1, use_block_num=False))
+
+        if not ops:
             return None
-        return ops[-1]['creator']
+
+        op = ops[0]
+        if 'creator' in op:
+            return op['creator']
+
+        return None
 
     def get_recharge_time_str(self, voting_power_goal=100, starting_voting_power=None):
         """ Returns the account recharge time as string
@@ -1962,24 +1955,10 @@ class Account(BlockchainObject):
 
             # linear approximation between the known upper and
             # lower bounds for the first iteration
-            # if cnt < 1:
-            #     op_num = int((target_blocknum - block_lower) / (block_upper - block_lower) * (op_upper - op_lower) + op_lower)
-            # else:
-            #     # divide and conquer for the following iterations
-            #     op_num = int((op_upper + op_lower) / 2)
-            #     if op_upper == op_lower + 1:  # round up if we're close to target
-            #         op_num += 1
-
-            ############ Modificado ###############
-            if cnt < 1:
-            # op_num = int((target_blocknum - block_lower) / (block_upper - block_lower) * (op_upper - op_lower) + op_lower)
-            # Usamos el punto medio para eliminar la dependencia de ratios
-                op_num = int((op_upper + op_lower) / 2)
-            else:
-            # divide and conquer for the following iterations
-                op_num = int((op_upper + op_lower) / 2)
-                if op_upper == op_lower + 1: # round up if we're close to target
-                    op_num += 1
+            # Use middle point to eliminate dependency on ratios
+            op_num = int((op_upper + op_lower) / 2)
+            if cnt >= 1 and op_upper == op_lower + 1:  # round up if we're close to target
+                op_num += 1
 
 
 
@@ -3165,44 +3144,23 @@ class Account(BlockchainObject):
         # if no values were set by user, claim all outstanding balances on
         # account
 
-        reward_token_amount = self._check_amount(reward_blurt + reward_blurt + reward_blurt, self.blockchain.token_symbol)
-        reward_backed_token_amount = self._check_amount(reward_blurt + reward_blurt, self.blockchain.backed_token_symbol)
+        reward_token_amount = self._check_amount(reward_blurt, self.blockchain.token_symbol)
         reward_vests_amount = self._check_amount(reward_vests, self.blockchain.vest_token_symbol)
 
-        if self.blockchain.is_blurt:
-            reward_token = "reward_blurt"
-            reward_backed_token = "reward_blurt"
-        elif self.blockchain.is_blurt:
-            reward_token = "reward_blurt"
-            reward_backed_token = "reward_blurt"
-        else:
-            reward_token = "reward_blurt"
+        reward_token = "reward_blurt"
 
-        if reward_token_amount.amount == 0 and reward_backed_token_amount.amount == 0 and reward_vests_amount.amount == 0:
-            if len(account.balances["rewards"]) == 3:
+        if reward_token_amount.amount == 0 and reward_vests_amount.amount == 0:
+            if len(account.balances["rewards"]) >= 2:
                 reward_token_amount = account.balances["rewards"][0]
-                reward_backed_token_amount = account.balances["rewards"][1]
-                reward_vests_amount = account.balances["rewards"][2]
-            else:
-                reward_token_amount = account.balances["rewards"][0]
-                reward_vests_amount = account.balances["rewards"][1]
-        if len(account.balances["rewards"]) == 3:
-            op = operations.Claim_reward_balance(
-                **{
-                    "account": account["name"],
-                    reward_token: reward_token_amount,
-                    #Has no sense : reward_backed_token: reward_backed_token_amount,
-                    "reward_vests": reward_vests_amount,
-                    "prefix": self.blockchain.prefix,
-                })         
-        else:
-            op = operations.Claim_reward_balance(
-                **{
-                    "account": account["name"],
-                    reward_token: reward_token_amount,
-                    "reward_vests": reward_vests_amount,
-                    "prefix": self.blockchain.prefix,
-                })
+                reward_vests_amount = account.balances["rewards"][-1]
+
+        op = operations.Claim_reward_balance(
+            **{
+                "account": account["name"],
+                reward_token: reward_token_amount,
+                "reward_vests": reward_vests_amount,
+                "prefix": self.blockchain.prefix,
+            })
 
         return self.blockchain.finalizeOp(op, account, "posting", **kwargs)
 
@@ -3794,8 +3752,6 @@ class Accounts(AccountsObject):
         
         if blockchain_instance is None:
             if kwargs.get("blurt_instance"):
-                blockchain_instance = kwargs["blurt_instance"]
-            elif kwargs.get("blurt_instance"):
                 blockchain_instance = kwargs["blurt_instance"]
         self.blockchain = blockchain_instance or shared_blockchain_instance()
 

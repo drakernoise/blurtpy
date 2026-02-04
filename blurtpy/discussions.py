@@ -62,8 +62,6 @@ class Discussions(object):
     def __init__(self, lazy=False, use_appbase=False, blockchain_instance=None, **kwargs):
         if blockchain_instance is None:
             if kwargs.get("blurt_instance"):
-                blockchain_instance = kwargs["blurt_instance"]
-            elif kwargs.get("blurt_instance"):
                 blockchain_instance = kwargs["blurt_instance"]        
         self.blockchain = blockchain_instance or shared_blockchain_instance()
         self.lazy = lazy
@@ -208,8 +206,6 @@ class Discussions_by_trending(list):
     def __init__(self, discussion_query, lazy=False, use_appbase=False, raw_data=False, blockchain_instance=None, **kwargs):
         if blockchain_instance is None:
             if kwargs.get("blurt_instance"):
-                blockchain_instance = kwargs["blurt_instance"]
-            elif kwargs.get("blurt_instance"):
                 blockchain_instance = kwargs["blurt_instance"]        
         self.blockchain = blockchain_instance or shared_blockchain_instance()
         reduced_query = {}
@@ -266,8 +262,6 @@ class Discussions_by_author_before_date(list):
     def __init__(self, author="", start_permlink="", before_date="1970-01-01T00:00:00", limit=100, lazy=False, use_appbase=False, raw_data=False, blockchain_instance=None, **kwargs):
         if blockchain_instance is None:
             if kwargs.get("blurt_instance"):
-                blockchain_instance = kwargs["blurt_instance"]
-            elif kwargs.get("blurt_instance"):
                 blockchain_instance = kwargs["blurt_instance"]        
         self.blockchain = blockchain_instance or shared_blockchain_instance()
         self.blockchain.rpc.set_next_node_on_empty_reply(self.blockchain.rpc.get_use_appbase() and use_appbase)
@@ -313,8 +307,6 @@ class Comment_discussions_by_payout(list):
     def __init__(self, discussion_query, lazy=False, use_appbase=False, raw_data=False, blockchain_instance=None, **kwargs):
         if blockchain_instance is None:
             if kwargs.get("blurt_instance"):
-                blockchain_instance = kwargs["blurt_instance"]
-            elif kwargs.get("blurt_instance"):
                 blockchain_instance = kwargs["blurt_instance"]        
         self.blockchain = blockchain_instance or shared_blockchain_instance()
         reduced_query = {}
@@ -364,8 +356,6 @@ class Post_discussions_by_payout(list):
     def __init__(self, discussion_query, lazy=False, use_appbase=False, raw_data=False, blockchain_instance=None, **kwargs):
         if blockchain_instance is None:
             if kwargs.get("blurt_instance"):
-                blockchain_instance = kwargs["blurt_instance"]
-            elif kwargs.get("blurt_instance"):
                 blockchain_instance = kwargs["blurt_instance"]        
         self.blockchain = blockchain_instance or shared_blockchain_instance()
         reduced_query = {}
@@ -415,8 +405,6 @@ class Discussions_by_created(list):
     def __init__(self, discussion_query, lazy=False, use_appbase=False, raw_data=False, blockchain_instance=None, **kwargs):
         if blockchain_instance is None:
             if kwargs.get("blurt_instance"):
-                blockchain_instance = kwargs["blurt_instance"]
-            elif kwargs.get("blurt_instance"):
                 blockchain_instance = kwargs["blurt_instance"]        
         self.blockchain = blockchain_instance or shared_blockchain_instance()
         reduced_query = {}
@@ -466,8 +454,6 @@ class Discussions_by_active(list):
     def __init__(self, discussion_query, lazy=False, use_appbase=False, raw_data=False, blockchain_instance=None, **kwargs):
         if blockchain_instance is None:
             if kwargs.get("blurt_instance"):
-                blockchain_instance = kwargs["blurt_instance"]
-            elif kwargs.get("blurt_instance"):
                 blockchain_instance = kwargs["blurt_instance"]        
         self.blockchain = blockchain_instance or shared_blockchain_instance()
         reduced_query = {}
@@ -518,8 +504,6 @@ class Discussions_by_cashout(list):
     def __init__(self, discussion_query, lazy=False, use_appbase=False, raw_data=False, blockchain_instance=None, **kwargs):
         if blockchain_instance is None:
             if kwargs.get("blurt_instance"):
-                blockchain_instance = kwargs["blurt_instance"]
-            elif kwargs.get("blurt_instance"):
                 blockchain_instance = kwargs["blurt_instance"]        
         self.blockchain = blockchain_instance or shared_blockchain_instance()
         reduced_query = {}
@@ -569,8 +553,6 @@ class Discussions_by_votes(list):
     def __init__(self, discussion_query, lazy=False, use_appbase=False, raw_data=False, blockchain_instance=None, **kwargs):
         if blockchain_instance is None:
             if kwargs.get("blurt_instance"):
-                blockchain_instance = kwargs["blurt_instance"]
-            elif kwargs.get("blurt_instance"):
                 blockchain_instance = kwargs["blurt_instance"]        
         self.blockchain = blockchain_instance or shared_blockchain_instance()
         reduced_query = {}
@@ -620,8 +602,6 @@ class Discussions_by_children(list):
     def __init__(self, discussion_query, lazy=False, use_appbase=False, raw_data=False, blockchain_instance=None, **kwargs):
         if blockchain_instance is None:
             if kwargs.get("blurt_instance"):
-                blockchain_instance = kwargs["blurt_instance"]
-            elif kwargs.get("blurt_instance"):
                 blockchain_instance = kwargs["blurt_instance"]        
         self.blockchain = blockchain_instance or shared_blockchain_instance()
         reduced_query = {}
@@ -671,8 +651,6 @@ class Discussions_by_hot(list):
     def __init__(self, discussion_query, lazy=False, use_appbase=False, raw_data=False, blockchain_instance=None, **kwargs):
         if blockchain_instance is None:
             if kwargs.get("blurt_instance"):
-                blockchain_instance = kwargs["blurt_instance"]
-            elif kwargs.get("blurt_instance"):
                 blockchain_instance = kwargs["blurt_instance"]        
         self.blockchain = blockchain_instance or shared_blockchain_instance()
         reduced_query = {}
@@ -722,8 +700,6 @@ class Discussions_by_feed(list):
     def __init__(self, discussion_query, lazy=False, use_appbase=False, raw_data=False, blockchain_instance=None, **kwargs):
         if blockchain_instance is None:
             if kwargs.get("blurt_instance"):
-                blockchain_instance = kwargs["blurt_instance"]
-            elif kwargs.get("blurt_instance"):
                 blockchain_instance = kwargs["blurt_instance"]        
         self.blockchain = blockchain_instance or shared_blockchain_instance()
         self.blockchain.rpc.set_next_node_on_empty_reply(self.blockchain.rpc.get_use_appbase() and use_appbase)
@@ -777,8 +753,6 @@ class Discussions_by_blog(list):
     def __init__(self, discussion_query, lazy=False, use_appbase=False, raw_data=False, blockchain_instance=None, **kwargs):
         if blockchain_instance is None:
             if kwargs.get("blurt_instance"):
-                blockchain_instance = kwargs["blurt_instance"]
-            elif kwargs.get("blurt_instance"):
                 blockchain_instance = kwargs["blurt_instance"]        
         self.blockchain = blockchain_instance or shared_blockchain_instance()
         reduced_query = {}
@@ -835,8 +809,6 @@ class Discussions_by_comments(list):
     def __init__(self, discussion_query, lazy=False, use_appbase=False, raw_data=False, blockchain_instance=None, **kwargs):
         if blockchain_instance is None:
             if kwargs.get("blurt_instance"):
-                blockchain_instance = kwargs["blurt_instance"]
-            elif kwargs.get("blurt_instance"):
                 blockchain_instance = kwargs["blurt_instance"]        
         self.blockchain = blockchain_instance or shared_blockchain_instance()
         reduced_query = {}
@@ -887,8 +859,6 @@ class Discussions_by_promoted(list):
     def __init__(self, discussion_query, lazy=False, use_appbase=False, raw_data=False, blockchain_instance=None, **kwargs):
         if blockchain_instance is None:
             if kwargs.get("blurt_instance"):
-                blockchain_instance = kwargs["blurt_instance"]
-            elif kwargs.get("blurt_instance"):
                 blockchain_instance = kwargs["blurt_instance"]        
         self.blockchain = blockchain_instance or shared_blockchain_instance()
         reduced_query = {}
@@ -938,8 +908,6 @@ class Replies_by_last_update(list):
     def __init__(self, discussion_query, lazy=False, use_appbase=False, raw_data=False, blockchain_instance=None, **kwargs):
         if blockchain_instance is None:
             if kwargs.get("blurt_instance"):
-                blockchain_instance = kwargs["blurt_instance"]
-            elif kwargs.get("blurt_instance"):
                 blockchain_instance = kwargs["blurt_instance"]        
         self.blockchain = blockchain_instance or shared_blockchain_instance()
         self.blockchain.rpc.set_next_node_on_empty_reply(self.blockchain.rpc.get_use_appbase() and use_appbase)
@@ -990,8 +958,6 @@ class Trending_tags(list):
     def __init__(self, discussion_query, lazy=False, use_appbase=False, blockchain_instance=None, **kwargs):
         if blockchain_instance is None:
             if kwargs.get("blurt_instance"):
-                blockchain_instance = kwargs["blurt_instance"]
-            elif kwargs.get("blurt_instance"):
                 blockchain_instance = kwargs["blurt_instance"]        
         self.blockchain = blockchain_instance or shared_blockchain_instance()
         self.blockchain.rpc.set_next_node_on_empty_reply(self.blockchain.rpc.get_use_appbase() and use_appbase)

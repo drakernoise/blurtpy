@@ -46,8 +46,6 @@ class Vote(BlockchainObject):
         self.lazy = lazy
         if blockchain_instance is None:
             if kwargs.get("blurt_instance"):
-                blockchain_instance = kwargs["blurt_instance"]
-            elif kwargs.get("blurt_instance"):
                 blockchain_instance = kwargs["blurt_instance"]        
         self.blockchain = blockchain_instance or shared_blockchain_instance()
         if isinstance(voter, string_types) and authorperm is not None:
@@ -368,8 +366,6 @@ class ActiveVotes(VotesObject):
     def __init__(self, authorperm, lazy=False, full=False, blockchain_instance=None, **kwargs):
         if blockchain_instance is None:
             if kwargs.get("blurt_instance"):
-                blockchain_instance = kwargs["blurt_instance"]
-            elif kwargs.get("blurt_instance"):
                 blockchain_instance = kwargs["blurt_instance"]        
         self.blockchain = blockchain_instance or shared_blockchain_instance()
         votes = None
@@ -436,8 +432,6 @@ class AccountVotes(VotesObject):
     def __init__(self, account, start=None, stop=None, raw_data=False, lazy=False, full=False, blockchain_instance=None, **kwargs):
         if blockchain_instance is None:
             if kwargs.get("blurt_instance"):
-                blockchain_instance = kwargs["blurt_instance"]
-            elif kwargs.get("blurt_instance"):
                 blockchain_instance = kwargs["blurt_instance"]        
         self.blockchain = blockchain_instance or shared_blockchain_instance()
         start = addTzInfo(start)

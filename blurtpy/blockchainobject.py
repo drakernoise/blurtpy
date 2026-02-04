@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from blurtgraphenebase.py23 import bytes_types, integer_types, string_types, text_type
 from blurtpy.instance import shared_blockchain_instance
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import json
 import threading
 
@@ -16,7 +16,7 @@ class ObjectCache(dict):
 
     def __setitem__(self, key, value):
         data = {
-            "expires": datetime.utcnow() + timedelta(
+            "expires": datetime.now(timezone.utc) + timedelta(
                 seconds=self.default_expiration),
             "data": value
         }
@@ -47,7 +47,7 @@ class ObjectCache(dict):
     def clear_expired_items(self):
         with self.lock:
             del_list = []
-            utc_now = datetime.utcnow()
+            utc_now = datetime.now(timezone.utc)
             for key in self:
                 value = dict.__getitem__(self, key)
                 if value is None:
@@ -64,7 +64,7 @@ class ObjectCache(dict):
                 value = dict.__getitem__(self, key)
                 if value is None:
                     return False
-                if datetime.utcnow() < value["expires"]:
+                if datetime.now(timezone.utc) < value["expires"]:
                     return True
                 else:
                     value["data"] = None
@@ -108,8 +108,6 @@ class BlockchainObject(dict):
     ):
         if blockchain_instance is None:
             if kwargs.get("blurt_instance"):
-                blockchain_instance = kwargs["blurt_instance"]
-            elif kwargs.get("blurt_instance"):
                 blockchain_instance = kwargs["blurt_instance"]      
         self.blockchain = blockchain_instance or shared_blockchain_instance()
         self.cached = False
