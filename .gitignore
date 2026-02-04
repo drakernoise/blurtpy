@@ -27,6 +27,11 @@ blurtpy-1.0.0/
 *.sqlite
 *.db
 
+# Secrets and environment variables
+.secrets.env
+.env.local
+.env.*.local
+
 # IDE
 .vscode/
 .idea/
