@@ -735,16 +735,16 @@ class Blockchain(object):
                         block_num = block.get("id")
                         _id = self.hash_op(event)
                         timestamp = block.get("timestamp")
-                    elif isinstance(op_data, dict) and "type" in op_data and "value" in op_data:
-                        op_type = op_data["type"]
+                    elif isinstance(event, dict) and "type" in event and "value" in event:
+                        op_type = event["type"]
                         if len(op_type) > 10 and op_type[len(op_type) - 10:] == "_operation":
                             op_type = op_type[:-10]
-                        op = op_data["value"]
+                        op = event["value"]
                         trx_id = block["transaction_ids"][trx_nr]
                         block_num = block.get("id")
                         _id = self.hash_op(event)
                         timestamp = block.get("timestamp")
-                    elif "op" in event and isinstance(event["op"], dict) and "type" in op_data["op"] and "value" in op_data["op"]:
+                    elif "op" in event and isinstance(event["op"], dict) and "type" in event["op"] and "value" in event["op"]:
                         op_type = event["op"]["type"]
                         if len(op_type) > 10 and op_type[len(op_type) - 10:] == "_operation":
                             op_type = op_type[:-10]
@@ -807,18 +807,19 @@ class Blockchain(object):
                     "The operation has not been added after %d blocks!" % (limit))
 
     @staticmethod
-    def hash_op(op_data):
+    def hash_op(op_obj):
         """ This method generates a hash of blockchain operation. """
-        if isinstance(op_data, dict) and "type" in op_data and "value" in op_data:
-            op_type = op_data["type"]
+        if isinstance(op_obj, dict) and "type" in op_obj and "value" in op_obj:
+            op_type = op_obj["type"]
             if len(op_type) > 10 and op_type[len(op_type) - 10:] == "_operation":
                 op_type = op_type[:-10]
-            op = op_data["value"]
-            op_data = [op_type, op]
-        event_buffer = json.dumps(op_data, sort_keys=True)
+            op = op_obj["value"]
+            op_obj = [op_type, op]
+        serialized_op = json.dumps(op_obj, sort_keys=True)
         # SHA1 is used here for non-cryptographic identification of operations
         # within a stream. It is not used for security-sensitive purposes.
-        return hashlib.new('sha1', py23_bytes(event_buffer, 'utf-8')).hexdigest()  # lgtm [py/weak-cryptographic-algorithm] # codeql [py/weak-cryptographic-algorithm] # codeql[py/weak-cryptographic-algorithm]
+        # lgtm [py/weak-cryptographic-algorithm] # codeql [py/weak-cryptographic-algorithm] # codeql[py/weak-cryptographic-algorithm]
+        return hashlib.new('sha1', py23_bytes(serialized_op, 'utf-8')).hexdigest()
 
     def get_all_accounts(self, start='', stop='', steps=1e3, limit=-1, **kwargs):
         """ Yields account names between start and stop.

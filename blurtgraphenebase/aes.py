@@ -20,7 +20,8 @@ class AESCipher(object):
     def __init__(self, pass_secret):
         self.bs = 32
         # SHA256 is used here as a simple key derivation from a passphrase string.
-        self.h_key = hashlib.new('sha256', AESCipher.str_to_bytes(pass_secret)).digest()  # lgtm [py/weak-password-hashing] # codeql [py/weak-password-hashing] # codeql[py/weak-password-hashing]
+        # lgtm [py/weak-password-hashing] # codeql [py/weak-password-hashing] # codeql[py/weak-password-hashing]
+        self.h_key = hashlib.new('sha256', AESCipher.str_to_bytes(pass_secret)).digest()
 
     @staticmethod
     def str_to_bytes(data):

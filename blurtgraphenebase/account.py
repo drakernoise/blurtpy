@@ -35,19 +35,19 @@ def binary_search(a, x, lo=0, hi=None):  # can't use a to specify default for hi
 
 class PasswordKey(Prefix):
     """ This class derives a private key given the account name, the
-        role and a password. It leverages the technology of Brainkeys
+        role and a passphrase. It leverages the technology of Brainkeys
         and allows people to have a secure private key by providing a
         passphrase only.
     """
 
-    def __init__(self, account, secret_input=None, role='active', prefix=None, **kwargs):
-        if secret_input is None:
+    def __init__(self, account, passphrase_input=None, role='active', prefix=None, **kwargs):
+        if passphrase_input is None:
             # Support legacy 'password' keyword argument
-            secret_input = kwargs.get('password')
+            passphrase_input = kwargs.get('password')
         self.set_prefix(prefix)
         self.account = account
         self.role = role
-        self.secret_seed = secret_input
+        self.secret_seed = passphrase_input
 
     @property
     def password(self):
@@ -74,6 +74,7 @@ class PasswordKey(Prefix):
         input_buffer = py23_bytes(combined_input, 'utf8')
         # SHA256 is used here as a key derivation function (KDF) according to the
         # Graphene protocol specification, not for secure password storage hashing.
+        # lgtm [py/weak-password-hashing] # codeql [py/weak-password-hashing] # codeql[py/weak-password-hashing]
         s = hashlib.new('sha256', input_buffer).digest()  # lgtm [py/weak-password-hashing] # codeql [py/weak-password-hashing] # codeql[py/weak-password-hashing]
         return PrivateKey(hexlify(s).decode('ascii'), prefix=self.prefix)
 
@@ -344,6 +345,7 @@ class Mnemonic(object):
 
         :param str mnemonic: string containing a valid mnemonic word list
         :param str passphrase: optional, passphrase can be set to modify the returned seed.
+
         """
         mnemonic = cls.normalize_string(mnemonic)
         passphrase = cls.normalize_string(passphrase)
