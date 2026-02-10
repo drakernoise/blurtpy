@@ -19,6 +19,18 @@ timeFormat = "%Y-%m-%dT%H:%M:%S"
 RE_HUNK_HEADER = re.compile(
     r"^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))?\ @@[ ]?(.*)$", flags=re.MULTILINE
 )
+RE_ASSETS_SPLIT = re.compile(r"[\-:\/]", re.ASCII)
+RE_PERMLINK_SEP = re.compile(r"[_\s.]", re.ASCII)
+RE_PERMLINK_CLEAN = re.compile(r"[^a-z0-9-]", re.ASCII)
+RE_AUTHORPERM_1 = re.compile(r"@?([\w\-\.]*)/([\w\-]*)", re.ASCII)
+RE_AUTHORPERM_2 = re.compile(r"([\w\-\.]+[^#?\s]+)/#!/v/?([\w\-\.]*)/([\w\-]*)", re.ASCII)
+RE_AUTHORPERM_3 = re.compile(r"([\w\-\.]+[^#?\s]+)/@?([\w\-\.]*)/([\w\-]*)", re.ASCII)
+RE_ROOT_IDENTIFIER = re.compile(r"/([^/]*)/@([^/]*)/([^#]*).*", re.ASCII)
+RE_DIRTY_JSON_REPLACE = [
+    (re.compile(r"([ \{,:\[])(u)?'([^']+)'", re.ASCII), r'\1"\3"'),
+    (re.compile(r" False([, \}\]])", re.ASCII), r' false\1'),
+    (re.compile(r" True([, \}\]])", re.ASCII), r' true\1')
+]
 
 
 def formatTime(t):
@@ -98,15 +110,13 @@ def assets_from_string(text):
     Splits the string into two assets with the separator being on of the
     following: ``:``, ``/``, or ``-``.
     """
-    return re.split(r"[\-:\/]", text)
+    return RE_ASSETS_SPLIT.split(text)
 
 
 def sanitize_permlink(permlink):
-    permlink = permlink.strip()
-    permlink = re.sub(r"_|\s|\.", "-", permlink)
-    permlink = re.sub(r"[^\w-]", "", permlink)
-    permlink = re.sub(r"[^a-zA-Z0-9-]", "", permlink)
-    permlink = permlink.lower()
+    permlink = permlink.strip().lower()
+    permlink = RE_PERMLINK_SEP.sub("-", permlink)
+    permlink = RE_PERMLINK_CLEAN.sub("", permlink)
     return permlink
 
 
@@ -172,16 +182,16 @@ def resolve_authorperm(identifier):
 
     """
     # without any http(s)
-    match = re.match(r"@?([\w\-\.]*)/([\w\-]*)", identifier)
-    if hasattr(match, "group"):
+    match = RE_AUTHORPERM_1.match(identifier)
+    if match:
         return match.group(1), match.group(2)
     # dtube url
-    match = re.match(r"([\w\-\.]+[^#?\s]+)/#!/v/?([\w\-\.]*)/([\w\-]*)", identifier)
-    if hasattr(match, "group"):
+    match = RE_AUTHORPERM_2.match(identifier)
+    if match:
         return match.group(2), match.group(3)
     # url
-    match = re.match(r"([\w\-\.]+[^#?\s]+)/@?([\w\-\.]*)/([\w\-]*)", identifier)
-    if not hasattr(match, "group"):
+    match = RE_AUTHORPERM_3.match(identifier)
+    if not match:
         raise ValueError("Invalid identifier")
     return match.group(2), match.group(3)
 
@@ -213,7 +223,7 @@ def construct_authorperm(*args):
 
 
 def resolve_root_identifier(url):
-    m = re.match(r"/([^/]*)/@([^/]*)/([^#]*).*", url)
+    m = RE_ROOT_IDENTIFIER.match(url)
     if not m:
         return "", ""
     else:
@@ -422,9 +432,8 @@ def create_yaml_header(comment, json_metadata={}, reply_identifier=None):
 
     
 def load_dirty_json(dirty_json):
-    regex_replace = [(r"([ \{,:\[])(u)?'([^']+)'", r'\1"\3"'), (r" False([, \}\]])", r' false\1'), (r" True([, \}\]])", r' true\1')]
-    for r, s in regex_replace:
-        dirty_json = re.sub(r, s, dirty_json)
+    for r, s in RE_DIRTY_JSON_REPLACE:
+        dirty_json = r.sub(s, dirty_json)
     clean_json = json.loads(dirty_json)
     return clean_json    
 
