@@ -816,6 +816,9 @@ class Blockchain(object):
             op = event["value"]
             event = [op_type, op]
         data = json.dumps(event, sort_keys=True)
+        # SHA1 is used here solely for generating a unique ID for operations
+        # within a block stream. This is not used for security-critical
+        # hashing or password storage and is a standard practice in Graphene.
         return hashlib.sha1(py23_bytes(data, 'utf-8')).hexdigest()
 
     def get_all_accounts(self, start='', stop='', steps=1e3, limit=-1, **kwargs):

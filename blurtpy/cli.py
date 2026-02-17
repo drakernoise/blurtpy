@@ -141,8 +141,9 @@ def unlock_wallet(stm, password=None, allow_wif=True):
                         raise exceptions.WrongMasterPasswordException("entered password is not a valid password")
 
     if stm.wallet.locked():
-        if password_storage == "keyring" or password_storage == "environment":
-            backend_type = password_storage; print("Wallet could not be unlocked with storage backend: %s!" % backend_type)
+        if password_storage in ["keyring", "environment"]:
+            display_name = {"keyring": "Keyring Service", "environment": "Environment Variable"}.get(password_storage, "Unknown Backend")
+            print("Wallet could not be unlocked with storage backend: %s!" % display_name)
             password = click.prompt("Password to unlock wallet", confirmation_prompt=False, hide_input=True)
             if bool(password):
                 unlock_wallet(stm, password=password)
@@ -180,9 +181,9 @@ def unlock_token_wallet(stm, sc2, password=None):
         except:
             raise exceptions.WrongMasterPasswordException("entered password is not a valid password")
 
-    if sc2.locked():
-        if password_storage == "keyring" or password_storage == "environment":
-            backend_type = password_storage; print("Wallet could not be unlocked with storage backend: %s!" % backend_type)
+        if password_storage in ["keyring", "environment"]:
+            display_name = {"keyring": "Keyring Service", "environment": "Environment Variable"}.get(password_storage, "Unknown Backend")
+            print("Wallet could not be unlocked with storage backend: %s!" % display_name)
             password = click.prompt("Password to unlock wallet", confirmation_prompt=False, hide_input=True)
             if bool(password):
                 unlock_token_wallet(stm, sc2, password=password)
