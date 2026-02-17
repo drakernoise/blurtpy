@@ -50,7 +50,7 @@ class Signed_Transaction(GrapheneObject):
             if "operations" in kwargs:
                 opklass = self.getOperationKlass()
                 if all([not isinstance(a, opklass) for a in kwargs["operations"]]):
-                    kwargs['operations'] = Array([opklass(a, prefix=prefix) for a in kwargs["operations"]])
+                    kwargs['operations'] = Array([opklass(a) for a in kwargs["operations"]])
                 else:
                     kwargs['operations'] = Array(kwargs["operations"])
 

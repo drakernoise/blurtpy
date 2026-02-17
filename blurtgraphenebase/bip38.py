@@ -40,8 +40,6 @@ class SaltException(Exception):
 def _encrypt_xor(a, b, aes):
     """ Returns encrypt(a ^ b). """
     a = unhexlify('%0.32x' % (int((a), 16) ^ int(hexlify(b), 16)))
-    # BIP38 uses AES ECB mode by specification for the XOR phase.
-    # lgtm [py/weak-cryptographic-algorithm] # codeql [py/weak-cryptographic-algorithm] # codeql[py/weak-cryptographic-algorithm]
     return aes.encrypt(a)
 
 
@@ -73,8 +71,9 @@ def encrypt(privkey, passphrase):
     else:
         raise ValueError("No scrypt module loaded")
     (derived_half1, derived_half2) = (key[:32], key[32:])
-    # AES ECB is required by the BIP38 standard for private key encryption.
-    # lgtm [py/weak-cryptographic-algorithm] # codeql [py/weak-cryptographic-algorithm] # codeql[py/weak-cryptographic-algorithm]
+    # BIP38 standard requires AES in ECB mode for block-wise XOR encryption.
+    # While ECB is generally insecure for larger data, it is used here 
+    # as specified by the immutable BIP-0038 standard for compatibility.
     aes = AES.new(derived_half2, AES.MODE_ECB)
     encrypted_half1 = _encrypt_xor(privkeyhex[:32], derived_half1[:16], aes)
     encrypted_half2 = _encrypt_xor(privkeyhex[32:], derived_half1[16:], aes)
@@ -119,12 +118,8 @@ def decrypt(encrypted_privkey, passphrase):
     derivedhalf2 = key[32:64]
     encryptedhalf1 = d[0:16]
     encryptedhalf2 = d[16:32]
-    # AES ECB is required by the BIP38 standard for private key decryption.
-    # lgtm [py/weak-cryptographic-algorithm] # codeql [py/weak-cryptographic-algorithm] # codeql[py/weak-cryptographic-algorithm]
     aes = AES.new(derivedhalf2, AES.MODE_ECB)
-    # lgtm [py/weak-cryptographic-algorithm] # codeql [py/weak-cryptographic-algorithm] # codeql[py/weak-cryptographic-algorithm]
     decryptedhalf2 = aes.decrypt(encryptedhalf2)
-    # lgtm [py/weak-cryptographic-algorithm] # codeql [py/weak-cryptographic-algorithm] # codeql[py/weak-cryptographic-algorithm]
     decryptedhalf1 = aes.decrypt(encryptedhalf1)
     privraw = decryptedhalf1 + decryptedhalf2
     privraw = ('%064x' % (int(hexlify(privraw), 16) ^

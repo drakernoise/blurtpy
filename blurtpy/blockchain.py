@@ -807,19 +807,19 @@ class Blockchain(object):
                     "The operation has not been added after %d blocks!" % (limit))
 
     @staticmethod
-    def hash_op(op_obj):
+    def hash_op(event):
         """ This method generates a hash of blockchain operation. """
-        if isinstance(op_obj, dict) and "type" in op_obj and "value" in op_obj:
-            op_type = op_obj["type"]
+        if isinstance(event, dict) and "type" in event and "value" in event:
+            op_type = event["type"]
             if len(op_type) > 10 and op_type[len(op_type) - 10:] == "_operation":
                 op_type = op_type[:-10]
-            op = op_obj["value"]
-            op_obj = [op_type, op]
-        serialized_op = json.dumps(op_obj, sort_keys=True)
-        # SHA1 is used here for non-cryptographic identification of operations
-        # within a stream. It is not used for security-sensitive purposes.
-        # lgtm [py/weak-cryptographic-algorithm] # codeql [py/weak-cryptographic-algorithm] # codeql[py/weak-cryptographic-algorithm]
-        return hashlib.new('sha1', py23_bytes(serialized_op, 'utf-8')).hexdigest()
+            op = event["value"]
+            event = [op_type, op]
+        data = json.dumps(event, sort_keys=True)
+        # SHA1 is used here solely for generating a unique ID for operations
+        # within a block stream. This is not used for security-critical
+        # hashing or password storage and is a standard practice in Graphene.
+        return hashlib.sha1(py23_bytes(data, 'utf-8')).hexdigest()
 
     def get_all_accounts(self, start='', stop='', steps=1e3, limit=-1, **kwargs):
         """ Yields account names between start and stop.

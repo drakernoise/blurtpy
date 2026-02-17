@@ -266,7 +266,7 @@ class WitnessesObject(list):
             name = account["name"]
 
         return (
-            any([name == x["owner"] for x in self])
+            any(name == x["owner"] for x in self)
         )
 
     def __str__(self):

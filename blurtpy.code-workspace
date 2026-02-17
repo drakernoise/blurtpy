@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../blurtpy-planning"
+		},
+		{
+			"path": "../Nexus"
+		}
+	],
+	"settings": {}
+}

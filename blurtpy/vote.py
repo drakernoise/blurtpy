@@ -343,10 +343,11 @@ class VotesObject(list):
             name = item
             authorperm = item
 
-        return (
-            any([name == x.voter for x in self]) or
-            any([name == x.votee for x in self]) or
-            any([authorperm == x.authorperm for x in self])
+        return any(
+            name == x.voter or
+            name == x.votee or
+            authorperm == x.authorperm
+            for x in self
         )
 
     def __str__(self):
