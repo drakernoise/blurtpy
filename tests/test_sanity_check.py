@@ -29,7 +29,7 @@ def sanity_check():
         logger.info("Reading blockchain state (DGP)...")
         props = b.get_dynamic_global_properties()
         head_block = props['head_block_number']
-        logger.info(f"✅ Connection Successful! Current block: {head_block}")
+        logger.info(f"DONE Connection Successful! Current block: {head_block}")
         
         # 3. Read a real account (e.g. 'initminer' or 'saboin')
         target_account = "saboin"
@@ -38,15 +38,15 @@ def sanity_check():
         account = Account(target_account, blockchain_instance=b)
         if account:
             balance = account.get('balance', 'N/A')
-            logger.info(f"✅ Account found. Balance: {balance}")
+            logger.info(f"DONE Account found. Balance: {balance}")
         else:
-            logger.warning("⚠️ Could not read account (might be a node issue, not a library issue)")
+            logger.warning("WARNING Could not read account (might be a node issue, not a library issue)")
 
-        logger.info("🎉 SANITY CHECK COMPLETED SUCCESSFULLY")
+        logger.info("SUCCESS SANITY CHECK COMPLETED SUCCESSFULLY")
         return True
 
     except Exception as e:
-        logger.error(f"❌ SANITY CHECK FAILED: {e}")
+        logger.error(f"FAILED SANITY CHECK FAILED: {e}")
         return False
 
 if __name__ == "__main__":
