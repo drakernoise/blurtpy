@@ -71,6 +71,9 @@ def encrypt(privkey, passphrase):
     else:
         raise ValueError("No scrypt module loaded")
     (derived_half1, derived_half2) = (key[:32], key[32:])
+    # BIP38 standard requires AES in ECB mode for block-wise XOR encryption.
+    # While ECB is generally insecure for larger data, it is used here 
+    # as specified by the immutable BIP-0038 standard for compatibility.
     aes = AES.new(derived_half2, AES.MODE_ECB)
     encrypted_half1 = _encrypt_xor(privkeyhex[:32], derived_half1[:16], aes)
     encrypted_half2 = _encrypt_xor(privkeyhex[32:], derived_half1[16:], aes)

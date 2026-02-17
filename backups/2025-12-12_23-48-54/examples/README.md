@@ -1,0 +1,67 @@
+# `blurtpy` Usage Examples
+
+This folder contains example scripts for performing common tasks with the `blurtpy` library.
+
+## Requirements
+Make sure you have the library installed and your private keys (WIF) configured in environment variables or within the script itself (be careful!).
+
+```bash
+pip install blurtpy
+```
+
+## ⚙️ Configuration
+
+The example scripts use a placeholder for the username. **You must edit the scripts** to set your actual Blurt username before running them.
+
+Look for this line at the top of each script (`account_management.py`, `social_actions.py`, `wallet_actions.py`):
+
+```python
+# Configuration
+USERNAME = "your_username"  # <--- Change this to your actual Blurt username
+```
+
+## Initial Setup (IMPORTANT!)
+
+Before running the examples, you must configure your **Secure Wallet**. This will create an encrypted local database (`blurtpy.sqlite`) to store your private keys, avoiding the need to write them in the code.
+
+1.  Run the setup script:
+    ```bash
+    python examples/wallet_manager.py
+    ```
+2.  Follow the instructions to create a master password and add your keys (WIF).
+
+## Examples Index
+
+### 1. Social Interaction (`social_actions.py`)
+-   Comment on a post.
+-   Count comments and list authors.
+-   Vote on comments.
+-   Find a user's latest post.
+-   Search recent posts by criteria (tags).
+
+### 2. Fund Management (`wallet_actions.py`)
+-   Power Up (Transfer to Vesting).
+-   Delegate Blurt Power (BP).
+-   Multiple transfer (batch).
+-   Recurrent transfer (logic example).
+-   Transfer to Savings.
+
+### 3. Account Management (`account_management.py`)
+-   Set recovery account.
+-   Change account keys.
+
+## Execution
+To run any of the scripts (you will be asked for the wallet password):
+
+```bash
+python examples/social_actions.py
+```
+
+## Node Optimization
+The library includes a function to automatically find the fastest node. You can use it in your own scripts like this:
+
+```python
+from blurtpy import Blurt
+# Automatically connects to the node with the lowest latency
+b = Blurt(node="best")
+```

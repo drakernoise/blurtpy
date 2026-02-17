@@ -70,7 +70,9 @@ class PasswordKey(Prefix):
         seed = self.normalize(seed)
         a = py23_bytes(seed, 'utf8')
         # We use SHA256 as part of the Graphene key derivation protocol.
-        # This is not intended for password storage hashing.
+        # This is strictly for compatibility with the blockchain's existing
+        # account key derivation scheme and should not be changed without
+        # a consensus-level hardfork. 
         s = hashlib.sha256(a).digest()  # codeql [py/weak-password-hashing]
         return PrivateKey(hexlify(s).decode('ascii'), prefix=self.prefix)
 

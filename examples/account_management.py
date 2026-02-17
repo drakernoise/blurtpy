@@ -197,14 +197,15 @@ def change_keys(new_password):
         
         # Show new keys (Security Warning: Do not do this in production logs)
         print("\n--- NEW KEYS (SAVE THEM NOW) ---")
-        print(f"Master Password: {new_password}")
+        print("MASTER PASSWORD: [HIDDEN FOR SECURITY]")
         for role in ["owner", "active", "posting", "memo"]:
             pk = PasswordKey(USERNAME, new_password, role=role)
             pub_key = format(pk.get_public(), "STM")
             priv_key = format(pk.get_private(), "WIF")
             print(f"{role.upper()}:")
             print(f"  Public: {pub_key}")
-            print(f"  Private: {priv_key}")
+            # print(f"  Private: {priv_key}") # Masking private keys in logs
+            print(f"  Private: {priv_key[:5]}...{priv_key[-5:]}")
             
     except Exception as e:
         print(f"Critical error changing keys: {e}")

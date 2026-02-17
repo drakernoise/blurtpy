@@ -63,9 +63,13 @@ class Operation(object):
         return "Unknown Operation ID %d" % i
 
     def _getklass(self, name):
-        module = __import__("graphenebase.operations", fromlist=["operations"])
-        class_ = getattr(module, name)
-        return class_
+        for module_path in ["blurtbase.operations", "blurtgraphenebase.operations", "graphenebase.operations"]:
+            try:
+                module = __import__(module_path, fromlist=["operations"])
+                return getattr(module, name)
+            except (ImportError, AttributeError):
+                continue
+        raise NotImplementedError(f"Could not find operation class: {name}")
 
     def __bytes__(self):
         return py23_bytes(Id(self.opId)) + py23_bytes(self.op)

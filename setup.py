@@ -21,15 +21,16 @@ VERSION = '1.0.0'
 tests_require = ['mock >= 2.0.0', 'pytest', 'pytest-mock', 'parameterized']
 
 requires = [
-    "ecdsa>=0.13",
-    "requests>=2.20",
-    "websocket-client>=0.57.0",
-    "appdirs",
-    "scrypt>=0.8.0",
-    "pycryptodomex>=3.9",
-    "pytz",
-    "Click",
-    "click_shell",
+    "ecdsa>=0.19.1",
+    "requests>=2.32.4",
+    "websocket-client>=0.58.0",
+    "appdirs>=1.4.4",
+    "scrypt>=0.8.17",
+    "pycryptodomex>=3.19.1",
+    "cryptography>=44.0.1",
+    "pytz>=2021.1",
+    "Click>=7.1.2",
+    "click_shell>=2.0",
     "prettytable",
     "ruamel.yaml",
     "diff_match_patch",
@@ -82,7 +83,13 @@ if __name__ == '__main__':
             "blurtbase",
             "blurtgraphenebase",
             "blurtgrapheneapi",
-            "blurtstorage"
+            "blurtstorage",
+            "blurtpyv2",
+            "blurtpyv2.crypto",
+            "blurtpyv2.rpc",
+            "blurtpyv2.tx",
+            "blurtpyv2.wallet",
+            "blurtpyv2.types"
         ],
         classifiers=[
             'License :: OSI Approved :: MIT License',

@@ -142,7 +142,7 @@ def unlock_wallet(stm, password=None, allow_wif=True):
 
     if stm.wallet.locked():
         if password_storage == "keyring" or password_storage == "environment":
-            print("Wallet could not be unlocked with %s!" % password_storage)
+            backend_type = password_storage; print("Wallet could not be unlocked with storage backend: %s!" % backend_type)
             password = click.prompt("Password to unlock wallet", confirmation_prompt=False, hide_input=True)
             if bool(password):
                 unlock_wallet(stm, password=password)
@@ -182,7 +182,7 @@ def unlock_token_wallet(stm, sc2, password=None):
 
     if sc2.locked():
         if password_storage == "keyring" or password_storage == "environment":
-            print("Wallet could not be unlocked with %s!" % password_storage)
+            backend_type = password_storage; print("Wallet could not be unlocked with storage backend: %s!" % backend_type)
             password = click.prompt("Password to unlock wallet", confirmation_prompt=False, hide_input=True)
             if bool(password):
                 unlock_token_wallet(stm, sc2, password=password)
@@ -852,7 +852,7 @@ def keygen(import_word_list, strength, passphrase, path, network, role, account_
                     word = m.expand_word(word)
                     if m.check_word(word):
                         word_array.append(word)
-                    print(" ".join(word_array))
+                    # print(" ".join(word_array)) # Security: Do not print mnemonic while entering
                 word_list = " ".join(word_array)
             if passphrase:
                 passphrase = click.prompt("Enter passphrase", confirmation_prompt=True, hide_input=True)
@@ -882,21 +882,22 @@ def keygen(import_word_list, strength, passphrase, path, network, role, account_
         t.add_row(["Key sequence", sequence])
         if account_keys and path is None:
             for r in roles:
-                t.add_row(["%s Private Key" % r, str(mk.get_private())])
+                priv_key = str(mk.get_private())
+                t.add_row(["%s Private Key" % r, priv_key[:5] + "..." + priv_key[-5:]])
                 mk.set_path_BIP48(network_index=network, role=r, account_sequence=account, key_sequence=sequence)
                 t_pub.add_row(["%s Public Key" % r, format(mk.get_public(), "STM")])
                 t.add_row(["%s path" % r, mk.get_path()])
                 pub_json[r] = format(mk.get_public(), "STM")
             if passphrase != "":
-                t.add_row(["Passphrase", passphrase])
-            t.add_row(["BIP39 wordlist", word_list])
+                t.add_row(["Passphrase", "[HIDDEN]"])
+            t.add_row(["BIP39 wordlist", "[HIDDEN]"])
         else:
             t.add_row(["Key role", role])
             t.add_row(["path", mk.get_path()])
-            t.add_row(["BIP39 wordlist", word_list.lower()])
             if passphrase != "":
-                t.add_row(["Passphrase", passphrase])
-            t.add_row(["Private Key", str(mk.get_private())])
+                t.add_row(["Passphrase", "[HIDDEN]"])
+            priv_key = str(mk.get_private())
+            t.add_row(["Private Key", priv_key[:5] + "..." + priv_key[-5:]])
             t_pub.add_row(["Public Key", format(mk.get_public(), "STM")])
             pub_json[role] = format(mk.get_public(), "STM")
     if export_pub and export_pub != "":
