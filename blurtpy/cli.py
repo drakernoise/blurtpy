@@ -16,8 +16,7 @@ import click
 from click_shell import shell
 import re
 from blurtpy.instance import set_shared_blockchain_instance, shared_blockchain_instance
-from blurtpy.amount import Amount
-from blurtpy.price import Price
+from blurtpy.amount import Amount, ExchangeRate
 from blurtpy.account import Account
 from blurtpy.blurt import Blurt
 from blurtpy.utils import formatTimeString, construct_authorperm, derive_beneficiaries, derive_tags, seperate_yaml_dict_from_body, derive_permlink, make_patch, create_new_password, import_coldcard_wif, generate_password, import_pubkeys, import_custom_json
@@ -31,7 +30,6 @@ from blurtbase import operations
 from blurtgraphenebase.account import PrivateKey, PublicKey, BrainKey, PasswordKey, MnemonicKey, Mnemonic
 from blurtgraphenebase.base58 import Base58
 from blurtpy.nodelist import NodeList, node_answer_time
-from blurtpy.conveyor import Conveyor
 from blurtpy.imageuploader import ImageUploader
 
 
@@ -174,27 +172,27 @@ def unlock_token_wallet(stm, sc2, password=None):
         password = os.environ.get("UNLOCK")
     if bool(password):
         sc2.unlock(password)
-    else:
-        password = click.prompt("Password to unlock wallet", confirmation_prompt=False, hide_input=True)
-        try:
-            sc2.unlock(password)
-        except:
-            raise exceptions.WrongMasterPasswordException("entered password is not a valid password")
+        if not sc2.locked():
+            print("Wallet Unlocked!")
+            return True
+    
+    password = click.prompt("Password to unlock wallet", confirmation_prompt=False, hide_input=True)
+    try:
+        sc2.unlock(password)
+    except:
+        raise exceptions.WrongMasterPasswordException("entered password is not a valid password")
 
-        if password_storage in ["keyring", "environment"]:
-            display_name = {"keyring": "Keyring Service", "environment": "Environment Variable"}.get(password_storage, "Unknown Backend")
-            print("Wallet could not be unlocked with storage backend: %s!" % display_name)
-            password = click.prompt("Password to unlock wallet", confirmation_prompt=False, hide_input=True)
-            if bool(password):
-                unlock_token_wallet(stm, sc2, password=password)
-                if not sc2.locked():
-                    return True
-        else:
-            print("Wallet could not be unlocked!")
-        return False
+    if password_storage in ["keyring", "environment"]:
+        display_name = {"keyring": "Keyring Service", "environment": "Environment Variable"}.get(password_storage, "Unknown Backend")
+        print("Wallet could not be unlocked with storage backend: %s!" % display_name)
+        password = click.prompt("Password to unlock wallet", confirmation_prompt=False, hide_input=True)
+        if bool(password):
+            unlock_token_wallet(stm, sc2, password=password)
+            if not sc2.locked():
+                return True
     else:
-        print("Wallet Unlocked!")
-        return True
+        print("Wallet could not be unlocked!")
+    return False
 
 
 def export_trx(tx, export):
@@ -263,7 +261,13 @@ def cli(node, offline, no_broadcast, no_wallet, unsigned, create_link, blurt, ke
         if keyfile.find('\0') > 0:
             with open(keys, encoding='utf-16') as fp:
                 keyfile = fp.read()
-        keyfile = ast.literal_eval(keyfile)
+        try:
+            keyfile = json.loads(keyfile)
+        except json.JSONDecodeError:
+            # Fallback to ast.literal_eval for legacy Python literal format
+            # but log a warning about security and standard compliance
+            log.warning("Key file is not valid JSON. Falling back to ast.literal_eval (less secure). Please convert to JSON.")
+            keyfile = ast.literal_eval(keyfile)
         for account in keyfile:
             for role in ["owner", "active", "posting", "memo"]:
                 if role in keyfile[account]:
@@ -287,6 +291,8 @@ def cli(node, offline, no_broadcast, no_wallet, unsigned, create_link, blurt, ke
         elif config["default_chain"].lower() == "blurt":
             blurt = True
     if blurt:
+        if not node:
+            node = None
         stm = Blurt(
             node=node,
             nobroadcast=no_broadcast,
@@ -1477,7 +1483,7 @@ def changerecovery(new_recovery_account, account, export):
 @click.option('--account', '-a', help='Powerup from this account')
 @click.option('--export', '-e', help='When set, transaction is stored in a file')
 def convert(amount, account, export):
-    """Convert TBD/TBD to Blurt/Blurt (takes a week to settle)"""
+    """No-op on Blurt (Legacy term)"""
     stm = shared_blockchain_instance()
     if stm.rpc is not None:
         stm.rpc.rpcconnect()
@@ -2556,11 +2562,11 @@ def download(permlink, account, save, export):
 @click.option('--tags', '-g', help='A komma separated list of tags to go with the post.')
 @click.option('--community', '-c', help=' Name of the community (optional)')
 @click.option('--beneficiaries', '-b', help='Post beneficiaries (komma separated, e.g. a:10%,b:20%)')
-@click.option('--percent-blurt-dollars', '-d', help='50% TBD /50% SP is 10000 (default), 100% SP is 0')
-@click.option('--percent-tbd', '-h', help='50% TBD /50% HP is 10000 (default), 100% HP is 0')
+@click.option('--percent-liquid', '-d', help='50% Liquid / 50% BP is 10000 (default), 100% BP is 0')
+@click.option('--percent-bp', '-h', help='50% Liquid / 50% BP is 10000 (default), 100% BP is 0')
 @click.option('--max-accepted-payout', '-m', help='Default is 1000000.000 [TBD]')
 @click.option('--no-parse-body', '-n', help='Disable parsing of links, tags and images', is_flag=True, default=False)
-def createpost(markdown_file, account, title, tags, community, beneficiaries, percent_blurt_dollars, percent_tbd, max_accepted_payout, no_parse_body):
+def createpost(markdown_file, account, title, tags, community, beneficiaries, percent_liquid, percent_bp, max_accepted_payout, no_parse_body):
     """Creates a new markdown file with YAML header"""
     stm = shared_blockchain_instance()
     if stm.rpc is not None:
@@ -2596,24 +2602,24 @@ def createpost(markdown_file, account, title, tags, community, beneficiaries, pe
 
     if beneficiaries is None:
         beneficiaries = input("beneficiaries (komma separated, e.g. a:10%,b:20%) [return to skip]: ")
-    if percent_blurt_dollars is None and percent_tbd is None:
+    if percent_liquid is None and percent_bp is None:
         ret = None
         while ret is None:
             ret = input("50% or 100% Blurt/Blurt Power as post reward [50 or 100]? ")
             if ret not in ["50", "100"]:
                 ret = None
         if ret == "50":
-            percent_blurt_dollars = 10000
-            percent_tbd = 10000
+            percent_liquid = 10000
+            percent_bp = 10000
         else:
-            percent_blurt_dollars = 0
-            percent_tbd = 0
-    elif percent_blurt_dollars is not None and percent_tbd is not None:
-        raise ValueError("percent_tbd and percent_blurt_dollars cannot be both set.")
-    elif percent_blurt_dollars is None:
-        percent_blurt_dollars = percent_tbd
-    elif percent_tbd is None:
-        percent_tbd = percent_blurt_dollars
+            percent_liquid = 0
+            percent_bp = 0
+    elif percent_liquid is not None and percent_bp is not None:
+        raise ValueError("percent_bp and percent_liquid cannot be both set.")
+    elif percent_liquid is None:
+        percent_liquid = percent_bp
+    elif percent_bp is None:
+        percent_bp = percent_liquid
 
     if max_accepted_payout is None:
         max_accepted_payout = input("max accepted payout [return to skip]: ")
@@ -2622,7 +2628,7 @@ def createpost(markdown_file, account, title, tags, community, beneficiaries, pe
     yaml_prefix += 'author: %s\n' % account
     yaml_prefix += 'tags: %s\n' % tags
     if stm.is_blurt:
-        yaml_prefix += 'percent_tbd: %d\n' % percent_tbd
+        yaml_prefix += 'percent_bp: %d\n' % percent_bp
     else:
         yaml_prefix += 'percent_blurt_dollars: %d\n' % percent_blurt_dollars
     if community is not None and community != "":
@@ -2646,13 +2652,13 @@ def createpost(markdown_file, account, title, tags, community, beneficiaries, pe
 @click.option('--community', '-c', help=' Name of the community (optional)')
 @click.option('--canonical-url', '-u', help='Canonical url, can also set to https://blurt.blog or https://peakd.com (optional)')
 @click.option('--beneficiaries', '-b', help='Post beneficiaries (komma separated, e.g. a:10%,b:20%)')
-@click.option('--percent-blurt-dollars', '-d', help='50% TBD /50% SP is 10000 (default), 100% SP is 0')
-@click.option('--percent-tbd', '-h', help='50% TBD /50% SP is 10000 (default), 100% SP is 0')
-@click.option('--max-accepted-payout', '-m', help='Default is 1000000.000 [TBD]')
+@click.option('--percent-liquid', '-d', help='50% Liquid / 50% BP is 10000 (default), 100% BP is 0')
+@click.option('--percent-bp', '-h', help='50% Liquid / 50% BP is 10000 (default), 100% BP is 0')
+@click.option('--max-accepted-payout', '-m', help='Default is 1000000.000 [BLURT]')
 @click.option('--no-parse-body', '-n', help='Disable parsing of links, tags and images', is_flag=True, default=False)
 @click.option('--no-patch-on-edit', '-e', help='Disable patch posting on edits (when the permlink already exists)', is_flag=True, default=False)
 @click.option('--export', help='When set, transaction is stored in a file')
-def post(markdown_file, account, title, permlink, tags, reply_identifier, community, canonical_url, beneficiaries, percent_blurt_dollars, percent_tbd, max_accepted_payout, no_parse_body, no_patch_on_edit, export):
+def post(markdown_file, account, title, permlink, tags, reply_identifier, community, canonical_url, beneficiaries, percent_liquid, percent_bp, max_accepted_payout, no_parse_body, no_patch_on_edit, export):
     """broadcasts a post/comment. All image links which links to a file will be uploaded.
     The yaml header can contain:
 
@@ -2685,14 +2691,14 @@ def post(markdown_file, account, title, permlink, tags, reply_identifier, commun
         parameter["community"] = community
     if reply_identifier is not None:
         parameter["reply_identifier"] = reply_identifier
-    if percent_blurt_dollars is not None:
-        parameter["percent_blurt_dollars"] = percent_blurt_dollars
-    elif "percent-blurt-dollars" in parameter:
-        parameter["percent_blurt_dollars"] = parameter["percent-blurt-dollars"]
-    if percent_tbd is not None:
-        parameter["percent_tbd"] = percent_tbd
-    elif "percent-tbd" in parameter:
-        parameter["percent_tbd"] = parameter["percent-tbd"]
+    if percent_liquid is not None:
+        parameter["percent_liquid"] = percent_liquid
+    elif "percent-liquid" in parameter:
+        parameter["percent_liquid"] = parameter["percent-liquid"]
+    if percent_bp is not None:
+        parameter["percent_bp"] = percent_bp
+    elif "percent-bp" in parameter:
+        parameter["percent_bp"] = parameter["percent-bp"]
     if max_accepted_payout is not None:
         parameter["max_accepted_payout"] = max_accepted_payout
     elif "max-accepted-payout" in parameter:
@@ -2744,14 +2750,17 @@ def post(markdown_file, account, title, permlink, tags, reply_identifier, commun
         if stm.backed_token_symbol not in max_accepted_payout:
             max_accepted_payout = str(Amount(float(max_accepted_payout), stm.backed_token_symbol, blockchain_instance=stm))
         comment_options["max_accepted_payout"] = max_accepted_payout
-    if percent_tbd is not None and stm.is_blurt:
-        comment_options["percent_tbd"] = percent_tbd
-    elif percent_blurt_dollars is not None and stm.is_blurt:
-        comment_options["percent_tbd"] = percent_blurt_dollars
-    elif percent_blurt_dollars is not None:
-        comment_options["percent_blurt_dollars"] = percent_blurt_dollars
-    elif percent_tbd is not None:
-        comment_options["percent_blurt_dollars"] = percent_tbd
+    if percent_bp is not None and stm.is_blurt:
+        comment_options["percent_bp"] = percent_bp
+    elif percent_liquid is not None and stm.is_blurt:
+        # If they set liquid but not BP, we assume they want (10000 - liquid) as BP?
+        # Actually usually it's either 50/50 (10000) or 100% BP (0).
+        # On Blurt, percent_steem_dollars (aliased to percent_tbd) 10000 means 50/50, 0 means 100% BP.
+        comment_options["percent_bp"] = percent_liquid
+    elif percent_bp is not None:
+        comment_options["percent_steem_dollars"] = percent_bp
+    elif percent_liquid is not None:
+        comment_options["percent_steem_dollars"] = percent_liquid
     beneficiaries = None
     if "beneficiaries" in parameter:
         beneficiaries = derive_beneficiaries(parameter["beneficiaries"])
@@ -3011,7 +3020,11 @@ def broadcast(file):
                 tx = fp.read()
     else:
         tx = click.get_text_stream('stdin')
-    tx = ast.literal_eval(tx)
+    try:
+        tx = json.loads(tx)
+    except json.JSONDecodeError:
+        log.warning("Transaction input is not valid JSON. Falling back to ast.literal_eval. Please use JSON format.")
+        tx = ast.literal_eval(tx)
     tx = stm.broadcast(tx)
     tx = json.dumps(tx, indent=4)
     print(tx)
@@ -3083,39 +3096,6 @@ def stream(lines, head, table, follow):
 
 
 
-@cli.command()
-@click.option('--width', '-w', help='Plot width (default 75)', default=75)
-@click.option('--height', '-h', help='Plot height (default 15)', default=15)
-@click.option('--ascii', help='Use only ascii symbols', is_flag=True, default=False)
-def pricehistory(width, height, ascii):
-    """ Show price history
-    """
-    stm = shared_blockchain_instance()
-    if stm.rpc is not None:
-        stm.rpc.rpcconnect()
-    feed_history = stm.get_feed_history()
-    current_base = Amount(feed_history['current_median_history']["base"], blockchain_instance=stm)
-    current_quote = Amount(feed_history['current_median_history']["quote"], blockchain_instance=stm)
-    price_history = feed_history["price_history"]
-    price = []
-    for h in price_history:
-        base = Amount(h["base"], blockchain_instance=stm)
-        quote = Amount(h["quote"], blockchain_instance=stm)
-        price.append(float(base.amount / quote.amount))
-    if ascii:
-        charset = u'ascii'
-    else:
-        charset = u'utf8'
-    chart = AsciiChart(height=height, width=width, offset=4, placeholder='{:6.2f} $', charset=charset)
-    print("\n            Price history for %s (median price %4.2f $)\n" % (stm.token_symbol, float(current_base) / float(current_quote)))
-
-    chart.adapt_on_series(price)
-    chart.new_chart()
-    chart.add_axis()
-    if (float(current_base) / float(current_quote)) <= max(price):
-        chart._draw_h_line(chart._map_y(float(current_base) / float(current_quote)), 1, int(chart.n / chart.skip), line=chart.char_set["curve_hl_dot"])
-    chart.add_curve(price)
-    print(str(chart))
 
 
 
@@ -3229,11 +3209,11 @@ def unfollow(unfollow, account, export):
 @click.option('--witness', help='Witness name')
 @click.option('--maximum_block_size', help='Max block size')
 @click.option('--account_creation_fee', help='Account creation fee')
-@click.option('--tbd_interest_rate', help='TBD interest rate in percent')
+@click.option('--interest-rate', help='Witness interest rate in percent')
 @click.option('--url', help='Witness URL')
 @click.option('--signing_key', help='Signing Key')
 @click.option('--export', '-e', help='When set, transaction is stored in a file')
-def witnessupdate(witness, maximum_block_size, account_creation_fee, tbd_interest_rate, url, signing_key, export):
+def witnessupdate(witness, maximum_block_size, account_creation_fee, interest_rate, url, signing_key, export):
     """Change witness properties"""
     stm = shared_blockchain_instance()
     if stm.rpc is not None:
@@ -3249,10 +3229,8 @@ def witnessupdate(witness, maximum_block_size, account_creation_fee, tbd_interes
             Amount("%.3f %s" % (float(account_creation_fee), stm.token_symbol), blockchain_instance=stm))
     if maximum_block_size is not None:
         props["maximum_block_size"] = int(maximum_block_size)
-    if tbd_interest_rate is not None:
-        props["tbd_interest_rate"] = int(float(tbd_interest_rate) * 100)
-    if tbd_interest_rate is not None:
-        props["tbd_interest_rate"] = int(float(tbd_interest_rate) * 100)
+    if interest_rate is not None:
+        props["sbd_interest_rate"] = int(float(interest_rate) * 100)
     tx = witness.update(signing_key or witness["signing_key"], url or witness["url"], props)
     if stm.unsigned and stm.nobroadcast and stm.blurtconnect is not None:
         tx = stm.blurtconnect.url_from_tx(tx)
@@ -3405,67 +3383,6 @@ def witnessproperties(witness, wif, account_creation_fee, account_subsidy_budget
     print(tx)
 
 
-@cli.command()
-@click.argument('witness', nargs=1)
-@click.argument('wif', nargs=1, required=False)
-@click.option('--base', '-b', help='Set base manually, when not set the base is automatically calculated.')
-@click.option('--quote', '-q', help='Blurt quote manually, when not set the base is automatically calculated.')
-@click.option('--support-peg', help='Supports peg adjusting the quote, is overwritten by --set-quote!', is_flag=True, default=False)
-def witnessfeed(witness, wif, base, quote, support_peg):
-    """Publish price feed for a witness"""
-    stm = shared_blockchain_instance()
-    if stm.rpc is not None:
-        stm.rpc.rpcconnect()
-    if wif is None:
-        if not unlock_wallet(stm):
-            return
-    witness = Witness(witness, blockchain_instance=stm)
-    
-    # Check for exchange rate key (support both legacy and new)
-    key = "tbd_exchange_rate"
-    if key not in witness and "sbd_exchange_rate" in witness:
-        key = "sbd_exchange_rate"
-        
-    if key in witness:
-        old_base = witness[key]["base"]
-        old_quote = witness[key]["quote"]
-        last_published_price = Price(witness[key], blockchain_instance=stm)
-    else:
-        # Fallback or error
-        print("No exchange rate found in witness")
-        return
-
-    print("Old price %.3f (base: %s, quote %s)" % (float(last_published_price), old_base, old_quote))
-    
-    if quote is None or base is None:
-        print("Error: --base and --quote are required as automatic fetching is disabled.")
-        return
-
-    if str(quote[-5:]).upper() == stm.token_symbol:
-        quote = Amount(quote, blockchain_instance=stm)
-    else:
-        quote = Amount(quote, stm.token_symbol, blockchain_instance=stm)
-
-    if str(quote[-3:]).upper() == stm.backed_token_symbol:
-        base = Amount(base, blockchain_instance=stm)
-    else:
-        base = Amount(base, stm.backed_token_symbol, blockchain_instance=stm)
-        
-    new_price = Price(base=base, quote=quote, blockchain_instance=stm)
-    print("New price %.3f (base: %s, quote %s)" % (float(new_price), base, quote))
-    
-    if wif is not None:
-        props = {key: new_price}
-        tx = stm.witness_set_properties(wif, witness["owner"], props)
-    else:
-        tx = witness.feed_publish(base, quote=quote)
-        
-    if stm.unsigned and stm.nobroadcast and stm.blurtconnect is not None:
-        tx = stm.blurtconnect.url_from_tx(tx)
-    elif stm.unsigned and stm.nobroadcast and stm.blurtsigner is not None:
-        tx = stm.blurtsigner.url_from_tx(tx)
-    tx = json.dumps(tx, indent=4)
-    print(tx)
 
 
 @cli.command()
@@ -3582,7 +3499,6 @@ def votes(account, direction, outgoing, incoming, days, export):
         votes_list = []
         for v in account.history(start=limit_time, only_ops=["vote"]):
             vote = Vote(v, blockchain_instance=stm)
-            vote.refresh()
             votes_list.append(vote)
         votes = ActiveVotes(votes_list, blockchain_instance=stm)
         in_votes_str = votes.printAsTable(votee=account["name"], return_str=True)
@@ -3626,7 +3542,7 @@ def curation(authorperm, account, limit, min_vote, max_vote, min_performance, ma
         stm.rpc.rpcconnect()
     SP_symbol = "SP"
     if stm.is_blurt:
-        SP_symbol = "HP"
+        SP_symbol = "BP"
     if authorperm is None:
         authorperm = 'all'
     if account is None and authorperm != 'all':
@@ -3679,8 +3595,8 @@ def curation(authorperm, account, limit, min_vote, max_vote, min_performance, ma
             payout = float(payout)
         elif payout is not None:
             payout = None
-        curation_rewards_SBD = comment.get_curation_rewards(pending_payout_SBD=True, pending_payout_value=payout)
-        curation_rewards_SP = comment.get_curation_rewards(pending_payout_SBD=False, pending_payout_value=payout)
+        curation_rewards_liquid = comment.get_curation_rewards(pending_payout_SBD=True, pending_payout_value=payout)
+        curation_rewards_BP = comment.get_curation_rewards(pending_payout_SBD=False, pending_payout_value=payout)
         rows = []
         sum_curation = [0, 0, 0, 0]
         max_curation = [0, 0, 0, 0, 0, 0]
@@ -3688,25 +3604,25 @@ def curation(authorperm, account, limit, min_vote, max_vote, min_performance, ma
         for vote in comment.get_votes():
             vote_time = vote["time"]
 
-            vote_SBD = stm.rshares_to_token_backed_dollar(int(vote["rshares"]))
-            curation_SBD = curation_rewards_SBD["active_votes"][vote["voter"]]
-            curation_SP = curation_rewards_SP["active_votes"][vote["voter"]]
-            if vote_SBD > 0:
-                penalty = ((comment.get_curation_penalty(vote_time=vote_time)) * vote_SBD)
-                performance = (float(curation_SBD) / vote_SBD * 100)
+            vote_liquid = stm.rshares_to_token_backed_dollar(int(vote["rshares"]))
+            cur_liquid = curation_rewards_liquid["active_votes"][vote["voter"]]
+            cur_BP = curation_rewards_BP["active_votes"][vote["voter"]]
+            if vote_liquid > 0:
+                penalty = ((comment.get_curation_penalty(vote_time=vote_time)) * vote_liquid)
+                performance = (float(cur_liquid) / vote_liquid * 100)
             else:
                 performance = 0
                 penalty = 0
             vote_befor_min = (((vote_time) - comment["created"]).total_seconds() / 60)
-            sum_curation[0] += vote_SBD
+            sum_curation[0] += vote_liquid
             sum_curation[1] += penalty
-            sum_curation[2] += float(curation_SP)
-            sum_curation[3] += float(curation_SBD)
+            sum_curation[2] += float(cur_BP)
+            sum_curation[3] += float(cur_liquid)
             row = [vote["voter"],
                    vote_befor_min,
-                   vote_SBD,
+                   vote_liquid,
                    penalty,
-                   float(curation_SP),
+                   float(cur_BP),
                    performance]
 
 
@@ -3832,22 +3748,21 @@ def rewards(accounts, only_sum, post, comment, curation, length, author, permlin
     now = utc.localize(datetime.now(timezone.utc))
     limit_time = now - timedelta(days=days)
     for account in accounts:
-        sum_reward = [0, 0, 0, 0, 0]
+        sum_reward = [0, 0, 0]
         account = Account(account, blockchain_instance=stm)
-        median_price = Price(stm.get_current_median_history(), blockchain_instance=stm)
-        latest = median_price
+        headers = ["Received", "Liquid", "BP", "Total"]
         if author and permlink:
-            t = PrettyTable(["Author", "Permlink", "Payout", stm.backed_token_symbol, "%sP + %s" % (stm.token_symbol[0], stm.token_symbol), "Liquid USD", "Invested USD"])
+            headers = ["Author", "Permlink"] + headers[1:]
         elif author and title:
-                t = PrettyTable(["Author", "Title", "Payout", stm.backed_token_symbol, "%sP + %s" % (stm.token_symbol[0], stm.token_symbol), "Liquid USD", "Invested USD"])
+            headers = ["Author", "Title"] + headers[1:]
         elif author:
-            t = PrettyTable(["Author", "Payout", stm.backed_token_symbol, "%sP + %s" % (stm.token_symbol[0], stm.token_symbol), "Liquid USD", "Invested USD"])
+            headers = ["Author"] + headers[1:]
         elif not author and permlink:
-            t = PrettyTable(["Permlink", "Payout", stm.backed_token_symbol, "%sP + %s" % (stm.token_symbol[0], stm.token_symbol), "Liquid USD", "Invested USD"])
+            headers = ["Permlink"] + headers[1:]
         elif not author and title:
-            t = PrettyTable(["Title", "Payout", stm.backed_token_symbol, "%sP + %s" % (stm.token_symbol[0], stm.token_symbol), "Liquid USD", "Invested USD"])
-        else:
-            t = PrettyTable(["Received", stm.backed_token_symbol, "%sP + %s" % (stm.token_symbol[0], stm.token_symbol), "Liquid USD", "Invested USD"])
+            headers = ["Title"] + headers[1:]
+        
+        t = PrettyTable(headers)
         t.align = "l"
         rows = []
         start_op = account.estimate_virtual_op_num(limit_time)
@@ -3862,29 +3777,19 @@ def rewards(accounts, only_sum, post, comment, curation, length, author, permlin
                 if not post and not comment and v["type"] == "author_reward":
                     continue
                 if v["type"] == "author_reward":
-                    c = Comment(v, blockchain_instance=stm)
-                    try:
-                        c.refresh()
-                    except exceptions.ContentDoesNotExistsException:
-                        continue
+                    c = Comment(v, blockchain_instance=stm, lazy=True)
                     if not post and not c.is_comment():
                         continue
                     if not comment and c.is_comment():
                         continue
+                    payout_liquid = Amount(v["blurt_payout"], blockchain_instance=stm)
                     if "tbd_payout" in v:
-                        payout_SBD = Amount(v["tbd_payout"], blockchain_instance=stm)
-                        payout_STEEM = Amount(v["blurt_payout"], blockchain_instance=stm)
-                    else:
-                        payout_SBD = Amount(v["tbd_payout"], blockchain_instance=stm)
-                        payout_STEEM = Amount(v["blurt_payout"], blockchain_instance=stm)
-                    sum_reward[0] += float(payout_SBD)
-                    sum_reward[1] += float(payout_STEEM)
-                    payout_SP = stm.vests_to_token_power(Amount(v["vesting_payout"], blockchain_instance=stm))
-                    sum_reward[2] += float(payout_SP)
-                    liquid_USD = float(payout_SBD) / float(latest) * float(median_price) + float(payout_STEEM) * float(median_price)
-                    sum_reward[3] += liquid_USD
-                    invested_USD = float(payout_SP) * float(median_price)
-                    sum_reward[4] += invested_USD
+                        payout_liquid += Amount(v["tbd_payout"], blockchain_instance=stm)
+                    
+                    payout_bp = stm.vests_to_bp(Amount(v["vesting_payout"], blockchain_instance=stm))
+                    sum_reward[0] += float(payout_liquid)
+                    sum_reward[1] += float(payout_bp)
+                    
                     if c.is_comment():
                         permlink_row = c.parent_permlink
                     else:
@@ -3895,18 +3800,12 @@ def rewards(accounts, only_sum, post, comment, curation, length, author, permlin
                     rows.append([c["author"],
                                  permlink_row,
                                  ((now - formatTimeString(v["timestamp"])).total_seconds() / 60 / 60 / 24),
-                                 (payout_SBD),
-                                 (payout_STEEM),
-                                 (payout_SP),
-                                 (liquid_USD),
-                                 (invested_USD)])
+                                 payout_liquid,
+                                 payout_bp,
+                                 payout_liquid + payout_bp])
                 elif v["type"] == "curation_reward":
-                    reward = Amount(v["reward"], blockchain_instance=stm)
-                    payout_SP = stm.vests_to_token_power(reward)
-                    liquid_USD = 0
-                    invested_USD = float(payout_SP) * float(median_price)
-                    sum_reward[2] += float(payout_SP)
-                    sum_reward[4] += invested_USD
+                    payout_bp = stm.vests_to_bp(Amount(v["reward"], blockchain_instance=stm))
+                    sum_reward[1] += float(payout_bp)
                     if title:
                         c = Comment(construct_authorperm(v["comment_author"], v["comment_permlink"]), blockchain_instance=stm)
                         permlink_row = c.title
@@ -3915,11 +3814,9 @@ def rewards(accounts, only_sum, post, comment, curation, length, author, permlin
                     rows.append([v["comment_author"],
                                  permlink_row,
                                  ((now - formatTimeString(v["timestamp"])).total_seconds() / 60 / 60 / 24),
-                                 0.000,
-                                 0.000,
-                                 payout_SP,
-                                 (liquid_USD),
-                                 (invested_USD)])
+                                 0,
+                                 payout_bp,
+                                 payout_bp])
         sortedList = sorted(rows, key=lambda row: (row[2]), reverse=False)
         if only_sum:
             sortedList = []
@@ -3933,55 +3830,48 @@ def rewards(accounts, only_sum, post, comment, curation, length, author, permlin
                            permlink_row,
                            "%.1f days" % row[2],
                            "%.3f" % float(row[3]),
-                           "%.3f" % (float(row[4]) + float(row[5])),
-                           "%.2f $" % (row[6]),
-                           "%.2f $" % (row[7])])
+                           "%.3f" % float(row[4]),
+                           "%.3f" % float(row[5])])
             elif author and not (permlink or title):
                 t.add_row([row[0],
                            "%.1f days" % row[2],
                            "%.3f" % float(row[3]),
-                           "%.3f" % (float(row[4]) + float(row[5])),
-                           "%.2f $" % (row[5]),
-                           "%.2f $" % (row[6])])
+                           "%.3f" % float(row[4]),
+                           "%.3f" % float(row[5])])
             elif not author and (permlink or title):
                 t.add_row([permlink_row,
                            "%.1f days" % row[2],
                            "%.3f" % float(row[3]),
-                           "%.3f" % (float(row[4]) + float(row[5])),
-                           "%.2f $" % (row[5]),
-                           "%.2f $" % (row[6])])
+                           "%.3f" % float(row[4]),
+                           "%.3f" % float(row[5])])
             else:
                 t.add_row(["%.1f days" % row[2],
                            "%.3f" % float(row[3]),
-                           "%.3f" % (float(row[4]) + float(row[5])),
-                           "%.2f $" % (row[5]),
-                           "%.2f $" % (row[6])])
+                           "%.3f" % float(row[4]),
+                           "%.3f" % float(row[5])])
 
         if author and (permlink or title):
             if not only_sum:
-                t.add_row(["", "", "", "", "", "", ""])
+                t.add_row(["", "", "", "", "", ""])
             t.add_row(["Sum",
                        "-",
                        "-",
-                       "%.2f %s" % (sum_reward[0], stm.backed_token_symbol),
-                       "%.2f %sP" % (sum_reward[1] + sum_reward[2], stm.token_symbol[0]),
-                       "%.2f $" % (sum_reward[3]),
-                       "%.2f $" % (sum_reward[4])])
+                       "%.2f" % sum_reward[0],
+                       "%.2f" % sum_reward[1],
+                       "%.2f %s" % (sum_reward[0] + sum_reward[1], stm.token_symbol)])
         elif not author and not (permlink or title):
+            t.add_row(["", "", "", ""])
+            t.add_row(["Sum",
+                       "%.2f" % sum_reward[0],
+                       "%.2f" % sum_reward[1],
+                       "%.2f %s" % (sum_reward[0] + sum_reward[1], stm.token_symbol)])
+        else:
             t.add_row(["", "", "", "", ""])
             t.add_row(["Sum",
-                       "%.2f %s" % (sum_reward[0], stm.backed_token_symbol),
-                       "%.2f %sP" % (sum_reward[1] + sum_reward[2], stm.token_symbol[0]),
-                       "%.2f $" % (sum_reward[2]),
-                       "%.2f $" % (sum_reward[3])])
-        else:
-            t.add_row(["", "", "", "", "", ""])
-            t.add_row(["Sum",
                        "-",
-                       "%.2f %s" % (sum_reward[0], stm.backed_token_symbol),
-                       "%.2f %sP" % (sum_reward[1] + sum_reward[2], stm.token_symbol[0]),
-                       "%.2f $" % (sum_reward[3]),
-                       "%.2f $" % (sum_reward[4])])
+                       "%.2f" % sum_reward[0],
+                       "%.2f" % sum_reward[1],
+                       "%.2f %s" % (sum_reward[0] + sum_reward[1], stm.token_symbol)])
         message = "\nShowing "
         if post:
             if comment + curation == 0:
@@ -4035,31 +3925,29 @@ def pending(accounts, only_sum, post, comment, curation, length, author, permlin
         _from = 7
     if _from + days > 7:
         days = 7 - _from
-    sp_symbol = "SP"
-    if stm.is_blurt:
-        sp_symbol = "HP"
+    sp_symbol = "BP"
 
     utc = pytz.timezone('UTC')
     max_limit_time = utc.localize(datetime.now(timezone.utc)) - timedelta(days=7)
     limit_time = utc.localize(datetime.now(timezone.utc)) - timedelta(days=_from + days)
     start_time = utc.localize(datetime.now(timezone.utc)) - timedelta(days=_from)
     for account in accounts:
-        sum_reward = [0, 0, 0, 0]
+        sum_reward = [0, 0]
         account = Account(account, blockchain_instance=stm)
-        median_price = Price(stm.get_current_median_history(), blockchain_instance=stm)
-        latest = median_price
+        headers = ["Liquid", "BP", "Total"]
         if author and permlink:
-            t = PrettyTable(["Author", "Permlink", "Cashout", stm.backed_token_symbol, sp_symbol, "Liquid USD", "Invested USD"])
+            headers = ["Author", "Permlink", "Cashout"] + headers
         elif author and title:
-            t = PrettyTable(["Author", "Title", "Cashout", stm.backed_token_symbol, sp_symbol, "Liquid USD", "Invested USD"])
+            headers = ["Author", "Title", "Cashout"] + headers
         elif author:
-            t = PrettyTable(["Author", "Cashout", stm.backed_token_symbol, sp_symbol, "Liquid USD", "Invested USD"])
+            headers = ["Author", "Cashout"] + headers
         elif not author and permlink:
-            t = PrettyTable(["Permlink", "Cashout", stm.backed_token_symbol, sp_symbol, "Liquid USD", "Invested USD"])
+            headers = ["Permlink", "Cashout"] + headers
         elif not author and title:
-            t = PrettyTable(["Title", "Cashout", stm.backed_token_symbol, sp_symbol, "Liquid USD", "Invested USD"])
+            headers = ["Title", "Cashout"] + headers
         else:
-            t = PrettyTable(["Cashout", stm.backed_token_symbol, sp_symbol, "Liquid USD", "Invested USD"])
+            headers = ["Cashout"] + headers
+        t = PrettyTable(headers)
         t.align = "l"
         rows = []
         c_list = {}
@@ -4088,14 +3976,10 @@ def pending(accounts, only_sum, post, comment, curation, length, author, permlin
                     continue
                 if v["author"] != account["name"]:
                     continue
-                payout_SBD = author_reward["payout_SBD"]
-                sum_reward[0] += float(payout_SBD)
-                payout_SP = author_reward["payout_SP"]
-                sum_reward[1] += float(payout_SP)
-                liquid_USD = float(author_reward["payout_SBD"]) / float(latest) * float(median_price)
-                sum_reward[2] += liquid_USD
-                invested_USD = float(author_reward["payout_SP"]) * float(median_price)
-                sum_reward[3] += invested_USD
+                payout_liquid = author_reward["payout_liquid"]
+                payout_bp = author_reward["payout_BP"]
+                sum_reward[0] += float(payout_liquid)
+                sum_reward[1] += float(payout_bp)
                 if v.is_comment():
                     permlink_row = v.permlink
                 else:
@@ -4105,11 +3989,10 @@ def pending(accounts, only_sum, post, comment, curation, length, author, permlin
                         permlink_row = v.permlink
                 rows.append([v["author"],
                              permlink_row,
-                             ((v["created"] - max_limit_time).total_seconds() / 60 / 60 / 24),
-                             (payout_SBD),
-                             (payout_SP),
-                             (liquid_USD),
-                             (invested_USD)])
+                             "%.1f days" % ((v["created"] - max_limit_time).total_seconds() / 60 / 60 / 24),
+                             payout_liquid,
+                             payout_bp,
+                             payout_liquid + payout_bp])
         if curation:
             votes = AccountVotes(account, start=limit_time, stop=start_time, blockchain_instance=stm)
             for vote in votes:
@@ -4124,22 +4007,18 @@ def pending(accounts, only_sum, post, comment, curation, length, author, permlin
                 days_to_payout = ((c["created"] - max_limit_time).total_seconds() / 60 / 60 / 24)
                 if days_to_payout < 0:
                     continue
-                payout_SP = rewards["active_votes"][account["name"]]
-                liquid_USD = 0
-                invested_USD = float(payout_SP) * float(median_price)
-                sum_reward[1] += float(payout_SP)
-                sum_reward[3] += invested_USD
+                payout_bp = rewards["active_votes"][account["name"]]
+                sum_reward[1] += float(payout_bp)
                 if title:
                     permlink_row = c.title
                 else:
                     permlink_row = c.permlink
                 rows.append([c["author"],
                              permlink_row,
-                             days_to_payout,
-                             0.000,
-                             payout_SP,
-                             (liquid_USD),
-                             (invested_USD)])
+                             "%.1f days" % days_to_payout,
+                             0,
+                             payout_bp,
+                             payout_bp])
         sortedList = sorted(rows, key=lambda row: (row[2]), reverse=True)
         if only_sum:
             sortedList = []
@@ -4151,57 +4030,50 @@ def pending(accounts, only_sum, post, comment, curation, length, author, permlin
             if author and (permlink or title):
                 t.add_row([row[0],
                            permlink_row,
-                           "%.1f days" % row[2],
+                           row[2],
                            "%.3f" % float(row[3]),
                            "%.3f" % float(row[4]),
-                           "%.2f $" % (row[5]),
-                           "%.2f $" % (row[6])])
+                           "%.3f" % float(row[5])])
             elif author and not (permlink or title):
                 t.add_row([row[0],
-                           "%.1f days" % row[2],
+                           row[2],
                            "%.3f" % float(row[3]),
                            "%.3f" % float(row[4]),
-                           "%.2f $" % (row[5]),
-                           "%.2f $" % (row[6])])
+                           "%.3f" % float(row[5])])
             elif not author and (permlink or title):
                 t.add_row([permlink_row,
-                           "%.1f days" % row[2],
+                           row[2],
                            "%.3f" % float(row[3]),
                            "%.3f" % float(row[4]),
-                           "%.2f $" % (row[5]),
-                           "%.2f $" % (row[6])])
+                           "%.3f" % float(row[5])])
             else:
-                t.add_row(["%.1f days" % row[2],
+                t.add_row([row[2],
                            "%.3f" % float(row[3]),
                            "%.3f" % float(row[4]),
-                           "%.2f $" % (row[5]),
-                           "%.2f $" % (row[6])])
+                           "%.3f" % float(row[5])])
 
         if author and (permlink or title):
             if not only_sum:
-                t.add_row(["", "", "", "", "", "", ""])
+                t.add_row(["", "", "", "", "", ""])
             t.add_row(["Sum",
                        "-",
                        "-",
-                       "%.2f %s" % (sum_reward[0], stm.backed_token_symbol),
-                       "%.2f %s" % (sum_reward[1], sp_symbol),
-                       "%.2f $" % (sum_reward[2]),
-                       "%.2f $" % (sum_reward[3])])
+                       "%.2f" % sum_reward[0],
+                       "%.2f" % sum_reward[1],
+                       "%.2f %s" % (sum_reward[0] + sum_reward[1], stm.token_symbol)])
         elif not author and not (permlink or title):
+            t.add_row(["", "", "", ""])
+            t.add_row(["Sum",
+                       "%.2f" % sum_reward[0],
+                       "%.2f" % sum_reward[1],
+                       "%.2f %s" % (sum_reward[0] + sum_reward[1], stm.token_symbol)])
+        else:
             t.add_row(["", "", "", "", ""])
             t.add_row(["Sum",
-                       "%.2f %s" % (sum_reward[0], stm.backed_token_symbol),
-                       "%.2f %s" % (sum_reward[1], sp_symbol),
-                       "%.2f $" % (sum_reward[2]),
-                       "%.2f $" % (sum_reward[3])])
-        else:
-            t.add_row(["", "", "", "", "", ""])
-            t.add_row(["Sum",
                        "-",
-                       "%.2f %s" % (sum_reward[0], stm.backed_token_symbol),
-                       "%.2f %s" % (sum_reward[1], sp_symbol),
-                       "%.2f $" % (sum_reward[2]),
-                       "%.2f $" % (sum_reward[3])])
+                       "%.2f" % sum_reward[0],
+                       "%.2f" % sum_reward[1],
+                       "%.2f %s" % (sum_reward[0] + sum_reward[1], stm.token_symbol)])
         message = "\nShowing pending "
         if post:
             if comment + curation == 0:
@@ -4408,21 +4280,17 @@ def info(objects):
         t = PrettyTable(["Key", "Value"])
         t.align = "l"
         info = stm.get_dynamic_global_properties()
-        median_price = stm.get_current_median_history()
         token_per_mvest = stm.get_token_per_mvest()
         chain_props = stm.get_chain_properties()
-        try:
-            price = (Amount(median_price["base"], blockchain_instance=stm).amount / Amount(median_price["quote"], blockchain_instance=stm).amount)
-        except:
-            price = None
+        # Blurt doesn't have a stablecoin or median price feed
+        price = 1.0
         for key in info:
             if isinstance(info[key], dict) and 'amount' in info[key]:
                 t.add_row([key, str(Amount(info[key], blockchain_instance=stm))])
             else:
                 t.add_row([key, info[key]])
         t.add_row(["%s per mvest" % stm.token_symbol, token_per_mvest])
-        if price is not None:
-            t.add_row(["internal price", price])
+        t.add_row(["internal price", price])
         t.add_row(["account_creation_fee", str(Amount(chain_props["account_creation_fee"], blockchain_instance=stm))])
         print(t.get_string(sortby="Key"))
         # Block
@@ -4558,33 +4426,6 @@ def info(objects):
             print("Couldn't identify object to read")
 
 
-@cli.command()
-@click.argument('account', nargs=1, required=False)
-@click.option('--signing-account', '-s', help='Signing account, when empty account is used.')
-def userdata(account, signing_account):
-    """ Get the account's email address and phone number.
-
-        The request has to be signed by the requested account or an admin account.
-    """
-    stm = shared_blockchain_instance()
-    if stm.rpc is not None:
-        stm.rpc.rpcconnect()
-    if not unlock_wallet(stm):
-        return
-    if not account:
-        if "default_account" in stm.config:
-            account = stm.config["default_account"]
-    account = Account(account, blockchain_instance=stm)
-    if signing_account is not None:
-        signing_account = Account(signing_account, blockchain_instance=stm)
-    c = Conveyor(blockchain_instance=stm)
-    user_data = c.get_user_data(account, signing_account=signing_account)
-    t = PrettyTable(["Key", "Value"])
-    t.align = "l"
-    for key in user_data:
-        # hide internal config data
-        t.add_row([key, user_data[key]])
-    print(t)
 
 
 @cli.command()
@@ -4664,33 +4505,6 @@ def history(account, limit, sort, max_length, virtual_ops, only_ops, exclude_ops
         print(t)
 
 
-@cli.command()
-@click.argument('account', nargs=1, required=False)
-@click.option('--signing-account', '-s', help='Signing account, when empty account is used.')
-def featureflags(account, signing_account):
-    """ Get the account's feature flags.
-
-        The request has to be signed by the requested account or an admin account.
-    """
-    stm = shared_blockchain_instance()
-    if stm.rpc is not None:
-        stm.rpc.rpcconnect()
-    if not unlock_wallet(stm):
-        return
-    if not account:
-        if "default_account" in stm.config:
-            account = stm.config["default_account"]
-    account = Account(account, blockchain_instance=stm)
-    if signing_account is not None:
-        signing_account = Account(signing_account, blockchain_instance=stm)
-    c = Conveyor(blockchain_instance=stm)
-    user_data = c.get_feature_flags(account, signing_account=signing_account)
-    t = PrettyTable(["Key", "Value"])
-    t.align = "l"
-    for key in user_data:
-        # hide internal config data
-        t.add_row([key, user_data[key]])
-    print(t)
 
 
 @cli.command()

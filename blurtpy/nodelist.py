@@ -96,7 +96,7 @@ class NodeList(list):
                 "score": 50
             },
             
-                # "url": "https://api.blurtit.com",
+                # "url": "https://rpc.blurt.blog",
                 # "version": "0.20.2",
                 # "type": "appbase",
                 # "owner": "blurtit",
@@ -482,29 +482,6 @@ class NodeList(list):
 
         return [node["url"] for node in sorted(node_list, key=lambda self: self['score'], reverse=True)]
 
-    def get_blurt_nodes(self, testnet=False, not_working=False, wss=True, https=True):
-        """ Returns blurt only nodes as list
-
-            :param bool testnet: when True, testnet nodes are included
-            :param bool not_working: When True, all nodes including not working ones will be returned
-
-        """
-        node_list = []
-        node_type_list = []
-
-        for node in self:
-            if node["blurt"]:
-                continue
-            if (node["score"] < 0 and not not_working):
-                continue
-            if (testnet and node["type"] == "testnet") or (not testnet and node["type"] != "testnet"):            
-                if not https and node["url"][:5] == 'https':
-                    continue
-                if not wss and node["url"][:3] == 'wss':
-                    continue
-                node_list.append(node)
-
-        return [node["url"] for node in sorted(node_list, key=lambda self: self['score'], reverse=True)]
 
     def get_testnet(self, testnet=True, testnetdev=False):
         """Returns testnet nodes"""

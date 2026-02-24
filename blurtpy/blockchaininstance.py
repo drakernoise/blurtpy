@@ -14,8 +14,7 @@ from blurtbase import operations
 from blurtgraphenebase.chains import known_chains
 from .storage import get_default_config_store
 from .account import Account
-from .amount import Amount
-from .price import Price
+from .amount import Amount, ExchangeRate
 from .version import version as blurtpy_version
 from .exceptions import (
     AccountExistsException,
@@ -184,6 +183,7 @@ class BlockChainInstance(object):
 
         # Store config for access through other Classes
         self.config = kwargs.get("config_store", get_default_config_store(**kwargs))
+        self.configStorage = self.config
         if self.path is None:
             self.path = self.config["default_path"]
 
@@ -390,21 +390,6 @@ class BlockChainInstance(object):
                              'max_virtual_bandwidth': None}
         return reserve_ratio
 
-    def get_feed_history(self, use_stored_data=True):
-        """ Returns the feed_history
-
-            :param bool use_stored_data: if True, stored data will be returned. If stored data are
-                empty or old, refresh_data() is used.
-
-        """
-        if use_stored_data:
-            self.refresh_data('feed_history')
-            return self.data['feed_history']
-        if self.rpc is None:
-            return None
-        self.rpc.set_next_node_on_empty_reply(True)
-        return self.rpc.get_feed_history(api="database")
-
     def get_reward_funds(self, use_stored_data=True):
         """ Get details for a reward fund.
 
@@ -439,27 +424,6 @@ class BlockChainInstance(object):
             ret = self.rpc.get_reward_fund("post", api="database")
         return ret
 
-    def get_current_median_history(self, use_stored_data=True):
-        """ Returns the current median price
-
-            :param bool use_stored_data: if True, stored data will be returned. If stored data are
-                                         empty or old, refresh_data() is used.
-        """
-        if use_stored_data:
-            self.refresh_data('feed_history')
-            if self.data['get_feed_history']:
-                return self.data['get_feed_history']['current_median_history']
-            else:
-                return None
-        if self.rpc is None:
-            return None
-        ret = None
-        self.rpc.set_next_node_on_empty_reply(True)
-        if self.rpc.get_use_appbase():
-            ret = self.rpc.get_feed_history(api="database")['current_median_history']
-        else:
-            ret = self.rpc.get_current_median_history_price(api="database")
-        return ret
 
     def get_hardfork_properties(self, use_stored_data=True):
         """ Returns Hardfork and live_time of the hardfork
@@ -501,19 +465,6 @@ class BlockChainInstance(object):
         except:
             return known_chains["BLURT"]
 
-    def get_median_price(self, use_stored_data=True):
-        """ Returns the current median history price as Price
-        """
-        median_price = self.get_current_median_history(use_stored_data=use_stored_data)
-        if median_price is None:
-            return None
-        a = Price(
-            None,
-            base=Amount(median_price['base'], blockchain_instance=self),
-            quote=Amount(median_price['quote'], blockchain_instance=self),
-            blockchain_instance=self
-        )
-        return a.as_base(self.backed_token_symbol)
 
     def get_block_interval(self, use_stored_data=True):
         """Returns the block interval in seconds"""
@@ -1230,14 +1181,11 @@ class BlockChainInstance(object):
             posting_key_authority.append([k, 1])
 
         for k in additional_owner_accounts:
-            addaccount = Account(k, blockchain_instance=self)
-            owner_accounts_authority.append([addaccount["name"], 1])
+            owner_accounts_authority.append([k, 1])
         for k in additional_active_accounts:
-            addaccount = Account(k, blockchain_instance=self)
-            active_accounts_authority.append([addaccount["name"], 1])
+            active_accounts_authority.append([k, 1])
         for k in additional_posting_accounts:
-            addaccount = Account(k, blockchain_instance=self)
-            posting_accounts_authority.append([addaccount["name"], 1])
+            posting_accounts_authority.append([k, 1])
         if combine_with_claim_account:            
             op = {
                 "fee": Amount(fee, blockchain_instance=self),
@@ -1427,14 +1375,11 @@ class BlockChainInstance(object):
             posting_key_authority.append([k, 1])
 
         for k in additional_owner_accounts:
-            addaccount = Account(k, blockchain_instance=self)
-            owner_accounts_authority.append([addaccount["name"], 1])
+            owner_accounts_authority.append([k, 1])
         for k in additional_active_accounts:
-            addaccount = Account(k, blockchain_instance=self)
-            active_accounts_authority.append([addaccount["name"], 1])
+            active_accounts_authority.append([k, 1])
         for k in additional_posting_accounts:
-            addaccount = Account(k, blockchain_instance=self)
-            posting_accounts_authority.append([addaccount["name"], 1])
+            posting_accounts_authority.append([k, 1])
 
         props = self.get_chain_properties()
         if self.hardfork >= 20:
@@ -1607,16 +1552,13 @@ class BlockChainInstance(object):
 
         if additional_owner_accounts is not None:
             for k in additional_owner_accounts:
-                addaccount = Account(k, blockchain_instance=self)
-                owner_accounts_authority.append([addaccount["name"], 1])
+                owner_accounts_authority.append([k, 1])
         if additional_active_accounts is not None:
             for k in additional_active_accounts:
-                addaccount = Account(k, blockchain_instance=self)
-                active_accounts_authority.append([addaccount["name"], 1])
+                active_accounts_authority.append([k, 1])
         if additional_posting_accounts is not None:
             for k in additional_posting_accounts:
-                addaccount = Account(k, blockchain_instance=self)
-                posting_accounts_authority.append([addaccount["name"], 1])
+                posting_accounts_authority.append([k, 1])
         op = {
             "account": account["name"],
             'owner': {'account_auths': owner_accounts_authority,

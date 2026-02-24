@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from blurtpy.instance import shared_blockchain_instance
 import random
+import secrets
 import os
 import struct
 from binascii import hexlify, unhexlify
@@ -174,7 +175,7 @@ class Memo(object):
         if not memo:
             return None
         if nonce is None:
-            nonce = str(random.getrandbits(64))
+            nonce = str(secrets.randbits(64))
         if isinstance(self.from_account, Account):
             memo_wif = self.blockchain.wallet.getPrivateKeyForPublicKey(
                 self.from_account["memo_key"]
@@ -240,7 +241,7 @@ class Memo(object):
             raise ValueError("%s does not exists!" % infile)
 
         if nonce is None:
-            nonce = str(random.getrandbits(64))
+            nonce = str(secrets.randbits(64))
         if isinstance(self.from_account, Account):
             memo_wif = self.blockchain.wallet.getPrivateKeyForPublicKey(
                 self.from_account["memo_key"]

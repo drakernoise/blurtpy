@@ -1,8 +1,10 @@
-# -*- coding: utf-8 -*-
 from blurtgraphenebase.py23 import bytes_types, integer_types, string_types, text_type
 from blurtpy.instance import shared_blockchain_instance
 from blurtpy.asset import Asset
+from .exceptions import InvalidAssetException
+from .utils import assets_from_string
 from decimal import Decimal, ROUND_DOWN
+from fractions import Fraction
 
 
 def check_asset(other, self, stm):
@@ -249,12 +251,11 @@ class Amount(dict):
         return a
 
     def __mul__(self, other):
-        from .price import Price
         a = self.copy()
         if isinstance(other, Amount):
             check_asset(other["asset"], self["asset"], self.blockchain)
             a["amount"] *= other["amount"]
-        elif isinstance(other, Price):
+        elif isinstance(other, ExchangeRate):
             if not self["asset"] == other["quote"]["asset"]:
                 raise AssertionError()
             a = self.copy() * other["price"]
@@ -269,9 +270,7 @@ class Amount(dict):
     def __floordiv__(self, other):
         a = self.copy()
         if isinstance(other, Amount):
-            from .price import Price
-            check_asset(other["asset"], self["asset"], self.blockchain)
-            return Price(self, other, blockchain_instance=self.blockchain)
+            return ExchangeRate(base=self, quote=other, blockchain_instance=self.blockchain)
         else:
             a["amount"] //= Decimal(other)
         if self.fixed_point_arithmetic:
@@ -279,23 +278,24 @@ class Amount(dict):
         return a
 
     def __div__(self, other):
-        from .price import Price
         a = self.copy()
         if isinstance(other, Amount):
-            check_asset(other["asset"], self["asset"], self.blockchain)
-            return Price(self, other, blockchain_instance=self.blockchain)
-        elif isinstance(other, Price):
+            return ExchangeRate(base=self, quote=other, blockchain_instance=self.blockchain)
+        elif isinstance(other, ExchangeRate):
             if not self["asset"] == other["base"]["asset"]:
                 raise AssertionError()
-            a =self.copy()
-            a["amount"] =  a["amount"] / other["price"]
+            a = self.copy()
+            a["amount"] = a["amount"] / other["price"]
             a["asset"] = other["quote"]["asset"].copy()
-            a["symbol"] = other["quote"]["asset"]["symbol"]            
+            a["symbol"] = other["quote"]["asset"]["symbol"]
         else:
             a["amount"] /= Decimal(other)
         if self.fixed_point_arithmetic:
             a["amount"] = quantize(a["amount"], self["asset"]["precision"])
         return a
+
+    def __truediv__(self, other):
+        return self.__div__(other)
 
     def __mod__(self, other):
         a = self.copy()
@@ -415,6 +415,8 @@ class Amount(dict):
         if isinstance(other, Amount):
             check_asset(other["asset"], self["asset"], self.blockchain)
             return self["amount"] != quantize(other["amount"], self["asset"]["precision"])
+        elif isinstance(other, ExchangeRate):
+            return False        
         else:
             return quant_amount != quantize((other or 0), self["asset"]["precision"])
 
@@ -437,3 +439,299 @@ class Amount(dict):
     __repr__ = __str__
     __truediv__ = __div__
     __truemul__ = __mul__
+
+
+class ExchangeRate(dict):
+    """ This class deals with all sorts of exchange rates of any pair of assets.
+
+        :param list args: Allows to deal with different representations of a price
+        :param Asset base: Base asset
+        :param Asset quote: Quote asset
+        :param Blurt blockchain_instance: Blurt instance
+        :returns: All data required to represent an exchange rate
+        :rtype: dictionary
+
+        .. note::
+
+            The rate (floating) is derived as ``base/quote``
+
+    """
+    def __init__(
+        self,
+        price=None,
+        base=None,
+        quote=None,
+        base_asset=None,  # to identify sell/buy
+        blockchain_instance=None,
+        **kwargs
+    ):
+        if blockchain_instance is None:
+            if kwargs.get("blurt_instance"):
+                blockchain_instance = kwargs["blurt_instance"]
+        self.blockchain = blockchain_instance or shared_blockchain_instance()
+        if price == "":
+            price = None
+        if (price is not None and isinstance(price, string_types) and not base and not quote):
+            price, assets = price.split(" ")
+            base_symbol, quote_symbol = assets_from_string(assets)
+            base = Asset(base_symbol, blockchain_instance=self.blockchain)
+            quote = Asset(quote_symbol, blockchain_instance=self.blockchain)
+            frac = Fraction(float(price)).limit_denominator(10 ** base["precision"])
+            self["quote"] = Amount(amount=frac.denominator, asset=quote, blockchain_instance=self.blockchain)
+            self["base"] = Amount(amount=frac.numerator, asset=base, blockchain_instance=self.blockchain)
+
+        elif (price is not None and isinstance(price, dict) and
+                "base" in price and
+                "quote" in price):
+            if "price" in price:
+                raise AssertionError("You cannot provide a 'price' this way")
+            self["base"] = Amount(price["base"], blockchain_instance=self.blockchain)
+            self["quote"] = Amount(price["quote"], blockchain_instance=self.blockchain)
+
+        elif (price is not None and isinstance(base, Asset) and isinstance(quote, Asset)):
+            frac = Fraction(float(price)).limit_denominator(10 ** base["precision"])
+            self["quote"] = Amount(amount=frac.denominator, asset=quote, blockchain_instance=self.blockchain)
+            self["base"] = Amount(amount=frac.numerator, asset=base, blockchain_instance=self.blockchain)
+
+        elif (price is not None and isinstance(base, string_types) and isinstance(quote, string_types)):
+            base = Asset(base, blockchain_instance=self.blockchain)
+            quote = Asset(quote, blockchain_instance=self.blockchain)
+            frac = Fraction(float(price)).limit_denominator(10 ** base["precision"])
+            self["quote"] = Amount(amount=frac.denominator, asset=quote, blockchain_instance=self.blockchain)
+            self["base"] = Amount(amount=frac.numerator, asset=base, blockchain_instance=self.blockchain)
+
+        elif (price is None and isinstance(base, string_types) and isinstance(quote, string_types)):
+            self["quote"] = Amount(quote, blockchain_instance=self.blockchain)
+            self["base"] = Amount(base, blockchain_instance=self.blockchain)
+        elif (price is not None and isinstance(price, string_types) and isinstance(base, string_types)):
+            self["quote"] = Amount(price, blockchain_instance=self.blockchain)
+            self["base"] = Amount(base, blockchain_instance=self.blockchain)
+
+        elif isinstance(price, Amount) and isinstance(base, Amount):
+            self["quote"], self["base"] = price, base
+
+        elif (price is None and isinstance(base, Amount) and isinstance(quote, Amount)):
+            self["quote"] = quote
+            self["base"] = base
+
+        elif ((isinstance(price, float) or isinstance(price, integer_types) or isinstance(price, Decimal)) and
+                isinstance(base, string_types)):
+            base_symbol, quote_symbol = assets_from_string(base)
+            base = Asset(base_symbol, blockchain_instance=self.blockchain)
+            quote = Asset(quote_symbol, blockchain_instance=self.blockchain)
+            frac = Fraction(float(price)).limit_denominator(10 ** base["precision"])
+            self["quote"] = Amount(amount=frac.denominator, asset=quote, blockchain_instance=self.blockchain)
+            self["base"] = Amount(amount=frac.numerator, asset=base, blockchain_instance=self.blockchain)
+
+        else:
+            raise ValueError("Couldn't parse 'ExchangeRate'.")
+
+    def __setitem__(self, key, value):
+        dict.__setitem__(self, key, value)
+        if ("quote" in self and
+                "base" in self and
+                self["base"] and self["quote"]):
+            dict.__setitem__(self, "price", self._safedivide(
+                self["base"]["amount"],
+                self["quote"]["amount"]))
+
+    def copy(self):
+        return ExchangeRate(
+            None,
+            base=self["base"].copy(),
+            quote=self["quote"].copy(),
+            blockchain_instance=self.blockchain)
+
+    def _safedivide(self, a, b):
+        if b != 0.0:
+            return a / b
+        else:
+            return float('Inf')
+
+    def symbols(self):
+        return self["base"]["symbol"], self["quote"]["symbol"]
+
+    def as_base(self, base):
+        if base == self["base"]["symbol"]:
+            return self.copy()
+        elif base == self["quote"]["symbol"]:
+            return self.copy().invert()
+        else:
+            raise InvalidAssetException
+
+    def as_quote(self, quote):
+        if quote == self["quote"]["symbol"]:
+            return self.copy()
+        elif quote == self["base"]["symbol"]:
+            return self.copy().invert()
+        else:
+            raise InvalidAssetException
+
+    def invert(self):
+        tmp = self["quote"]
+        self["quote"] = self["base"]
+        self["base"] = tmp
+        return self
+
+    def json(self):
+        return {
+            "base": self["base"].json(),
+            "quote": self["quote"].json()
+        }
+
+    def __repr__(self):
+        return "{price:.{precision}f} {base}/{quote}".format(
+            price=self["price"],
+            base=self["base"]["symbol"],
+            quote=self["quote"]["symbol"],
+            precision=(
+                self["base"]["asset"]["precision"] +
+                self["quote"]["asset"]["precision"]
+            )
+        )
+
+    def __float__(self):
+        return float(self["price"])
+
+    def _check_other(self, other):
+        if not other["base"]["symbol"] == self["base"]["symbol"]:
+            raise AssertionError()
+        if not other["quote"]["symbol"] == self["quote"]["symbol"]:
+            raise AssertionError()
+
+    def __mul__(self, other):
+        a = self.copy()
+        if isinstance(other, ExchangeRate):
+            if (
+                self["quote"]["symbol"] not in other.symbols() and
+                self["base"]["symbol"] not in other.symbols()
+            ):
+                raise InvalidAssetException
+
+            a = self.copy()
+            if self["quote"]["symbol"] == other["base"]["symbol"]:
+                a["base"] = Amount(
+                    float(self["base"]) * float(other["base"]), self["base"]["symbol"],
+                    blockchain_instance=self.blockchain
+                )
+                a["quote"] = Amount(
+                    float(self["quote"]) * float(other["quote"]), other["quote"]["symbol"],
+                    blockchain_instance=self.blockchain
+                )
+            elif self["base"]["symbol"] == other["quote"]["symbol"]:
+                a["base"] = Amount(
+                    float(self["base"]) * float(other["base"]), other["base"]["symbol"],
+                    blockchain_instance=self.blockchain
+                )
+                a["quote"] = Amount(
+                    float(self["quote"]) * float(other["quote"]), self["quote"]["symbol"],
+                    blockchain_instance=self.blockchain
+                )
+            else:
+                raise ValueError("Wrong rotation of rates")
+        elif isinstance(other, Amount):
+            check_asset(other["asset"], self["quote"]["asset"], self.blockchain)
+            a = other.copy() * self["price"]
+            a["asset"] = self["base"]["asset"].copy()
+            a["symbol"] = self["base"]["asset"]["symbol"]
+        else:
+            a["base"] *= other
+        return a
+
+    def __imul__(self, other):
+        if isinstance(other, ExchangeRate):
+            tmp = self * other
+            self["base"] = tmp["base"]
+            self["quote"] = tmp["quote"]
+        else:
+            self["base"] *= other
+        return self
+
+    def __div__(self, other):
+        a = self.copy()
+        if isinstance(other, ExchangeRate):
+            if sorted(self.symbols()) == sorted(other.symbols()):
+                return float(self.as_base(self["base"]["symbol"])) / float(other.as_base(self["base"]["symbol"]))
+            elif self["quote"]["symbol"] in other.symbols():
+                other = other.as_base(self["quote"]["symbol"])
+            elif self["base"]["symbol"] in other.symbols():
+                other = other.as_base(self["base"]["symbol"])
+            else:
+                raise InvalidAssetException
+            a["base"] = Amount(
+                float(self["base"].amount / other["base"].amount), other["quote"]["symbol"],
+                blockchain_instance=self.blockchain
+            )
+            a["quote"] = Amount(
+                float(self["quote"].amount / other["quote"].amount), self["quote"]["symbol"],
+                blockchain_instance=self.blockchain
+            )
+        elif isinstance(other, Amount):
+            check_asset(other["asset"], self["quote"]["asset"], self.blockchain)
+            a = other.copy() / self["price"]
+            a["asset"] = self["base"]["asset"].copy()
+            a["symbol"] = self["base"]["asset"]["symbol"]
+        else:
+            a["base"] /= other
+        return a
+
+    def __idiv__(self, other):
+        if isinstance(other, ExchangeRate):
+            tmp = self / other
+            self["base"] = tmp["base"]
+            self["quote"] = tmp["quote"]
+        else:
+            self["base"] /= other
+        return self
+
+    def __floordiv__(self, other):
+        raise NotImplementedError("This is not possible as the rate is a ratio")
+
+    def __ifloordiv__(self, other):
+        raise NotImplementedError("This is not possible as the rate is a ratio")
+
+    def __lt__(self, other):
+        if isinstance(other, ExchangeRate):
+            self._check_other(other)
+            return self["price"] < other["price"]
+        else:
+            return self["price"] < float(other or 0)
+
+    def __le__(self, other):
+        if isinstance(other, ExchangeRate):
+            self._check_other(other)
+            return self["price"] <= other["price"]
+        else:
+            return self["price"] <= float(other or 0)
+
+    def __eq__(self, other):
+        if isinstance(other, ExchangeRate):
+            self._check_other(other)
+            return self["price"] == other["price"]
+        else:
+            return self["price"] == float(other or 0)
+
+    def __ne__(self, other):
+        if isinstance(other, ExchangeRate):
+            self._check_other(other)
+            return self["price"] != other["price"]
+        else:
+            return self["price"] != float(other or 0)
+
+    def __ge__(self, other):
+        if isinstance(other, ExchangeRate):
+            self._check_other(other)
+            return self["price"] >= other["price"]
+        else:
+            return self["price"] >= float(other or 0)
+
+    def __gt__(self, other):
+        if isinstance(other, ExchangeRate):
+            self._check_other(other)
+            return self["price"] > other["price"]
+        else:
+            return self["price"] > float(other or 0)
+
+    __truediv__ = __div__
+    __truemul__ = __mul__
+    __str__ = __repr__

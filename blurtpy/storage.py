@@ -48,3 +48,6 @@ def get_default_config_store(*args, **kwargs):
 
 def get_default_key_store(config, *args, **kwargs):
     return SqliteEncryptedKeyStore(config=config, **kwargs)
+
+
+configStorage = get_default_config_store()

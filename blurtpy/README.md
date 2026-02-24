@@ -20,18 +20,15 @@ This directory contains the core logic and main classes of the `blurtpy` library
 | `cli.py` | Command Line Interface (CLI) implementation for the `blurtpy` command. |
 | `comment.py` | **`Comment` class**: Represents posts and comments. Used to read content, reply, and vote. |
 | `constants.py` | System constants and configuration defaults. |
-| `conveyor.py` | Efficiently processes blocks and operations in a stream. |
 | `discussions.py` | **`Discussions` class**: Fetches discussion lists (trending, hot, created, etc.). |
 | `exceptions.py` | Custom exception classes for `blurtpy`. |
 | `imageuploader.py` | Utilities for uploading images to IPFS or other hosting services. |
 | `instance.py` | Helper functions for instance management. |
-| `market.py` | **`Market` class**: Interface for the Decentralized Exchange (DEX). |
 | `memo.py` | Utilities for encrypting and decrypting transaction memos. |
 | `message.py` | Tools for signing and verifying arbitrary text messages with private keys. |
 | `nodelist.py` | **`NodeList` class**: Manages the list of RPC nodes and performs latency benchmarking. |
-| `price.py` | **`Price` class**: Represents an exchange rate between two assets. |
+| `amount.py` | **`ExchangeRate` class**: Represents an exchange rate between two assets. |
 | `profile.py` | Utilities for parsing and handling user profile metadata. |
-| `snapshot.py` | Tools for taking snapshots of account balances or other state. |
 | `storage.py` | Interface for the local storage backend. |
 | `transactionbuilder.py` | **`TransactionBuilder` class**: Constructs, signs, and broadcasts transactions. |
 | `utils.py` | General utility functions (date parsing, formatting, etc.). |
