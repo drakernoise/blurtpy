@@ -9,7 +9,7 @@ from datetime import datetime, timezone, date, time
 from .instance import shared_blockchain_instance
 from .account import Account
 from .amount import Amount
-from .price import Price
+from .amount import Amount, ExchangeRate
 from .utils import resolve_authorperm, construct_authorperm, construct_authorpermvoter, derive_permlink, remove_from_dict, make_patch, formatTimeString, formatToTimeStamp
 from .blockchainobject import BlockchainObject
 from .exceptions import ContentDoesNotExistsException, VotingInvalidOnArcblurtdPost
@@ -342,12 +342,11 @@ class Comment(BlockchainObject):
     def time_elapsed(self):
         """Returns a timedelta on how old the post is.
         """
-        utc = pytz.timezone('UTC')
-        return utc.localize(datetime.now(timezone.utc)) - self['created']
+        return datetime.now(timezone.utc) - self['created']
 
-    def curation_penalty_compensation_SBD(self):
-        """ Returns The required post payout amount after 15 minutes
-            which will compentsate the curation penalty, if voting earlier than 15 minutes
+    def curation_penalty_compensation(self):
+        """ Returns The required post payout amount after a certain time
+            which will compensate the curation penalty.
         """
         self.refresh()
         if self.blockchain.hardfork >= 21:
@@ -358,21 +357,29 @@ class Comment(BlockchainObject):
             reverse_auction_window_seconds = BLURT_REVERSE_AUCTION_WINDOW_SECONDS_HF6
         return self.reward * reverse_auction_window_seconds / ((self.time_elapsed()).total_seconds() / 60) ** 2
 
-    def estimate_curation_SBD(self, vote_value_SBD, estimated_value_SBD=None):
+    def curation_penalty_compensation_SBD(self):
+        """ Legacy alias for curation_penalty_compensation """
+        return self.curation_penalty_compensation()
+
+    def estimate_curation(self, vote_value, estimated_value=None):
         """ Estimates curation reward
 
-            :param float vote_value_SBD: The vote value in TBD for which the curation
+            :param float vote_value: The vote value in BLURT for which the curation
                 should be calculated
-            :param float estimated_value_SBD: When set, this value is used for calculate
+            :param float estimated_value: When set, this value is used for calculate
                 the curation. When not set, the current post value is used.
         """
         self.refresh()
-        if estimated_value_SBD is None:
-            estimated_value_SBD = float(self.reward)
+        if estimated_value is None:
+            estimated_value = float(self.reward)
         t = 1.0 - self.get_curation_penalty()
-        k = vote_value_SBD / (vote_value_SBD + float(self.reward))
+        k = vote_value / (vote_value + float(self.reward))
         K = (1 - math.sqrt(1 - k)) / 4 / k
-        return K * vote_value_SBD * t * math.sqrt(estimated_value_SBD)
+        return K * vote_value * t * math.sqrt(estimated_value)
+
+    def estimate_curation_SBD(self, vote_value_SBD, estimated_value_SBD=None):
+        """ Legacy alias for estimate_curation """
+        return self.estimate_curation(vote_value_SBD, estimated_value=estimated_value_SBD)
 
     def get_curation_penalty(self, vote_time=None):
         """ If post is less than 5 minutes old, it will incur a curation
@@ -472,54 +479,43 @@ class Comment(BlockchainObject):
         return {"total_payout": total_payout, "author_payout": author_payout, "curator_payout": curator_payout}
 
     def get_author_rewards(self):
-        """ Returns the author rewards.
-
+        """ Returns the author rewards in Blurt-native terms.
             
-            
-            Example::
-
-                {
-                    'pending_rewards': True,
-                    'payout_SP': 0.912 BLURT,
-                    'payout_SBD': 3.583 TBD,
-                    'total_payout_SBD': 7.166 TBD
-                }
-
+            payout_BP: Blurt Power (formerly payout_SP)
+            payout_liquid: Liquid BLURT (formerly payout_SBD, set to 0 if 100% powered up)
+            total_payout_BLURT: Total payout in BLURT
         """
         if not self.is_pending():
+            total = Amount(self["total_payout_value"], blockchain_instance=self.blockchain)
             return {'pending_rewards': False,
-                    "payout_SP": Amount(0, self.blockchain.token_symbol, blockchain_instance=self.blockchain),
+                    "payout_BP": total,
+                    "payout_SP": total, # Legacy alias
+                    "payout_liquid": Amount(0, self.blockchain.token_symbol, blockchain_instance=self.blockchain),
                     "payout_SBD": Amount(0, self.blockchain.backed_token_symbol, blockchain_instance=self.blockchain),
-                    "total_payout_SBD": Amount(self["total_payout_value"], blockchain_instance=self.blockchain)}
+                    "total_payout_BLURT": total,
+                    "total_payout_SBD": total} # Legacy alias
+        
         author_reward_factor = 0.5
-        median_hist = self.blockchain.get_current_median_history()
-        if median_hist is not None:
-            median_price = Price(median_hist, blockchain_instance=self.blockchain)
         beneficiaries_pct = self.get_beneficiaries_pct()
         curation_tokens = self.reward * author_reward_factor
         author_tokens = self.reward - curation_tokens
-        curation_rewards = self.get_curation_rewards()
-        if self.blockchain.hardfork >= 20 and median_hist is not None:
-            author_tokens += median_price * curation_rewards['unclaimed_rewards']
-
+        
         benefactor_tokens = author_tokens * beneficiaries_pct / 100.
         author_tokens -= benefactor_tokens
 
-        if median_hist is not None and "percent_blurt_dollars" in self:
-            tbd_blurt = author_tokens * self["percent_blurt_dollars"] / 20000.
-            vesting_blurt = median_price.as_base(self.blockchain.token_symbol) * (author_tokens - tbd_blurt)
-            return {'pending_rewards': True, "payout_SP": vesting_blurt, "payout_SBD": tbd_blurt, "total_payout_SBD": author_tokens}
-        elif median_hist is not None and "percent_tbd" in self:
-            tbd_blurt = author_tokens * self["percent_tbd"] / 20000.
-            vesting_blurt = median_price.as_base(self.blockchain.token_symbol) * (author_tokens - tbd_blurt)
-            return {'pending_rewards': True, "payout_SP": vesting_blurt, "payout_SBD": tbd_blurt, "total_payout_SBD": author_tokens}        
-        else:
-            return {'pending_rewards': True, "total_payout": author_tokens, "payout_SBD": None, "total_payout_SBD": None}
+        return {
+            'pending_rewards': True,
+            "payout_BP": author_tokens,
+            "payout_SP": author_tokens, # Legacy alias
+            "payout_liquid": Amount(0, self.blockchain.token_symbol, blockchain_instance=self.blockchain),
+            "payout_SBD": Amount(0, self.blockchain.backed_token_symbol, blockchain_instance=self.blockchain),
+            "total_payout_BLURT": author_tokens,
+            "total_payout_SBD": author_tokens # Legacy alias
+        }
 
-    def get_curation_rewards(self, pending_payout_SBD=False, pending_payout_value=None):
+    def get_curation_rewards(self, pending_payout_value=None):
         """ Returns the curation rewards. The split between creator/curator is currently 50%/50%.
 
-            :param bool pending_payout_SBD: If True, the rewards are returned in TBD and not in BLURT (default is False)
             :param pending_payout_value: When not None this value instead of the current
                 value is used for calculating the rewards
             :type pending_payout_value: float, str
@@ -545,9 +541,6 @@ class Comment(BlockchainObject):
                 }
 
         """
-        median_hist = self.blockchain.get_current_median_history()
-        if median_hist is not None:
-            median_price = Price(median_hist, blockchain_instance=self.blockchain)
         pending_rewards = False
         active_votes_list = self.get_votes()
         curator_reward_factor = 0.5
@@ -567,10 +560,7 @@ class Comment(BlockchainObject):
             total_vote_weight += vote["weight"]
             
         if not self.is_pending():
-            if pending_payout_SBD or median_hist is None:
-                max_rewards = Amount(self["curator_payout_value"], blockchain_instance=self.blockchain)
-            else:
-                max_rewards = median_price.as_base(self.blockchain.token_symbol) * Amount(self["curator_payout_value"], blockchain_instance=self.blockchain)
+            max_rewards = Amount(self["curator_payout_value"], blockchain_instance=self.blockchain)
             unclaimed_rewards = Amount(0, self.blockchain.token_symbol, blockchain_instance=self.blockchain)
         else:
             if pending_payout_value is None and "pending_payout_value" in self:
@@ -578,13 +568,12 @@ class Comment(BlockchainObject):
             elif pending_payout_value is None:
                 pending_payout_value = 0
             elif isinstance(pending_payout_value, (float, integer_types)):
-                pending_payout_value = Amount(pending_payout_value, self.blockchain.backed_token_symbol, blockchain_instance=self.blockchain)
+                pending_payout_value = Amount(pending_payout_value, self.blockchain.token_symbol, blockchain_instance=self.blockchain)
             elif isinstance(pending_payout_value, str):
                 pending_payout_value = Amount(pending_payout_value, blockchain_instance=self.blockchain)
-            if pending_payout_SBD or median_hist is None:
-                max_rewards = (pending_payout_value * curator_reward_factor)
-            else:
-                max_rewards = median_price.as_base(self.blockchain.token_symbol) * (pending_payout_value * curator_reward_factor)
+            
+            # Blurt curation rewards are always calculated in BLURT
+            max_rewards = (pending_payout_value * curator_reward_factor)
             unclaimed_rewards = max_rewards.copy()
             pending_rewards = True
 

@@ -20,18 +20,15 @@ Este directorio contiene la lógica central y las clases principales de la libre
 | `cli.py` | Implementación de la Interfaz de Línea de Comandos (CLI) para el comando `blurtpy`. |
 | `comment.py` | **Clase `Comment`**: Representa posts y comentarios. Se usa para leer contenido, responder y votar. |
 | `constants.py` | Constantes del sistema y valores por defecto de configuración. |
-| `conveyor.py` | Procesa eficientemente bloques y operaciones en un flujo (stream). |
 | `discussions.py` | **Clase `Discussions`**: Obtiene listas de discusiones (trending, hot, created, etc.). |
 | `exceptions.py` | Clases de excepción personalizadas para `blurtpy`. |
 | `imageuploader.py` | Utilidades para subir imágenes a IPFS u otros servicios de alojamiento. |
 | `instance.py` | Funciones auxiliares para la gestión de instancias. |
-| `market.py` | **Clase `Market`**: Interfaz para el Exchange Descentralizado (DEX). |
 | `memo.py` | Utilidades para cifrar y descifrar memos de transacciones. |
 | `message.py` | Herramientas para firmar y verificar mensajes de texto arbitrarios con claves privadas. |
 | `nodelist.py` | **Clase `NodeList`**: Gestiona la lista de nodos RPC y realiza benchmarks de latencia. |
-| `price.py` | **Clase `Price`**: Representa una tasa de cambio entre dos activos. |
+| `amount.py` | **Clase `ExchangeRate`**: Representa una tasa de cambio entre dos activos. |
 | `profile.py` | Utilidades para analizar y manejar metadatos del perfil de usuario. |
-| `snapshot.py` | Herramientas para tomar instantáneas de balances de cuentas u otro estado. |
 | `storage.py` | Interfaz para el backend de almacenamiento local. |
 | `transactionbuilder.py` | **Clase `TransactionBuilder`**: Construye, firma y transmite transacciones. |
 | `utils.py` | Funciones de utilidad general (parseo de fechas, formateo, etc.). |

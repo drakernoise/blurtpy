@@ -5,7 +5,6 @@ import time as timenow
 import math
 from datetime import datetime, tzinfo, timedelta, date, time, timezone
 import pytz
-import difflib
 from ruamel.yaml import YAML
 import secrets
 import string
@@ -123,6 +122,8 @@ def sanitize_permlink(permlink):
     permlink = permlink.strip().lower()
     permlink = RE_PERMLINK_SEP.sub("-", permlink)
     permlink = RE_PERMLINK_CLEAN.sub("", permlink)
+    while "--" in permlink:
+        permlink = permlink.replace("--", "-")
     return permlink
 
 
@@ -183,7 +184,7 @@ def resolve_authorperm(identifier):
 
             >>> from blurtpy.utils import resolve_authorperm
             >>> author, permlink = resolve_authorperm('https://d.tube/#!/v/pottlund/m5cqkd1a')
-            >>> author, permlink = resolve_authorperm("https://blurtit.com/witness-category/@gtg/24lfrm-gtg-witness-log")
+            >>> author, permlink = resolve_authorperm("https://blurt.blog/witness-category/@gtg/24lfrm-gtg-witness-log")
             >>> author, permlink = resolve_authorperm("@gtg/24lfrm-gtg-witness-log")
             >>> author, permlink = resolve_authorperm("https://busy.org/@gtg/24lfrm-gtg-witness-log")
 
@@ -498,7 +499,10 @@ def import_pubkeys(import_pub):
     if pubkeys.find('\0') > 0:
         with open(import_pub, encoding='utf-16') as fp:
             pubkeys = fp.read()
-    pubkeys = ast.literal_eval(pubkeys)
+    try:
+        pubkeys = json.loads(pubkeys)
+    except json.JSONDecodeError:
+        pubkeys = ast.literal_eval(pubkeys)
     owner = pubkeys["owner"]
     active = pubkeys["active"]
     posting = pubkeys["posting"]

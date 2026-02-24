@@ -691,7 +691,7 @@ class Blockchain(object):
                     'from': 'johngreenfield',
                     'to': 'thundercurator',
                     'amount': '0.080 TBD',
-                    'memo': 'https://blurtit.com/lofi/@johngreenfield/lofi-joji-yeah-right',
+                    'memo': 'https://blurt.blog/lofi/@johngreenfield/lofi-joji-yeah-right',
                     '_id': '6d4c5f2d4d8ef1918acaee4a8dce34f9da384786',
                     'timestamp': datetime.datetime(2018, 5, 9, 11, 23, 6, tzinfo=<UTC>),
                     'block_num': 22277588, 'trx_num': 35, 'trx_id': 'cf11b2ac8493c71063ec121b2e8517ab1e0e6bea'
@@ -709,7 +709,7 @@ class Blockchain(object):
                                 {
                                     'from': 'johngreenfield', 'to': 'thundercurator',
                                     'amount': '0.080 TBD',
-                                    'memo': 'https://blurtit.com/lofi/@johngreenfield/lofi-joji-yeah-right'
+                                    'memo': 'https://blurt.blog/your-post-permlink'
                                 }
                         ],
                         'timestamp': datetime.datetime(2018, 5, 9, 11, 23, 6, tzinfo=<UTC>)
@@ -918,7 +918,7 @@ class Blockchain(object):
 
             >>> from blurtpy.blockchain import Blockchain
             >>> from blurtpy import Blurt
-            >>> stm = Blurt("https://api.blurtit.com")
+            >>> stm = Blurt("https://rpc.blurt.blog")
             >>> blockchain = Blockchain(blockchain_instance=stm)
             >>> ret = blockchain.get_similar_account_names("test", limit=5)
             >>> len(ret) == 5
@@ -946,7 +946,7 @@ class Blockchain(object):
 
             >>> from blurtpy.blockchain import Blockchain
             >>> from blurtpy import Blurt
-            >>> stm = Blurt("https://api.blurtit.com")
+            >>> stm = Blurt("https://rpc.blurt.blog")
             >>> blockchain = Blockchain(blockchain_instance=stm)
             >>> ret = blockchain.find_rc_accounts(["test"])
             >>> len(ret) == 1
@@ -986,7 +986,7 @@ class Blockchain(object):
 
             >>> from blurtpy.blockchain import Blockchain
             >>> from blurtpy import Blurt
-            >>> stm = Blurt("https://api.blurtit.com")
+            >>> stm = Blurt("https://rpc.blurt.blog")
             >>> blockchain = Blockchain(blockchain_instance=stm)
             >>> ret = blockchain.list_change_recovery_account_requests(limit=1)
 
@@ -1013,7 +1013,7 @@ class Blockchain(object):
 
             >>> from blurtpy.blockchain import Blockchain
             >>> from blurtpy import Blurt
-            >>> stm = Blurt("https://api.blurtit.com")
+            >>> stm = Blurt("https://rpc.blurt.blog")
             >>> blockchain = Blockchain(blockchain_instance=stm)
             >>> ret = blockchain.find_change_recovery_account_requests('bott')
 

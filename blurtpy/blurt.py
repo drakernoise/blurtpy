@@ -173,13 +173,8 @@ class Blurt(BlockChainInstance):
         if recent_claims == 0:
             return 0
         fund_per_share = reward_balance / (recent_claims)
-        median_price = self.get_median_price(use_stored_data=use_stored_data)
-        if median_price is None:
-            # Blurt doesn't have a stablecoin, so we use 1.0 (1 BLURT = 1 BLURT)
-            median_price = 1.0
-            price = 1.0
-        else:
-            price = float(median_price * (Amount(1, self.blurt_symbol, blockchain_instance=self)))
+        # Blurt doesn't have a stablecoin or median price feed
+        price = 1.0
         return fund_per_share * price
 
     def get_blurt_per_mvest(self, time_stamp=None, use_stored_data=True):
@@ -219,8 +214,8 @@ class Blurt(BlockChainInstance):
                         (float(Amount(global_properties['total_vesting_shares'], blockchain_instance=self)) / 1e6)
                     )                    
 
-    def vests_to_sp(self, vests, timestamp=None, use_stored_data=True):
-        """ Converts vests to SP
+    def vests_to_bp(self, vests, timestamp=None, use_stored_data=True):
+        """ Converts vests to BP (Blurt Power)
 
             :param amount.Amount vests/float vests: Vests to convert
             :param int timestamp: (Optional) Can be used to calculate
@@ -231,14 +226,22 @@ class Blurt(BlockChainInstance):
             vests = float(vests)
         return float(vests) / 1e6 * self.get_blurt_per_mvest(timestamp, use_stored_data=use_stored_data)
 
-    def sp_to_vests(self, sp, timestamp=None, use_stored_data=True):
-        """ Converts SP to vests
+    def vests_to_sp(self, vests, timestamp=None, use_stored_data=True):
+        """ Legacy alias for vests_to_bp """
+        return self.vests_to_bp(vests, timestamp=timestamp, use_stored_data=use_stored_data)
 
-            :param float sp: Blurt power to convert
+    def bp_to_vests(self, bp, timestamp=None, use_stored_data=True):
+        """ Converts BP to vests
+
+            :param float bp: Blurt power to convert
             :param datetime timestamp: (Optional) Can be used to calculate
                 the conversion rate from the past
         """
-        return sp * 1e6 / self.get_blurt_per_mvest(timestamp, use_stored_data=use_stored_data)
+        return bp * 1e6 / self.get_blurt_per_mvest(timestamp, use_stored_data=use_stored_data)
+
+    def sp_to_vests(self, sp, timestamp=None, use_stored_data=True):
+        """ Legacy alias for bp_to_vests """
+        return self.bp_to_vests(sp, timestamp=timestamp, use_stored_data=use_stored_data)
 
     def vests_to_token_power(self, vests, timestamp=None, use_stored_data=True):
         return self.vests_to_sp(vests, timestamp=timestamp, use_stored_data=use_stored_data)
@@ -249,10 +252,11 @@ class Blurt(BlockChainInstance):
     def get_token_per_mvest(self, time_stamp=None, use_stored_data=True):
         return self.get_blurt_per_mvest(time_stamp=time_stamp, use_stored_data=use_stored_data)
 
-    def token_power_to_value(self, token_power, post_rshares=0, voting_power=BLURT_100_PERCENT, vote_pct=BLURT_100_PERCENT, not_broadcasted_vote=True, use_stored_data=True):
-        return self.sp_to_value(token_power, post_rshares=post_rshares, voting_power=voting_power, vote_pct=vote_pct, not_broadcasted_vote=not_broadcasted_vote, use_stored_data=use_stored_data)
+    def bp_to_value(self, bp, post_rshares=0, voting_power=BLURT_100_PERCENT, vote_pct=BLURT_100_PERCENT, not_broadcasted_vote=True, use_stored_data=True):
+        return self.sp_to_value(bp, post_rshares=post_rshares, voting_power=voting_power, vote_pct=vote_pct, not_broadcasted_vote=not_broadcasted_vote, use_stored_data=use_stored_data)
 
     def sp_to_value(self, sp, post_rshares=0, voting_power=BLURT_100_PERCENT, vote_pct=BLURT_100_PERCENT, not_broadcasted_vote=True, use_stored_data=True):
+        """ Converts SP to value in BLURT. (Legacy alias for bp_to_value) """
         """ Obtain the resulting Value vote value from Blurt power
 
             :param number blurt_power: Blurt Power
@@ -353,28 +357,19 @@ class Blurt(BlockChainInstance):
         # the change our vote is causing to the recent_claims. This is more important for really
         # big votes which have a significant impact on the recent_claims.
         reward_fund = self.get_reward_funds(use_stored_data=use_stored_data)
-        median_price = self.get_median_price(use_stored_data=use_stored_data)
-        
-        recent_claims = int(reward_fund["recent_claims"])
-        reward_balance = Amount(reward_fund["reward_balance"], blockchain_instance=self)
-        
-        if median_price is None:
-             # Should not happen in Blurt if connected, but fallback to 1
-             median_price = 1.0
-
-        reward_pool_value = median_price * float(reward_balance)
+        reward_pool_value = float(reward_balance)
         if value > reward_pool_value:
             raise ValueError('Provided more Value than available in the reward pool.')
 
         # This is the formula we can use to determine the "true" rshares.
         # We get this formula by some math magic using the previous used formulas
-        # FundsPerShare = (balance / (claims + newShares)) * Price
+        # FundsPerShare = (balance / (claims + newShares)) * ExchangeRate
         # newShares = amount / FundsPerShare
         # We can now resolve both formulas for FundsPerShare and set the formulas to be equal
-        # (balance / (claims + newShares)) * price = amount / newShares
+        # (balance / (claims + newShares)) * 1.0 = amount / newShares
         # Now we resolve for newShares resulting in:
-        # newShares = claims * amount / (balance * price - amount)
-        rshares = recent_claims * float(value) / ((float(reward_balance) * float(median_price)) - float(value))
+        # newShares = claims * amount / (balance - amount)
+        rshares = recent_claims * float(value) / (float(reward_balance) - float(value))
         return int(rshares)
 
     def rshares_to_vote_pct(self, rshares, post_rshares=0, blurt_power=None, vests=None, voting_power=BLURT_100_PERCENT, use_stored_data=True):

@@ -114,54 +114,6 @@ class Witness(BlockchainObject):
     def is_active(self):
         return len(self['signing_key']) > 3 and self['signing_key'][3:] != '1111111111111111111111111111111114T1Anm'
 
-    def feed_publish(self,
-                     base,
-                     quote=None,
-                     account=None):
-        """ Publish a feed price as a witness.
-
-            :param float base: USD Price of BLURT in TBD (implied price)
-            :param float quote: (optional) Quote Price. Should be 1.000 (default), unless
-                we are adjusting the feed to support the peg.
-            :param str account: (optional) the source account for the transfer
-                if not self["owner"]
-        """
-        quote = quote if quote is not None else "1.000 %s" % (self.blockchain.token_symbol)
-        if not account:
-            account = self["owner"]
-        if not account:
-            raise ValueError("You need to provide an account")
-
-        account = Account(account, blockchain_instance=self.blockchain)
-        if isinstance(base, Amount):
-            base = Amount(base, blockchain_instance=self.blockchain)
-        elif isinstance(base, string_types):
-            base = Amount(base, blockchain_instance=self.blockchain)
-        else:
-            base = Amount(base, self.blockchain.backed_token_symbol, blockchain_instance=self.blockchain)
-
-        if isinstance(quote, Amount):
-            quote = Amount(quote, blockchain_instance=self.blockchain)
-        elif isinstance(quote, string_types):
-            quote = Amount(quote, blockchain_instance=self.blockchain)
-        else:
-            quote = Amount(quote, self.blockchain.token_symbol, blockchain_instance=self.blockchain)
-
-        if not base.symbol == self.blockchain.backed_token_symbol:
-            raise AssertionError()
-        if not quote.symbol == self.blockchain.token_symbol:
-            raise AssertionError()
-        op = operations.Feed_publish(
-            **{
-                "publisher": account["name"],
-                "exchange_rate": {
-                    "base": base,
-                    "quote": quote,
-                },
-                "prefix": self.blockchain.prefix,
-                "json_str": not bool(self.blockchain.config["use_condenser"]),
-            })
-        return self.blockchain.finalizeOp(op, account, "active")
 
     def update(self, signing_key, url, props, account=None):
         """ Update witness
@@ -193,7 +145,7 @@ class WitnessesObject(list):
             table_header = ["Name", "Votes [PV]", "Disabled", "Missed", "Fee", "Size", "Version"]
             no_feed = True
         else:
-            table_header = ["Name", "Votes [PV]", "Disabled", "Missed", "Feed base", "Feed quote", "Feed update", "Fee", "Size", "Interest", "Version"]
+            table_header = ["Name", "Votes [PV]", "Disabled", "Missed", "Price base", "Price quote", "Price update", "Fee", "Size", "Interest", "Version"]
         if "sbd_exchange_rate" in self[0]:
             bd_exchange_rate = "sbd_exchange_rate"
             bd_interest_rate = "sbd_interest_rate"

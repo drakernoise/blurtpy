@@ -297,6 +297,16 @@ class Account(BlockchainObject):
         else:
             return {}
 
+    def get_bridge_profile(self):
+        """ Returns rpc.bridge.get_profile data if available
+        """
+        if not self.blockchain.is_connected():
+            return None
+        try:
+            return self.blockchain.rpc.get_profile({'account': self.name}, api="bridge")
+        except:
+            return None
+
     @property
     def rep(self):
         """ Returns the account reputation
@@ -304,10 +314,16 @@ class Account(BlockchainObject):
         return self.get_reputation()
 
     @property
-    def sp(self):
-        """ Returns the accounts Blurt Power
+    def bp(self):
+        """ Returns the accounts Blurt Power (BP)
         """
         return self.get_token_power()
+
+    @property
+    def sp(self):
+        """ Legacy alias for bp (Blurt Power)
+        """
+        return self.bp
 
     @property
     def tp(self):
@@ -355,7 +371,7 @@ class Account(BlockchainObject):
             t.add_row(["Vote Value", "%.2f $" % (self.get_voting_value_blurt())])
             t.add_row(["Last vote", "%s ago" % last_vote_time_str])
             t.add_row(["Full in ", "%s" % (self.get_recharge_time_str())])
-            t.add_row(["Token Power", "%.2f %s" % (self.get_token_power(), self.blockchain.token_symbol)])
+            t.add_row(["Blurt Power (BP)", "%.2f %s" % (self.get_token_power(), self.blockchain.token_symbol)])
             t.add_row(["Balance", "%s, %s" % (str(self.balances["available"][0]), str(self.balances["available"][1]))])
 
             if return_str:
@@ -371,7 +387,7 @@ class Account(BlockchainObject):
             ret += "--- Downvoting Power ---\n"
             ret += "%.2f %% \n" % (self.get_downvoting_power())
             ret += "--- Balance ---\n"
-            ret += "%.2f SP, " % (self.get_token_power())
+            ret += "%.2f BP, " % (self.get_token_power())
             ret += "%s, %s\n" % (str(self.balances["available"][0]), str(self.balances["available"][1]))
 
             if return_str:
@@ -531,10 +547,10 @@ class Account(BlockchainObject):
         """
         return self.blockchain.vests_to_token_power(self.get_vests(only_own_vests=only_own_vests), use_stored_data=use_stored_data)
 
-    def get_blurt_power(self, onlyOwnSP=False):
-        """ Returns the account blurt power
+    def get_blurt_power(self, only_own_bp=False):
+        """ Returns the account blurt power (BP)
         """
-        return self.get_token_power(only_own_vests=onlyOwnSP)
+        return self.get_token_power(only_own_vests=only_own_bp)
 
     def get_voting_value(self, post_rshares=0, voting_weight=100, voting_power=None, token_power=None, not_broadcasted_vote=True):
         """ Returns the account voting value in Blurt/Blurt token units
@@ -3166,7 +3182,7 @@ class Account(BlockchainObject):
 
     def delegate_vesting_shares(self, to_account, vesting_shares,
                                 account=None, **kwargs):
-        """ Delegate SP to another account.
+        """ Delegate BP to another account.
 
         :param str to_account: Account we are delegating shares to
             (delegatee).
@@ -3698,7 +3714,7 @@ class AccountsObject(list):
         t.align = "r"
         t.add_row([tag_type + " count", str(len(self))])
         own_mvest = []
-        eff_sp = []
+        eff_bp = []
         rep = []
         last_vote_h = []
         last_post_d = []
@@ -3707,7 +3723,7 @@ class AccountsObject(list):
         for f in self:
             rep.append(f.rep)
             own_mvest.append(float(f.balances["available"][2]) / 1e6)
-            eff_sp.append(f.get_token_power())
+            eff_bp.append(f.get_token_power())
             last_vote = addTzInfo(datetime.now(timezone.utc)) - (f["last_vote_time"])
             if last_vote.days >= 365:
                 no_vote += 1
@@ -3723,10 +3739,10 @@ class AccountsObject(list):
         if (len(rep) > 0):
             t.add_row(["Mean Rep.", "%.2f" % (sum(rep) / len(rep))])
             t.add_row(["Max Rep.", "%.2f" % (max(rep))])
-        if (len(eff_sp) > 0):
-            t.add_row(["Summed eff. SP", "%.2f" % sum(eff_sp)])
-            t.add_row(["Mean eff. SP", "%.2f" % (sum(eff_sp) / len(eff_sp))])
-            t.add_row(["Max eff. SP", "%.2f" % max(eff_sp)])
+        if (len(eff_bp) > 0):
+            t.add_row(["Summed eff. BP", "%.2f" % sum(eff_bp)])
+            t.add_row(["Mean eff. BP", "%.2f" % (sum(eff_bp) / len(eff_bp))])
+            t.add_row(["Max eff. BP", "%.2f" % max(eff_bp)])
         if (len(last_vote_h) > 0):
             t.add_row(["Mean last vote diff in hours", "%.2f" % (sum(last_vote_h) / len(last_vote_h))])
         if len(last_post_d) > 0:
