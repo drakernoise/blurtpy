@@ -4,6 +4,11 @@ import sys
 import re
 import os
 import codecs
+try:
+    import secrets
+except ImportError:
+    import random
+    secrets = random.SystemRandom()
 import ecdsa
 import ctypes
 import binascii
@@ -161,21 +166,10 @@ class BrainKey(Prefix):
         """ Suggest a new random brain key. Randomness is provided by the
             operating system using ``os.urandom()``.
         """
-        brainkey = [None] * word_count
         dict_lines = BrainKeyDictionary.split(',')
         if not len(dict_lines) == 49744:
             raise AssertionError()
-        for j in range(0, word_count):
-            urand = os.urandom(2)
-            if isinstance(urand, str):
-                urand = py23_bytes(urand, 'ascii')
-            if PY2:
-                num = int(codecs.encode(urand[::-1], 'hex'), 16)
-            else:
-                num = int.from_bytes(urand, byteorder='little')
-            rndMult = num / 2 ** 16  # returns float between 0..1 (inclusive)
-            wIdx = int(round(len(dict_lines) * rndMult))
-            brainkey[j] = dict_lines[wIdx]
+        brainkey = [secrets.choice(dict_lines) for _ in range(word_count)]
         return ' '.join(brainkey).upper()
 
 
