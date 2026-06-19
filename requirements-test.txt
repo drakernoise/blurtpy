@@ -2,13 +2,13 @@ pip
 setuptools
 wheel
 future==1.0.0
-ecdsa==0.19.1
-requests==2.32.4
+ecdsa==0.19.2
+requests==2.33.0
 websocket-client==0.58.0
 pytz==2021.1
 pycryptodomex==3.21.0
 scrypt==0.8.17
-cryptography==46.0.5
+cryptography==48.0.1
 ruamel.yaml
 mock==4.0.3
 appdirs==1.4.4
